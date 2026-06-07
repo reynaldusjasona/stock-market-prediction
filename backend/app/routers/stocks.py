@@ -1,3 +1,58 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
+
+from app.services.stock_service import (
+    calculateIndicators,
+    fetchPriceData,
+    fetchStockList,
+    fetchTrendingTickers,
+    getOrderBook,
+    getPriceHistory,
+    getLivePrice,
+    queryStockDB,
+)
 
 router = APIRouter()
+
+# ---- STATIC ROUTES FIRST (must precede /{ticker} to avoid shadowing) ----
+
+@router.get("/stocks/trending", tags=["Stocks"])
+async def trending():
+    return await fetchTrendingTickers()
+
+
+@router.get("/stocks/search", tags=["Stocks"])
+async def search(q: str = Query(..., description="Ticker symbol or company name")):
+    return await queryStockDB(q)
+
+
+@router.get("/stocks", tags=["Stocks"])
+async def getStocks():
+    return await fetchStockList()
+
+
+# ---- DYNAMIC ROUTES (ticker param) ----
+
+@router.get("/stocks/{ticker}/indicators", tags=["Stocks"])
+async def indicators(ticker: str, period: str = Query("1M", description="1W | 1M | 3M | 1Y")):
+    price_history = await getPriceHistory(ticker, period)
+    return await calculateIndicators(price_history)
+
+
+@router.get("/stocks/{ticker}/history", tags=["Stocks"])
+async def history(ticker: str, period: str = Query("1M", description="1W | 1M | 3M | 1Y")):
+    return await getPriceHistory(ticker, period)
+
+
+@router.get("/stocks/{ticker}/price", tags=["Stocks"])
+async def price(ticker: str):
+    return await getLivePrice(ticker)
+
+
+@router.get("/stocks/{ticker}/orderbook", tags=["Stocks"])
+async def orderbook(ticker: str):
+    return await getOrderBook(ticker)
+
+
+@router.get("/stocks/{ticker}", tags=["Stocks"])
+async def getStockByTicker(ticker: str):
+    return await fetchPriceData(ticker.upper())
