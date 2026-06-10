@@ -5,9 +5,9 @@ from app.services.stock_service import (
     fetchPriceData,
     fetchStockList,
     fetchTrendingTickers,
-    getOrderBook,
-    getPriceHistory,
-    getLivePrice,
+    getOrderBook as svcGetOrderBook,
+    getPriceHistory as svcGetPriceHistory,
+    getLivePrice as svcGetLivePrice,
     queryStockDB,
 )
 
@@ -34,23 +34,23 @@ async def getStocks():
 
 @router.get("/stocks/{ticker}/indicators", tags=["Stocks"])
 async def indicators(ticker: str, period: str = Query("1M", description="1W | 1M | 3M | 1Y")):
-    price_history = await getPriceHistory(ticker, period)
+    price_history = await svcGetPriceHistory(ticker, period)
     return await calculateIndicators(price_history)
 
 
 @router.get("/stocks/{ticker}/history", tags=["Stocks"])
-async def history(ticker: str, period: str = Query("1M", description="1W | 1M | 3M | 1Y")):
-    return await getPriceHistory(ticker, period)
+async def getPriceHistory(ticker: str, period: str = Query("1M", description="1W | 1M | 3M | 1Y")):
+    return await svcGetPriceHistory(ticker, period)
 
 
 @router.get("/stocks/{ticker}/price", tags=["Stocks"])
-async def price(ticker: str):
-    return await getLivePrice(ticker)
+async def getLivePrice(ticker: str):
+    return await svcGetLivePrice(ticker)
 
 
 @router.get("/stocks/{ticker}/orderbook", tags=["Stocks"])
-async def orderbook(ticker: str):
-    return await getOrderBook(ticker)
+async def getOrderBook(ticker: str):
+    return await svcGetOrderBook(ticker)
 
 
 @router.get("/stocks/{ticker}", tags=["Stocks"])

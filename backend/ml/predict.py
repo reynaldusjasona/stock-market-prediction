@@ -39,7 +39,7 @@ def get_latest_features(ticker: str) -> pd.DataFrame:
     return processed[_FEATURE_COLS].iloc[[-1]]
 
 
-def predict_signal(ticker: str) -> dict:
+def getPrediction(ticker: str) -> dict:
     """
     Generate a Buy / Hold / Sell signal for a single ticker.
 
@@ -89,5 +89,5 @@ def predict_signal(ticker: str) -> dict:
 
 
 if __name__ == "__main__":
-    result = predict_signal("AAPL")
+    result = getPrediction("AAPL")
     print(result)
