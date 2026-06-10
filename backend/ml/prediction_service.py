@@ -1,10 +1,10 @@
 from datetime import datetime
 from app.core.database import supabase
-from ml.predict import predict_signal
+from ml.predict import getPrediction
 
 
 def get_prediction(ticker: str) -> dict:
-    result = predict_signal(ticker.upper())
+    result = getPrediction(ticker.upper())
     supabase.table("predictions").upsert({
         "ticker": result["ticker"],
         "signal": result["signal"],

@@ -19,7 +19,7 @@ async def predictionHistory(
 
 
 @router.get("/predictions/{ticker}/recommendation", tags=["Predictions"])
-async def recommendation(
+async def getStockRecommendations(
     ticker: str,
     _user: dict = Depends(get_current_user),
 ):
