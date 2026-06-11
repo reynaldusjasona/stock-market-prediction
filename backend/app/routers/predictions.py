@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.security import get_current_user
+from app.services.prediction_service import (
+    getRecommendationDetails as svcGetRecommendationDetails,
+)
 from ml.prediction_service import get_prediction, get_prediction_history
 
 router = APIRouter()
@@ -43,6 +46,14 @@ async def getStockRecommendations(
         "risk_level": result["risk_level"],
         "confidence": result["confidence"],
     }
+
+
+@router.get("/predictions/{ticker}/details", tags=["Predictions"])
+async def getRecommendationDetails(
+    ticker: str,
+    _user: dict = Depends(get_current_user),
+):
+    return await svcGetRecommendationDetails(ticker)
 
 
 # ---- BASE TICKER ROUTE (must come after specific sub-paths) ----
