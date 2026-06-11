@@ -1,7 +1,4 @@
-import numpy as np
 import pandas as pd
-import xgboost as xgb
-from sklearn.preprocessing import LabelEncoder
 
 from ml.evaluate import load_model
 from ml.features import calculate_indicators, fetch_stock_data
@@ -53,7 +50,8 @@ def getPrediction(ticker: str) -> dict:
       50–74  → "Moderate Risk"
       < 50   → "High Risk"
 
-    Returns a dict with keys: ticker, signal, confidence, risk_level, reasoning.
+    Returns a dict with keys: ticker, signal, confidence,
+    risk_level, reasoning.
     """
     model, label_encoder = load_model()
     features = get_latest_features(ticker)

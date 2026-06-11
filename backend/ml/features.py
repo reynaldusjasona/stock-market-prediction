@@ -14,9 +14,13 @@ def fetch_stock_data(
 
     Returns a DataFrame with columns: Open, High, Low, Close, Volume.
     """
-    raw = yf.download(ticker, start=start, end=end, auto_adjust=True, progress=False)
+    raw = yf.download(
+        ticker, start=start, end=end,
+        auto_adjust=True, progress=False,
+    )
 
-    # yfinance may return a MultiIndex when multiple tickers are used; flatten here
+    # yfinance may return a MultiIndex when multiple tickers are
+    # used; flatten here
     if isinstance(raw.columns, pd.MultiIndex):
         raw.columns = raw.columns.get_level_values(0)
 

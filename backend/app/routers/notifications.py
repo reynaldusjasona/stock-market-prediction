@@ -22,7 +22,9 @@ async def markAsRead(
     current_user: dict = Depends(get_current_user),
 ):
     userID = current_user["sub"]
-    updated = await notification_service.markAsRead(notification_id, userID, None)
+    updated = await notification_service.markAsRead(
+        notification_id, userID, None
+    )
     if not updated:
         raise HTTPException(status_code=404, detail="Notification not found")
     return {"success": True}
@@ -33,5 +35,7 @@ async def sendPendingEmailNotification(
     current_user: dict = Depends(get_current_user),
 ):
     userID = current_user["sub"]
-    await notification_service.sendPendingEmailNotification(userID, None, send_email)
+    await notification_service.sendPendingEmailNotification(
+        userID, None, send_email
+    )
     return {"sent": True}

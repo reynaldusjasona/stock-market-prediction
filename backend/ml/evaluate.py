@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import joblib
-import numpy as np
 import pandas as pd
 import xgboost as xgb
 from sklearn.metrics import (
@@ -83,13 +82,22 @@ def evaluate_model(
     return {
         "accuracy": round(accuracy_score(y_test_enc, y_pred_enc), 4),
         "precision": round(
-            precision_score(y_test_enc, y_pred_enc, average="weighted", zero_division=0), 4
+            precision_score(
+                y_test_enc, y_pred_enc,
+                average="weighted", zero_division=0,
+            ), 4
         ),
         "recall": round(
-            recall_score(y_test_enc, y_pred_enc, average="weighted", zero_division=0), 4
+            recall_score(
+                y_test_enc, y_pred_enc,
+                average="weighted", zero_division=0,
+            ), 4
         ),
         "f1": round(
-            f1_score(y_test_enc, y_pred_enc, average="weighted", zero_division=0), 4
+            f1_score(
+                y_test_enc, y_pred_enc,
+                average="weighted", zero_division=0,
+            ), 4
         ),
     }
 

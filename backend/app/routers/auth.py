@@ -89,7 +89,9 @@ async def register(body: RegisterRequest):
 
     user_id = insert_result.data[0]["id"]
 
-    await savePreferences(user_id, body.sectors or [], body.level or "moderate")
+    await savePreferences(
+        user_id, body.sectors or [], body.level or "moderate"
+    )
     await sendConfirmationEmail(body.email, body.name)
 
     return {"message": "Registration successful", "user_id": user_id}
@@ -122,7 +124,9 @@ async def updateAccount(investorID: str, body: UpdateAccountRequest):
     if not validation["valid"]:
         raise HTTPException(status_code=400, detail=validation["error"])
 
-    return await svcUpdateAccount(investorID, body.name or "", body.password or "")
+    return await svcUpdateAccount(
+        investorID, body.name or "", body.password or ""
+    )
 
 
 @router.delete("/auth/user/{userID}", tags=["Auth"])
