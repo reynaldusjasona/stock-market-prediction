@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, stocks, predictions, news, alerts, notifications, admin
+from app.routers import (
+    auth, stocks, predictions, news, alerts, notifications, admin
+)
 
 app = FastAPI(
     title="StockWise AI",

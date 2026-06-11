@@ -47,7 +47,9 @@ async def sendPendingEmailNotification(userID: str, db, email_func) -> None:
     if not notifications:
         return
 
-    user_result = supabase.table("users").select("email").eq("id", userID).execute()
+    user_result = (
+        supabase.table("users").select("email").eq("id", userID).execute()
+    )
     if not user_result.data:
         return
     user_email = user_result.data[0]["email"]

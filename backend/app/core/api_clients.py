@@ -23,7 +23,10 @@ async def finnhubGet(endpoint: str, params: dict) -> dict:
             resp.raise_for_status()
             return resp.json()
     except httpx.HTTPStatusError as exc:
-        return {"error": exc.response.text, "status_code": exc.response.status_code}
+        return {
+            "error": exc.response.text,
+            "status_code": exc.response.status_code,
+        }
     except Exception as exc:
         return {"error": str(exc)}
 
@@ -37,7 +40,10 @@ async def twelveDataGet(endpoint: str, params: dict) -> dict:
             resp.raise_for_status()
             return resp.json()
     except httpx.HTTPStatusError as exc:
-        return {"error": exc.response.text, "status_code": exc.response.status_code}
+        return {
+            "error": exc.response.text,
+            "status_code": exc.response.status_code,
+        }
     except Exception as exc:
         return {"error": str(exc)}
 
@@ -50,6 +56,9 @@ async def alphaVantageGet(params: dict) -> dict:
             resp.raise_for_status()
             return resp.json()
     except httpx.HTTPStatusError as exc:
-        return {"error": exc.response.text, "status_code": exc.response.status_code}
+        return {
+            "error": exc.response.text,
+            "status_code": exc.response.status_code,
+        }
     except Exception as exc:
         return {"error": str(exc)}
