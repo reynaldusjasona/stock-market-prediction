@@ -3,8 +3,14 @@ from datetime import datetime, timedelta, timezone
 from app.core.api_clients import finnhubGet
 from app.core.database import supabase
 
-_POSITIVE_WORDS = {"up", "gain", "rise", "beat", "growth", "profit", "surge", "high", "strong", "positive"}
-_NEGATIVE_WORDS = {"down", "loss", "fall", "miss", "decline", "weak", "drop", "low", "risk", "negative"}
+_POSITIVE_WORDS = {
+    "up", "gain", "rise", "beat", "growth", "profit",
+    "surge", "high", "strong", "positive",
+}
+_NEGATIVE_WORDS = {
+    "down", "loss", "fall", "miss", "decline", "weak",
+    "drop", "low", "risk", "negative",
+}
 
 
 def _score_text(text: str) -> float:
@@ -21,14 +27,19 @@ async def getStockNews(stock: str) -> list:
     from_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
     to_date = today.strftime("%Y-%m-%d")
 
-    raw = await finnhubGet("company-news", {"symbol": stock, "from": from_date, "to": to_date})
+    raw = await finnhubGet(
+        "company-news",
+        {"symbol": stock, "from": from_date, "to": to_date},
+    )
     if not isinstance(raw, list):
         return []
 
     articles = []
     rows = []
     for item in raw:
-        published_at = datetime.fromtimestamp(item.get("datetime", 0), tz=timezone.utc).isoformat()
+        published_at = datetime.fromtimestamp(
+            item.get("datetime", 0), tz=timezone.utc
+        ).isoformat()
         article = {
             "ticker": stock,
             "headline": item.get("headline", ""),
@@ -45,7 +56,9 @@ async def getStockNews(stock: str) -> list:
         })
 
     if rows:
-        supabase.table("news_articles").upsert(rows, on_conflict="url").execute()
+        supabase.table("news_articles").upsert(
+            rows, on_conflict="url"
+        ).execute()
 
     return articles
 

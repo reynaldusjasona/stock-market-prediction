@@ -33,7 +33,8 @@ async def sendConfirmationEmail(to_email: str, name: str) -> bool:
     body = (
         f"<h2>Welcome, {name}!</h2>"
         "<p>Your StockWise AI account has been created successfully.</p>"
-        "<p>You can now log in and start exploring AI-powered stock predictions.</p>"
+        "<p>You can now log in and start exploring "
+        "AI-powered stock predictions.</p>"
     )
     try:
         await asyncio.to_thread(_send_sync, to_email, subject, body)
@@ -52,7 +53,8 @@ async def sendEmailAlert(
     subject = f"StockWise AI - Price Alert Triggered: {ticker}"
     body = (
         f"<h2>Price Alert: {ticker}</h2>"
-        f"<p>Your condition <b>{condition} {target_price}</b> has been met.</p>"
+        f"<p>Your condition <b>{condition} {target_price}</b> "
+        "has been met.</p>"
         f"<p>Current price: <b>{current_price}</b></p>"
     )
     try:
