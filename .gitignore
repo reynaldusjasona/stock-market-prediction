@@ -27,3 +27,6 @@ frontend/build/
 # IDE
 .vscode/settings.json
 .idea/
+
+# Claude
+.claude/
