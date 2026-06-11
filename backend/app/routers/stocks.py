@@ -15,13 +15,16 @@ router = APIRouter()
 
 # ---- STATIC ROUTES FIRST (must precede /{ticker} to avoid shadowing) ----
 
+
 @router.get("/stocks/trending", tags=["Stocks"])
 async def trending():
     return await fetchTrendingTickers()
 
 
 @router.get("/stocks/search", tags=["Stocks"])
-async def search(q: str = Query(..., description="Ticker symbol or company name")):
+async def search(
+    q: str = Query(..., description="Ticker symbol or company name"),
+):
     return await queryStockDB(q)
 
 
@@ -33,13 +36,19 @@ async def getStocks():
 # ---- DYNAMIC ROUTES (ticker param) ----
 
 @router.get("/stocks/{ticker}/indicators", tags=["Stocks"])
-async def indicators(ticker: str, period: str = Query("1M", description="1W | 1M | 3M | 1Y")):
+async def indicators(
+    ticker: str,
+    period: str = Query("1M", description="1W | 1M | 3M | 1Y"),
+):
     price_history = await svcGetPriceHistory(ticker, period)
     return await calculateIndicators(price_history)
 
 
 @router.get("/stocks/{ticker}/history", tags=["Stocks"])
-async def getPriceHistory(ticker: str, period: str = Query("1M", description="1W | 1M | 3M | 1Y")):
+async def getPriceHistory(
+    ticker: str,
+    period: str = Query("1M", description="1W | 1M | 3M | 1Y"),
+):
     return await svcGetPriceHistory(ticker, period)
 
 

@@ -26,7 +26,9 @@ def verifyPassword(plain_password: str, hashed_password: str) -> bool:
     return _pwd_context.verify(plain_password, hashed_password)
 
 
-def createAccessToken(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def createAccessToken(
+    data: dict, expires_delta: Optional[timedelta] = None
+) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + (
         expires_delta if expires_delta else timedelta(minutes=_EXPIRE_MINUTES)
