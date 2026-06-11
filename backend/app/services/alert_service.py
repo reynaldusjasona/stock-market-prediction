@@ -3,7 +3,9 @@ from app.core.database import supabase
 from app.core.email import sendPendingEmailNotification as send_email
 
 
-async def validateAndSaveAlert(ticker: str, targetPrice: float, condition: str, userID: str) -> dict:
+async def validateAndSaveAlert(
+    ticker: str, targetPrice: float, condition: str, userID: str
+) -> dict:
     if condition not in ("above", "below"):
         raise ValueError("condition must be 'above' or 'below'")
     if targetPrice <= 0:
@@ -47,7 +49,9 @@ async def detectAlertCondition(userID: str, ticker: str) -> list:
     quote = await finnhubGet("quote", {"symbol": ticker})
     current_price = quote.get("c", 0.0)
 
-    user_result = supabase.table("users").select("email").eq("id", userID).execute()
+    user_result = (
+        supabase.table("users").select("email").eq("id", userID).execute()
+    )
     user_email = user_result.data[0]["email"] if user_result.data else None
 
     triggered = []
@@ -91,7 +95,9 @@ async def validateInput(alertID: str, newPrice: float, alertType: str) -> bool:
     return True
 
 
-async def updatePriceAlerts(alertID: str, newPrice: float, alertType: str, userID: str) -> dict:
+async def updatePriceAlerts(
+    alertID: str, newPrice: float, alertType: str, userID: str
+) -> dict:
     await validateInput(alertID, newPrice, alertType)
 
     result = (

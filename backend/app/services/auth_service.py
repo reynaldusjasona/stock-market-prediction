@@ -24,7 +24,10 @@ async def validateInputs(name: str, email: str, password: str) -> dict:
     if not _EMAIL_RE.match(email):
         return {"valid": False, "error": "Invalid email format"}
     if len(password) < 8:
-        return {"valid": False, "error": "Password must be at least 8 characters"}
+        return {
+            "valid": False,
+            "error": "Password must be at least 8 characters",
+        }
     return {"valid": True}
 
 
@@ -54,7 +57,9 @@ async def login(identifier: str, password: str) -> dict:
     token = createAccessToken(
         {"sub": user["id"], "email": user["email"], "role": user["role"]}
     )
-    supabase.table("users").update({"session_token": token}).eq("id", user["id"]).execute()
+    supabase.table("users").update(
+        {"session_token": token}
+    ).eq("id", user["id"]).execute()
     return {"token": token, "user": _strip_hash(user)}
 
 
@@ -107,7 +112,10 @@ async def validateFormInput(data: dict) -> dict:
     if name is not None and not str(name).strip():
         return {"valid": False, "error": "Name cannot be empty"}
     if password is not None and len(str(password)) < 8:
-        return {"valid": False, "error": "Password must be at least 8 characters"}
+        return {
+            "valid": False,
+            "error": "Password must be at least 8 characters",
+        }
     return {"valid": True}
 
 
@@ -178,16 +186,22 @@ async def validateAndSave(data: dict, userID: str) -> dict:
         level = data["level"]
         if level not in _VALID_LEVELS:
             raise HTTPException(
-                status_code=400, detail="Level must be one of: low, moderate, high"
+                status_code=400,
+                detail="Level must be one of: low, moderate, high",
             )
         updates["risk_tolerance"] = level
     if "preferences" in data:
         prefs = data["preferences"]
         if not isinstance(prefs, list):
-            raise HTTPException(status_code=400, detail="Preferences must be a list")
+            raise HTTPException(
+                status_code=400,
+                detail="Preferences must be a list",
+            )
         updates["sector_preferences"] = prefs
     if not updates:
-        raise HTTPException(status_code=400, detail="No valid fields to update")
+        raise HTTPException(
+            status_code=400, detail="No valid fields to update"
+        )
     result = (
         supabase.table("users")
         .update(updates)

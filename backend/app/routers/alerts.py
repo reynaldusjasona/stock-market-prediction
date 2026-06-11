@@ -43,7 +43,9 @@ async def createAlertsForm(
 ):
     userID = current_user["sub"]
     try:
-        return await alert_service.validateAndSaveAlert(ticker, body.target_price, body.condition, userID)
+        return await alert_service.validateAndSaveAlert(
+            ticker, body.target_price, body.condition, userID
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -56,7 +58,9 @@ async def updatePriceAlerts(
 ):
     userID = current_user["sub"]
     try:
-        return await alert_service.updatePriceAlerts(alert_id, body.new_price, body.alert_type, userID)
+        return await alert_service.updatePriceAlerts(
+            alert_id, body.new_price, body.alert_type, userID
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except LookupError as exc:
