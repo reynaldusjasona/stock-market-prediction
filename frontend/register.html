@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Account — StockWise AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .reg-page {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 5rem 1.5rem 4rem;
+    }
+
+    .reg-box {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* Progress steps */
+    .steps {
+      display: flex; align-items: center; gap: 0; margin-bottom: 2.5rem;
+    }
+    .step {
+      display: flex; align-items: center; gap: 0.5rem;
+      flex: 1;
+    }
+    .step-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8125rem; font-weight: 700; font-family: var(--font-mono);
+      flex-shrink: 0;
+      border: 2px solid var(--border);
+      color: var(--text-subtle);
+      background: var(--bg-surface);
+      transition: all 0.25s ease;
+    }
+    .step.active .step-circle  { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .step.done   .step-circle  { border-color: var(--accent); background: var(--accent); color: #000; }
+    .step-label {
+      font-size: 0.8125rem; font-weight: 500; color: var(--text-subtle);
+      transition: color 0.25s ease;
+    }
+    .step.active .step-label { color: var(--text-primary); }
+    .step.done   .step-label { color: var(--text-muted); }
+    .step-line {
+      flex: 1; height: 2px; background: var(--border); margin: 0 0.5rem;
+      transition: background 0.25s ease;
+    }
+    .step-line.done { background: var(--accent); }
+
+    /* Step panels */
+    .step-panel { display: none; flex-direction: column; gap: 1.25rem; }
+    .step-panel.active { display: flex; }
+
+    .step-heading { margin-bottom: 0.5rem; }
+    .step-heading h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+    .step-heading p  { font-size: 0.9rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+    /* ---- Role selection cards ---- */
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .role-item { position: relative; }
+    .role-item input[type="radio"] {
+      position: absolute; opacity: 0; width: 0; height: 0;
+    }
+    .role-card {
+      display: flex; flex-direction: column; gap: 0.875rem;
+      padding: 1.5rem 1.25rem;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+      height: 100%;
+      box-sizing: border-box;
+      user-select: none;
+    }
+    .role-card:hover { border-color: var(--border-hover); }
+    .role-item input:checked + .role-card {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .role-card-top {
+      display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .role-card-icon {
+      width: 44px; height: 44px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .role-item input:checked + .role-card .role-card-icon {
+      background: rgba(0,255,65,0.15);
+    }
+    .role-card-check {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg-surface);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+    .role-card-check svg { display: none; }
+    .role-item input:checked + .role-card .role-card-check {
+      background: var(--accent); border-color: var(--accent);
+    }
+    .role-item input:checked + .role-card .role-card-check svg { display: block; }
+    .role-card-title {
+      font-size: 1.0625rem; font-weight: 700; letter-spacing: -0.01em;
+    }
+    .role-card-desc {
+      font-size: 0.8rem; color: var(--text-muted); line-height: 1.55; flex: 1;
+    }
+    .role-item input:checked + .role-card .role-card-desc {
+      color: var(--accent); opacity: 0.75;
+    }
+    .role-card-features {
+      display: flex; flex-direction: column; gap: 0.375rem; margin-top: 0.25rem;
+    }
+    .role-feature {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.75rem; color: var(--text-subtle);
+    }
+    .role-feature svg { flex-shrink: 0; opacity: 0.6; }
+    .role-item input:checked + .role-card .role-feature { color: var(--accent); opacity: 0.8; }
+    .role-item input:checked + .role-card .role-feature svg { opacity: 1; }
+
+    /* ---- DNA step sub-labels ---- */
+    .dna-section { display: flex; flex-direction: column; gap: 0.75rem; }
+    .dna-label {
+      font-size: 0.8125rem; font-weight: 600; color: var(--text-primary);
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+
+    /* Sector checkboxes */
+    .sector-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.625rem;
+    }
+    .sector-item { position: relative; }
+    .sector-item input[type="checkbox"] {
+      position: absolute; opacity: 0; width: 0; height: 0;
+    }
+    .sector-label {
+      display: flex; align-items: center; gap: 0.625rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem; font-weight: 500;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+      user-select: none;
+    }
+    .sector-label:hover { border-color: var(--border-hover); }
+    .sector-item input:checked + .sector-label {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+    .sector-check {
+      width: 16px; height: 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .sector-item input:checked + .sector-label .sector-check {
+      background: var(--accent); border-color: var(--accent);
+    }
+    .sector-check svg { display: none; }
+    .sector-item input:checked + .sector-label .sector-check svg { display: block; }
+
+    .select-all-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.25rem;
+    }
+    .select-all-btn {
+      font-size: 0.8125rem; color: var(--accent); font-weight: 500;
+      background: none; border: none; cursor: pointer; padding: 0;
+    }
+    .select-all-btn:hover { text-decoration: underline; }
+    .sector-hint { font-size: 0.8125rem; color: var(--text-subtle); }
+
+    /* Risk options */
+    .risk-options { display: flex; flex-direction: column; gap: 0.75rem; }
+    .risk-item { position: relative; }
+    .risk-item input[type="radio"] {
+      position: absolute; opacity: 0; width: 0; height: 0;
+    }
+    .risk-label {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1.125rem 1.25rem;
+      background: var(--bg-elevated);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .risk-label:hover { border-color: var(--border-hover); }
+    .risk-item input:checked + .risk-label {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .risk-icon {
+      width: 40px; height: 40px; border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 1.25rem;
+    }
+    .risk-text h4  { font-size: 0.9375rem; font-weight: 600; }
+    .risk-text p   { font-size: 0.8125rem; color: var(--text-muted); margin-top: 2px; }
+    .risk-item input:checked + .risk-label .risk-text p { color: var(--accent); opacity: 0.8; }
+
+    /* Navigation buttons */
+    .step-nav {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      margin-top: 0.75rem;
+    }
+    .btn-full { width: 100%; justify-content: center; padding: 0.875rem; font-size: 0.9375rem; }
+
+    .auth-alert {
+      padding: 0.875rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      display: none;
+      align-items: center; gap: 0.5rem;
+    }
+    .auth-alert.error {
+      background: var(--red-dim); border: 1px solid rgba(255,68,68,0.25); color: var(--red); display: flex;
+    }
+
+    .sign-in-link {
+      text-align: center; font-size: 0.875rem; color: var(--text-muted); margin-top: 1rem;
+    }
+    .sign-in-link a { color: var(--accent); font-weight: 500; }
+    .sign-in-link a:hover { text-decoration: underline; }
+
+    @media (max-width: 520px) {
+      .sector-grid { grid-template-columns: 1fr; }
+      .step-label  { display: none; }
+    }
+    @media (max-width: 400px) {
+      .role-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar" aria-label="Navigation sidebar">
+  <div class="sidebar-header">
+    <a href="index.html" class="sidebar-logo">
+      <svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <rect width="28" height="28" rx="6" fill="#00ff41" fill-opacity="0.12"/>
+        <polyline points="5,18 10,12 14,15 19,8 23,11" stroke="#00ff41" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="23" cy="11" r="2" fill="#00ff41"/>
+      </svg>
+      StockWise <em>AI</em>
+    </a>
+    <button class="sidebar-close" onclick="closeSidebar()" aria-label="Close sidebar">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="sidebar-body">
+    <nav class="sidebar-nav-top">
+      <a href="dashboard.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/></svg>
+        Dashboard
+      </a>
+      <a href="alerts.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5a5.5 5.5 0 00-5.5 5.5v3l-1 1.5h13l-1-1.5V7A5.5 5.5 0 008 1.5z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><path d="M6.5 12.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+        Alerts
+      </a>
+      <a href="settings.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.25"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+        Settings
+      </a>
+    </nav>
+    <nav class="sidebar-nav-bottom">
+      <div class="sidebar-divider"></div>
+      <a href="help.html" class="sidebar-link">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.25"/><path d="M8 11v.5M8 5a2 2 0 010 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+        Help
+      </a>
+      <button class="sidebar-link danger" onclick="api.logout()" style="background:none;border:none;width:100%;text-align:left;cursor:pointer;font-family:inherit;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 2h2a2 2 0 012 2v8a2 2 0 01-2 2h-2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/><path d="M7 11l-3-3 3-3M4 8h8" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Log Out
+      </button>
+    </nav>
+  </div>
+</aside>
+
+<nav class="navbar" aria-label="Top navigation">
+  <div class="navbar-inner">
+    <a href="index.html" class="logo-btn" aria-label="Go to homepage">
+      <svg width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <rect width="28" height="28" rx="6" fill="#00ff41" fill-opacity="0.12"/>
+        <polyline points="5,18 10,12 14,15 19,8 23,11" stroke="#00ff41" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="23" cy="11" r="2" fill="#00ff41"/>
+      </svg>
+      StockWise <em>AI</em>
+    </a>
+    <div class="navbar-actions">
+      <div class="guest-only" style="display:flex;gap:0.5rem;align-items:center;">
+        <a href="index.html" class="btn btn-ghost btn-sm">← Back</a>
+        <a href="login.html" class="btn btn-ghost btn-sm">Sign In</a>
+      </div>
+      <div class="nav-avatar-wrap" id="avatarWrap" style="display:none;">
+        <button class="nav-avatar-btn" id="avatarBtn" aria-expanded="false" aria-haspopup="true">
+          <span class="nav-avatar" id="navAvatar">?</span>
+          <span id="navAvatarName">Account</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="nav-dropdown" id="navDropdown" role="menu">
+          <div class="nav-dropdown-user">
+            <span id="ddName">—</span>
+            <span id="ddEmail" class="muted">—</span>
+          </div>
+          <div class="nav-dropdown-divider"></div>
+          <a href="account.html" class="nav-dropdown-item" role="menuitem">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><circle cx="7.5" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-3.038 2.462-5.5 5.5-5.5S13 9.962 13 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            My Account
+          </a>
+          <div class="nav-dropdown-divider"></div>
+          <button class="nav-dropdown-item danger" role="menuitem" onclick="api.logout()">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M9.5 2h2a1.5 1.5 0 011.5 1.5v8A1.5 1.5 0 0111.5 13h-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M6.5 10.5L4 8l2.5-2.5M4 8h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Log Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-top reg-page">
+  <div class="reg-box">
+
+    <!-- Step indicator -->
+    <div class="steps" role="list" aria-label="Registration steps">
+      <div class="step active" id="step-ind-1" role="listitem">
+        <div class="step-circle" aria-label="Step 1: Account">1</div>
+        <span class="step-label">Account</span>
+      </div>
+      <div class="step-line" id="line-1"></div>
+      <div class="step" id="step-ind-2" role="listitem">
+        <div class="step-circle" aria-label="Step 2: Account type">2</div>
+        <span class="step-label">Role</span>
+      </div>
+      <div class="step-line" id="line-2"></div>
+      <div class="step" id="step-ind-3" role="listitem">
+        <div class="step-circle" aria-label="Step 3: Investment DNA">3</div>
+        <span class="step-label">DNA</span>
+      </div>
+    </div>
+
+    <div class="auth-alert" id="alertBox" role="alert" aria-live="polite"></div>
+
+    <!-- ===================== STEP 1: Account Info ===================== -->
+    <div class="step-panel active" id="panel-1" aria-label="Step 1: Account information">
+      <div class="step-heading">
+        <h2>Create your account</h2>
+        <p>Enter your details to get started with StockWise AI.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="name" class="form-label">Full name</label>
+        <input type="text" id="name" class="form-input" placeholder="Full Name" autocomplete="name" required/>
+      </div>
+
+      <div class="form-group">
+        <label for="email" class="form-label">Email address</label>
+        <input type="email" id="email" class="form-input" placeholder="you@example.com" autocomplete="email" required/>
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <div class="input-wrap">
+          <input type="password" id="password" class="form-input" placeholder="Minimum 8 characters" autocomplete="new-password" required/>
+          <button type="button" class="input-suffix" onclick="togglePass('password','eye1')" aria-label="Toggle password">
+            <svg id="eye1" width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M1 8.5C1 8.5 3.5 3 8.5 3S16 8.5 16 8.5 13.5 14 8.5 14 1 8.5 1 8.5z" stroke="currentColor" stroke-width="1.25"/><circle cx="8.5" cy="8.5" r="2.5" stroke="currentColor" stroke-width="1.25"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirm" class="form-label">Confirm password</label>
+        <div class="input-wrap">
+          <input type="password" id="confirm" class="form-input" placeholder="Repeat your password" autocomplete="new-password" required/>
+          <button type="button" class="input-suffix" onclick="togglePass('confirm','eye2')" aria-label="Toggle password">
+            <svg id="eye2" width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M1 8.5C1 8.5 3.5 3 8.5 3S16 8.5 16 8.5 13.5 14 8.5 14 1 8.5 1 8.5z" stroke="currentColor" stroke-width="1.25"/><circle cx="8.5" cy="8.5" r="2.5" stroke="currentColor" stroke-width="1.25"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <div></div>
+        <button class="btn btn-accent btn-lg" onclick="goStep2()">
+          Continue
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <p class="sign-in-link">Already have an account? <a href="login.html">Sign in</a></p>
+    </div>
+
+    <!-- ===================== STEP 2: Account Type ===================== -->
+    <div class="step-panel" id="panel-2" aria-label="Step 2: Choose your account type">
+      <div class="step-heading">
+        <h2>Choose your account type</h2>
+        <p>Select the experience that matches your investment style.</p>
+      </div>
+
+      <div class="role-grid" role="radiogroup" aria-label="Account type">
+
+        <!-- Investor card -->
+        <div class="role-item">
+          <input type="radio" name="accountRole" id="role-investor" value="investor"/>
+          <label for="role-investor" class="role-card">
+            <div class="role-card-top">
+              <div class="role-card-icon">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <rect x="2" y="10" width="18" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M6 10V7a5 5 0 0110 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <circle cx="11" cy="15" r="1.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <div class="role-card-check">
+                <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5l2 2 4-4" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="role-card-title">Investor</div>
+            <div class="role-card-desc">Focused on long-term growth, portfolio diversification, and AI-driven insights for wealth preservation.</div>
+            <div class="role-card-features">
+              <span class="role-feature">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l2.5 2.5 5.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Fundamental analysis
+              </span>
+              <span class="role-feature">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l2.5 2.5 5.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                News &amp; sentiment
+              </span>
+              <span class="role-feature">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l2.5 2.5 5.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                AI predictions
+              </span>
+            </div>
+          </label>
+        </div>
+
+        <!-- Trader card -->
+        <div class="role-item">
+          <input type="radio" name="accountRole" id="role-trader" value="trader"/>
+          <label for="role-trader" class="role-card">
+            <div class="role-card-top">
+              <div class="role-card-icon">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                  <path d="M13 2L5 13h6l-2 7 8-11h-6l2-7z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="role-card-check">
+                <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5l2 2 4-4" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="role-card-title">Trader</div>
+            <div class="role-card-desc">Designed for high-frequency market participants requiring real-time data, technical signals, and execution speed.</div>
+            <div class="role-card-features">
+              <span class="role-feature">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l2.5 2.5 5.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Advanced indicators (MACD, BB)
+              </span>
+              <span class="role-feature">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l2.5 2.5 5.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Customisable chart overlays
+              </span>
+              <span class="role-feature">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l2.5 2.5 5.5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Short-term signals
+              </span>
+            </div>
+          </label>
+        </div>
+
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-ghost btn-lg" onclick="goToStep(1)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back
+        </button>
+        <button class="btn btn-accent btn-lg" onclick="goStep3()">
+          Continue
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===================== STEP 3: Investment DNA ===================== -->
+    <div class="step-panel" id="panel-3" aria-label="Step 3: Investment DNA">
+      <div class="step-heading">
+        <h2>Investment DNA</h2>
+        <p>Personalise your experience by selecting your interests and risk profile.</p>
+      </div>
+
+      <!-- Sectors -->
+      <div class="dna-section">
+        <div class="dna-label">Sectors of interest</div>
+        <div>
+          <div class="select-all-row">
+            <span class="sector-hint" id="sectorCount">0 selected</span>
+            <button class="select-all-btn" id="selectAllBtn" onclick="toggleSelectAll()">Select all</button>
+          </div>
+          <div class="sector-grid" id="sectorGrid">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk tolerance -->
+      <div class="dna-section">
+        <div class="dna-label">Risk tolerance</div>
+        <div class="risk-options" role="radiogroup" aria-label="Risk tolerance">
+          <div class="risk-item">
+            <input type="radio" name="riskLevel" id="risk-low" value="low"/>
+            <label for="risk-low" class="risk-label">
+              <div class="risk-icon">🛡️</div>
+              <div class="risk-text">
+                <h4>Conservative</h4>
+                <p>Capital preservation first. Stable, blue-chip stocks with steady dividends.</p>
+              </div>
+            </label>
+          </div>
+          <div class="risk-item">
+            <input type="radio" name="riskLevel" id="risk-moderate" value="moderate" checked/>
+            <label for="risk-moderate" class="risk-label">
+              <div class="risk-icon">⚖️</div>
+              <div class="risk-text">
+                <h4>Balanced</h4>
+                <p>Mix of growth and income. Comfortable with moderate short-term volatility.</p>
+              </div>
+            </label>
+          </div>
+          <div class="risk-item">
+            <input type="radio" name="riskLevel" id="risk-high" value="high"/>
+            <label for="risk-high" class="risk-label">
+              <div class="risk-icon">🚀</div>
+              <div class="risk-text">
+                <h4>Aggressive</h4>
+                <p>Maximum growth potential. High volatility tolerance for high-reward opportunities.</p>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-ghost btn-lg" onclick="goToStep(2)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back
+        </button>
+        <button class="btn btn-accent btn-lg" id="submitBtn" onclick="submitForm()">
+          <span id="submitLabel">Create Account</span>
+          <span id="submitSpinner" class="spinner" style="display:none;width:16px;height:16px;border-width:2px;"></span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="js/api.js"></script>
+<script>
+(function() {
+  redirectIfLoggedIn('dashboard.html');
+
+  const SECTORS = [
+    'Technology','Finance','Healthcare','Energy',
+    'Consumer','Real Estate','Industrials','Materials',
+    'Utilities','Communication','Transportation','Biotech'
+  ];
+
+  let currentStep = 1;
+
+  /* Build sector grid */
+  const grid = document.getElementById('sectorGrid');
+  grid.innerHTML = SECTORS.map((s, i) => `
+    <div class="sector-item">
+      <input type="checkbox" id="sec-${i}" value="${s}" onchange="updateCount()"/>
+      <label for="sec-${i}" class="sector-label">
+        <span class="sector-check">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5 4-4" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        ${s}
+      </label>
+    </div>`).join('');
+
+  function updateCount() {
+    const n = document.querySelectorAll('#sectorGrid input:checked').length;
+    document.getElementById('sectorCount').textContent = `${n} selected`;
+    document.getElementById('selectAllBtn').textContent = n === SECTORS.length ? 'Deselect all' : 'Select all';
+  }
+
+  window.toggleSelectAll = function() {
+    const boxes = document.querySelectorAll('#sectorGrid input[type="checkbox"]');
+    const allChecked = [...boxes].every(b => b.checked);
+    boxes.forEach(b => b.checked = !allChecked);
+    updateCount();
+  };
+
+  function showAlert(msg) {
+    const a = document.getElementById('alertBox');
+    a.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><circle cx="8" cy="8" r="6.5" stroke="#ff4444" stroke-width="1.25"/><path d="M8 5v3.5M8 10.5v.5" stroke="#ff4444" stroke-width="1.5" stroke-linecap="round"/></svg><span>${escHtml(msg)}</span>`;
+    a.className = 'auth-alert error';
+  }
+  function hideAlert() {
+    const a = document.getElementById('alertBox');
+    a.className = 'auth-alert';
+    a.innerHTML = '';
+  }
+
+  function goToStep(n) {
+    hideAlert();
+    const old = currentStep;
+    currentStep = n;
+
+    document.getElementById(`panel-${old}`).classList.remove('active');
+    document.getElementById(`panel-${n}`).classList.add('active');
+
+    [1,2,3].forEach(i => {
+      const ind = document.getElementById(`step-ind-${i}`);
+      ind.classList.remove('active','done');
+      if (i < n) ind.classList.add('done');
+      if (i === n) ind.classList.add('active');
+    });
+    [1,2].forEach(i => {
+      const line = document.getElementById(`line-${i}`);
+      line.classList.toggle('done', i < n);
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  window.goToStep = goToStep;
+
+  window.goStep2 = function() {
+    const name  = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const pass  = document.getElementById('password').value;
+    const conf  = document.getElementById('confirm').value;
+
+    if (!name)  { showAlert('Please enter your full name.'); return; }
+    if (!email) { showAlert('Please enter your email address.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAlert('Please enter a valid email address.'); return; }
+    if (pass.length < 8) { showAlert('Password must be at least 8 characters.'); return; }
+    if (pass !== conf)   { showAlert('Passwords do not match.'); return; }
+
+    goToStep(2);
+  };
+
+  window.goStep3 = function() {
+    const selected = document.querySelector('input[name="accountRole"]:checked');
+    if (!selected) { showAlert('Please choose an account type to continue.'); return; }
+    goToStep(3);
+  };
+
+  window.submitForm = async function() {
+    hideAlert();
+    const name     = document.getElementById('name').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const role     = document.querySelector('input[name="accountRole"]:checked')?.value || 'investor';
+    const sectors  = [...document.querySelectorAll('#sectorGrid input:checked')].map(b => b.value);
+    const level    = document.querySelector('input[name="riskLevel"]:checked')?.value || 'moderate';
+
+    const btn  = document.getElementById('submitBtn');
+    const lbl  = document.getElementById('submitLabel');
+    const spn  = document.getElementById('submitSpinner');
+    btn.disabled = true;
+    lbl.style.display = 'none';
+    spn.style.display = 'inline-block';
+
+    try {
+      await api.register(name, email, password, sectors, level);
+      showToast('Account created! Signing you in…', 'success');
+      await api.login(email, password);
+      localStorage.setItem('sw_role', role);
+      window.location.href = 'dashboard.html';
+    } catch (err) {
+      showAlert(err.message || 'Registration failed. Please try again.');
+      btn.disabled = false;
+      lbl.style.display = '';
+      spn.style.display = 'none';
+    }
+  };
+
+  window.togglePass = function(inputId, iconId) {
+    const inp = document.getElementById(inputId);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    document.getElementById(iconId).style.opacity = inp.type === 'text' ? '0.5' : '1';
+  };
+
+  initHoverSidebar();
+  initAvatarDropdown();
+  populateAvatar();
+})();
+</script>
+</body>
+</html>
