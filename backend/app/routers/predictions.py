@@ -6,7 +6,8 @@ from ml.prediction_service import get_prediction, get_prediction_history
 router = APIRouter()
 
 
-# ---- STATIC-STYLE ROUTES FIRST (specific paths before /{ticker} param routes) ----
+# ---- STATIC-STYLE ROUTES FIRST ----
+# (specific paths before /{ticker} param routes)
 
 @router.get("/predictions/{ticker}/history", tags=["Predictions"])
 async def predictionHistory(
@@ -14,7 +15,8 @@ async def predictionHistory(
     limit: int = Query(default=10, le=50),
     _user: dict = Depends(get_current_user),
 ):
-    # Return the last {limit} prediction records for the ticker, most recent first
+    # Return the last {limit} prediction records for the ticker,
+    # most recent first
     return get_prediction_history(ticker.upper(), limit)
 
 
@@ -27,7 +29,9 @@ async def getStockRecommendations(
     try:
         result = get_prediction(ticker.upper())
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        )
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -52,9 +56,12 @@ async def predict(
     try:
         return get_prediction(ticker.upper())
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        )
     except Exception:
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Prediction failed",

@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import joblib
@@ -9,12 +8,18 @@ from sklearn.preprocessing import LabelEncoder
 
 from ml.features import get_multiple_tickers
 
-TRAIN_TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "JPM", "JNJ", "XOM"]
+TRAIN_TICKERS = [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
+    "META", "TSLA", "JPM", "JNJ", "XOM",
+]
 
 
 def split_data(
     X: pd.DataFrame, y: pd.Series
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
+) -> tuple[
+    pd.DataFrame, pd.DataFrame, pd.DataFrame,
+    pd.Series, pd.Series, pd.Series,
+]:
     """
     Perform a time-based (no-shuffle) 70/15/15 train/val/test split.
 

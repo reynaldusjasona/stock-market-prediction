@@ -63,14 +63,20 @@ async def fetchStockList() -> list:
 
     # Batch upsert in chunks of 100
     for i in range(0, len(rows), 100):
-        chunk = rows[i : i + 100]
+        chunk = rows[i:i + 100]
         try:
-            supabase.table("stocks").upsert(chunk, on_conflict="ticker").execute()
+            supabase.table("stocks").upsert(
+                chunk, on_conflict="ticker"
+            ).execute()
         except Exception:
             pass
 
     return [
-        {"ticker": r["ticker"], "company_name": r["company_name"], "exchange": r["exchange"]}
+        {
+            "ticker": r["ticker"],
+            "company_name": r["company_name"],
+            "exchange": r["exchange"],
+        }
         for r in rows
     ]
 
@@ -113,7 +119,10 @@ async def calculateIndicators(priceData: list) -> dict:
     if not priceData:
         return {}
 
-    closes = [float(d["close"]) for d in priceData if d.get("close") is not None]
+    closes = [
+        float(d["close"]) for d in priceData
+        if d.get("close") is not None
+    ]
     if not closes:
         return {}
 
@@ -147,16 +156,25 @@ async def calculateIndicators(priceData: list) -> dict:
         ema26 = _ema_list(closes, 26)  # len = n - 25
         if ema12 and ema26:
             overlap = len(ema26)
-            ema12_aligned = ema12[len(ema12) - overlap :]
+            ema12_aligned = ema12[len(ema12) - overlap:]
             macd_series = [ema12_aligned[i] - ema26[i] for i in range(overlap)]
             macd_line = macd_series[-1]
             signal_series = _ema_list(macd_series, 9)
             signal_line = signal_series[-1] if signal_series else None
-            histogram = (macd_line - signal_line) if signal_line is not None else None
+            histogram = (
+                (macd_line - signal_line)
+                if signal_line is not None else None
+            )
             macd_result = {
                 "macd_line": round(macd_line, 4),
-                "signal_line": round(signal_line, 4) if signal_line is not None else None,
-                "histogram": round(histogram, 4) if histogram is not None else None,
+                "signal_line": (
+                    round(signal_line, 4)
+                    if signal_line is not None else None
+                ),
+                "histogram": (
+                    round(histogram, 4)
+                    if histogram is not None else None
+                ),
             }
 
     # Bollinger Bands (20, 2)
@@ -190,10 +208,18 @@ async def fetchTrendingTickers() -> list:
     )
 
     # Prefer DB-cached tickers; fall back to hardcoded list
-    db_result = supabase.table("stocks").select("ticker, company_name").limit(10).execute()
+    db_result = (
+        supabase.table("stocks")
+        .select("ticker, company_name")
+        .limit(10)
+        .execute()
+    )
     if db_result.data and len(db_result.data) >= 10:
         tickers = [s["ticker"] for s in db_result.data]
-        name_map = {s["ticker"]: s.get("company_name", "") for s in db_result.data}
+        name_map = {
+            s["ticker"]: s.get("company_name", "")
+            for s in db_result.data
+        }
     else:
         tickers = _TRENDING_FALLBACK
         name_map = {t: t for t in tickers}
@@ -205,7 +231,11 @@ async def fetchTrendingTickers() -> list:
 
     output = []
     for i, res in enumerate(price_results):
-        if isinstance(res, Exception) or not isinstance(res, dict) or "error" in res:
+        if (
+            isinstance(res, Exception)
+            or not isinstance(res, dict)
+            or "error" in res
+        ):
             continue
         ticker = tickers[i]
         output.append(
@@ -237,10 +267,18 @@ async def getStockData(ticker: str) -> dict:
 
 
 async def getLiveUpdates() -> list:
-    db_result = supabase.table("stocks").select("ticker, company_name").limit(20).execute()
+    db_result = (
+        supabase.table("stocks")
+        .select("ticker, company_name")
+        .limit(20)
+        .execute()
+    )
     if db_result.data:
         tickers = [s["ticker"] for s in db_result.data]
-        name_map = {s["ticker"]: s.get("company_name", "") for s in db_result.data}
+        name_map = {
+            s["ticker"]: s.get("company_name", "")
+            for s in db_result.data
+        }
     else:
         tickers = _TRENDING_FALLBACK
         name_map = {t: t for t in tickers}
@@ -252,7 +290,11 @@ async def getLiveUpdates() -> list:
 
     output = []
     for i, res in enumerate(price_results):
-        if isinstance(res, Exception) or not isinstance(res, dict) or "error" in res:
+        if (
+            isinstance(res, Exception)
+            or not isinstance(res, dict)
+            or "error" in res
+        ):
             continue
         ticker = tickers[i]
         output.append(
@@ -272,12 +314,18 @@ async def getPriceHistory(ticker: str, period: str = "1M") -> list:
     outputsize = "full" if period == "1Y" else "compact"
 
     data = await alphaVantageGet(
-        {"function": "TIME_SERIES_DAILY", "symbol": ticker, "outputsize": outputsize}
+        {
+            "function": "TIME_SERIES_DAILY",
+            "symbol": ticker,
+            "outputsize": outputsize,
+        }
     )
 
     if "error" in data or "Time Series (Daily)" not in data:
         # Return DB cache on API failure
-        cutoff = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
+        cutoff = (
+            datetime.utcnow() - timedelta(days=days)
+        ).strftime("%Y-%m-%d")
         cached = (
             supabase.table("price_history")
             .select("date, open, high, low, close, volume")
@@ -312,7 +360,7 @@ async def getPriceHistory(ticker: str, period: str = "1M") -> list:
     for i in range(0, len(upsert_rows), 100):
         try:
             supabase.table("price_history").upsert(
-                upsert_rows[i : i + 100], on_conflict="ticker,date"
+                upsert_rows[i:i + 100], on_conflict="ticker,date"
             ).execute()
         except Exception:
             pass
