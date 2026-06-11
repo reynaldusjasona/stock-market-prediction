@@ -27,7 +27,7 @@ jobs:
         run: |
           pip install flake8
           cd backend
-          flake8 . --max-line-length=100 --exclude=__pycache__,.venv
+          flake8 . --max-line-length=100 --exclude=__pycache__,.venv,venv
 
       - name: Run tests
         run: |
