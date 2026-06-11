@@ -3,15 +3,13 @@ import math
 from datetime import datetime, timedelta
 from typing import Optional
 
-from app.core.api_clients import alphaVantageGet, finnhubGet
+from app.core.api_clients import finnhubGet
 from app.core.database import supabase
 
 _TRENDING_FALLBACK = [
     "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
     "META", "NVDA", "JPM", "V", "JNJ",
 ]
-
-_PERIOD_DAYS = {"1W": 7, "1M": 30, "3M": 90, "1Y": 365}
 
 
 # ---- pure-Python indicator helpers (no pandas, no ta-lib) ----
@@ -309,73 +307,29 @@ async def getLiveUpdates() -> list:
     return output
 
 
-async def getPriceHistory(ticker: str, period: str = "1M") -> list:
-    days = _PERIOD_DAYS.get(period, 30)
-    outputsize = "full" if period == "1Y" else "compact"
-
-    data = await alphaVantageGet(
-        {
-            "function": "TIME_SERIES_DAILY",
-            "symbol": ticker,
-            "outputsize": outputsize,
-        }
+async def getPriceHistory(stock: str) -> list:
+    result = (
+        supabase.table("price_history")
+        .select("date, open, high, low, close, volume")
+        .eq("ticker", stock.upper())
+        .order("date", desc=False)
+        .execute()
     )
-
-    if "error" in data or "Time Series (Daily)" not in data:
-        # Return DB cache on API failure
-        cutoff = (
-            datetime.utcnow() - timedelta(days=days)
-        ).strftime("%Y-%m-%d")
-        cached = (
-            supabase.table("price_history")
-            .select("date, open, high, low, close, volume")
-            .eq("ticker", ticker)
-            .gte("date", cutoff)
-            .order("date", desc=False)
-            .execute()
-        )
-        return cached.data or []
-
-    ts = data["Time Series (Daily)"]
-    cutoff_dt = datetime.utcnow() - timedelta(days=days)
-
-    rows = []
-    upsert_rows = []
-    for date_str in sorted(ts.keys()):
-        if datetime.strptime(date_str, "%Y-%m-%d") < cutoff_dt:
-            continue
-        vals = ts[date_str]
-        row = {
-            "date": date_str,
-            "open": float(vals["1. open"]),
-            "high": float(vals["2. high"]),
-            "low": float(vals["3. low"]),
-            "close": float(vals["4. close"]),
-            "volume": int(vals["5. volume"]),
-        }
-        rows.append(row)
-        upsert_rows.append({"ticker": ticker, **row})
-
-    # Cache to DB in batches
-    for i in range(0, len(upsert_rows), 100):
-        try:
-            supabase.table("price_history").upsert(
-                upsert_rows[i:i + 100], on_conflict="ticker,date"
-            ).execute()
-        except Exception:
-            pass
-
-    return rows
+    return result.data or []
 
 
-async def getLivePrice(ticker: str) -> dict:
-    data = await finnhubGet("quote", {"symbol": ticker})
-    if "error" in data:
-        return {"ticker": ticker, "error": data["error"]}
+async def getLivePrice(stock: str) -> dict:
+    data = await finnhubGet("quote", {"symbol": stock.upper()})
+    if not data or "error" in data:
+        return {}
     return {
-        "ticker": ticker,
-        "price": data.get("c", 0),
-        "timestamp": data.get("t", 0),
+        "price": data.get("c"),
+        "change": data.get("d"),
+        "change_percent": data.get("dp"),
+        "high": data.get("h"),
+        "low": data.get("l"),
+        "open": data.get("o"),
+        "prev_close": data.get("pc"),
     }
 
 
