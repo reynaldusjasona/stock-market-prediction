@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from app.core.security import get_current_user
 from app.services.stock_service import (
     calculateIndicators,
     fetchPriceData,
@@ -36,20 +37,29 @@ async def getStocks():
 # ---- DYNAMIC ROUTES (ticker param) ----
 
 @router.get("/stocks/{ticker}/indicators", tags=["Stocks"])
-async def indicators(
-    ticker: str,
-    period: str = Query("1M", description="1W | 1M | 3M | 1Y"),
-):
-    price_history = await svcGetPriceHistory(ticker, period)
+async def indicators(ticker: str):
+    price_history = await svcGetPriceHistory(ticker)
     return await calculateIndicators(price_history)
 
 
-@router.get("/stocks/{ticker}/history", tags=["Stocks"])
-async def getPriceHistory(
+@router.get("/stocks/{ticker}/chart", tags=["Stocks"])
+async def getStockChart(
     ticker: str,
-    period: str = Query("1M", description="1W | 1M | 3M | 1Y"),
+    _user: dict = Depends(get_current_user),
 ):
-    return await svcGetPriceHistory(ticker, period)
+    history = await svcGetPriceHistory(ticker)
+    live = await svcGetLivePrice(ticker)
+    if not history and not live:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No chart data available for {ticker}",
+        )
+    return {"ticker": ticker.upper(), "history": history, "live": live}
+
+
+@router.get("/stocks/{ticker}/history", tags=["Stocks"])
+async def getPriceHistory(ticker: str):
+    return await svcGetPriceHistory(ticker)
 
 
 @router.get("/stocks/{ticker}/price", tags=["Stocks"])
