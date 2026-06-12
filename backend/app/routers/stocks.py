@@ -2,6 +2,7 @@ from fastapi import APIRouter, Query
 
 from app.services.stock_service import (
     calculateIndicators,
+    fetchFundamentals,
     fetchPriceData,
     fetchStockList,
     fetchTrendingTickers,
@@ -39,8 +40,16 @@ async def indicators(ticker: str, period: str = Query("1M", description="1W | 1M
 
 
 @router.get("/stocks/{ticker}/history", tags=["Stocks"])
+<<<<<<< Updated upstream
 async def getPriceHistory(ticker: str, period: str = Query("1M", description="1W | 1M | 3M | 1Y")):
     return await svcGetPriceHistory(ticker, period)
+=======
+async def history(
+    ticker: str,
+    period: str = Query("1M", description="1W | 1M | 3M | 1Y"),
+):
+    return await getPriceHistory(ticker.upper(), period.upper())
+>>>>>>> Stashed changes
 
 
 @router.get("/stocks/{ticker}/price", tags=["Stocks"])
@@ -51,6 +60,11 @@ async def getLivePrice(ticker: str):
 @router.get("/stocks/{ticker}/orderbook", tags=["Stocks"])
 async def getOrderBook(ticker: str):
     return await svcGetOrderBook(ticker)
+
+
+@router.get("/stocks/{ticker}/fundamentals", tags=["Stocks"])
+async def fundamentals(ticker: str):
+    return await fetchFundamentals(ticker.upper())
 
 
 @router.get("/stocks/{ticker}", tags=["Stocks"])
