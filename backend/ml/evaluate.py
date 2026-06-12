@@ -6,16 +6,18 @@ import xgboost as xgb
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
+    confusion_matrix,
     f1_score,
     precision_score,
     recall_score,
+    roc_auc_score,
 )
 from sklearn.preprocessing import LabelEncoder
 
 from ml.features import get_multiple_tickers
 from ml.train import TRAIN_TICKERS, split_data
 
-_MODEL_FILE = "xgboost_model.pkl"
+_MODEL_FILE = "xgboost_model_latest.joblib"
 _ENCODER_FILE = "label_encoder.pkl"
 
 
@@ -70,6 +72,7 @@ def evaluate_model(
     """
     y_test_enc = label_encoder.transform(y_test)
     y_pred_enc = model.predict(X_test)
+    y_proba = model.predict_proba(X_test)
 
     report = classification_report(
         y_test_enc,
@@ -78,6 +81,18 @@ def evaluate_model(
         output_dict=False,
     )
     print(report)
+
+    cm = confusion_matrix(y_test_enc, y_pred_enc)
+    print("Confusion Matrix:")
+    print(cm)
+
+    roc_auc = round(
+        roc_auc_score(
+            y_test_enc, y_proba,
+            multi_class="ovr", average="weighted",
+        ), 4
+    )
+    print(f"\nROC-AUC Score (weighted OvR): {roc_auc}")
 
     return {
         "accuracy": round(accuracy_score(y_test_enc, y_pred_enc), 4),
@@ -99,6 +114,8 @@ def evaluate_model(
                 average="weighted", zero_division=0,
             ), 4
         ),
+        "confusion_matrix": cm.tolist(),
+        "roc_auc": roc_auc,
     }
 
 
