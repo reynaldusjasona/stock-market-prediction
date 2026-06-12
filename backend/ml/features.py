@@ -25,6 +25,8 @@ def fetch_stock_data(
         raw.columns = raw.columns.get_level_values(0)
 
     df = raw[["Open", "High", "Low", "Close", "Volume"]].copy()
+    df = df.drop_duplicates()
+    df = df.ffill()
     df.dropna(subset=["Open", "High", "Low", "Close", "Volume"], inplace=True)
     df.sort_index(inplace=True)
     return df
