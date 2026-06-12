@@ -1,10 +1,14 @@
+import shutil
+from datetime import datetime
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.preprocessing import LabelEncoder
+from sklearn.utils.class_weight import compute_sample_weight
 
 from ml.features import get_multiple_tickers
 
@@ -50,30 +54,38 @@ def train_model(
     y_val: np.ndarray,
 ) -> xgb.XGBClassifier:
     """
-    Train an XGBClassifier with fixed hyperparameters and early stopping.
+    Train an XGBClassifier using GridSearchCV over a hyperparameter grid.
 
-    y_train and y_val must already be label-encoded integer arrays (from
-    the LabelEncoder fitted in run_training). Early stopping monitors
-    mlogloss on the validation set and halts after 20 non-improving rounds.
+    y_train must already be a label-encoded integer array (from the
+    LabelEncoder fitted in run_training). GridSearchCV uses TimeSeriesSplit
+    with 3 folds and accuracy scoring to find the best combination of
+    n_estimators, max_depth, and learning_rate.
 
-    Returns the fitted XGBClassifier.
+    Returns the best_estimator_ from the grid search.
     """
-    model = xgb.XGBClassifier(
-        n_estimators=200,
-        max_depth=5,
-        learning_rate=0.05,
-        use_label_encoder=False,
+    param_grid = {
+        "n_estimators": [100, 300, 500],
+        "max_depth": [3, 5, 8],
+        "learning_rate": [0.01, 0.1, 0.3],
+    }
+    base_model = xgb.XGBClassifier(
         eval_metric="mlogloss",
         random_state=42,
-        early_stopping_rounds=20,
     )
-    model.fit(
-        X_train,
-        y_train,
-        eval_set=[(X_val, y_val)],
-        verbose=False,
+    cv = TimeSeriesSplit(n_splits=3)
+    grid_search = GridSearchCV(
+        estimator=base_model,
+        param_grid=param_grid,
+        cv=cv,
+        scoring="accuracy",
+        n_jobs=1,
+        verbose=1,
     )
-    return model
+    sample_weight = compute_sample_weight(class_weight="balanced", y=y_train)
+    grid_search.fit(X_train, y_train, sample_weight=sample_weight)
+    print(f"Best parameters: {grid_search.best_params_}")
+    print(f"Best CV accuracy: {grid_search.best_score_:.4f}")
+    return grid_search.best_estimator_
 
 
 def save_model(
@@ -86,18 +98,22 @@ def save_model(
 
     Creates save_dir (and any missing parents) if it does not already exist.
     Saves:
-      <save_dir>/xgboost_model.pkl  — the fitted XGBClassifier
-      <save_dir>/label_encoder.pkl  — the fitted LabelEncoder
+      <save_dir>/xgboost_model_YYYYMMDD_HHMMSS.joblib — timestamped model
+      <save_dir>/xgboost_model_latest.joblib           — copy of the latest model
+      <save_dir>/label_encoder.pkl                     — the fitted LabelEncoder
 
-    Returns the absolute path string of the saved model file.
+    Returns the absolute path string of the timestamped model file.
     """
     save_path = Path(save_dir)
     save_path.mkdir(parents=True, exist_ok=True)
 
-    model_file = save_path / "xgboost_model.pkl"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_file = save_path / f"xgboost_model_{timestamp}.joblib"
+    latest_file = save_path / "xgboost_model_latest.joblib"
     encoder_file = save_path / "label_encoder.pkl"
 
     joblib.dump(model, model_file)
+    shutil.copy2(model_file, latest_file)
     joblib.dump(label_encoder, encoder_file)
 
     return str(model_file.resolve())
