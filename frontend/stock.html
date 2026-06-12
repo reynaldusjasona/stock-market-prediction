@@ -437,6 +437,13 @@
           <button class="ind-btn" data-key="obv">OBV</button>
           <button class="ind-btn" data-key="vol">Volume</button>
         </div>
+        <!-- Indicator toggle bar — Guest / Investor -->
+        <div class="ind-bar" id="basicBar" style="display:none;">
+          <button class="ind-btn" data-bkey="sma">SMA 20</button>
+          <button class="ind-btn" data-bkey="ema">EMA 20</button>
+          <button class="ind-btn" data-bkey="rsi">RSI</button>
+          <button class="ind-btn" data-bkey="vol">Volume</button>
+        </div>
         <div class="chart-body">
           <div class="chart-loading" id="chartLoading">
             <span class="spinner" style="width:28px;height:28px;"></span>
@@ -534,8 +541,9 @@
 
   /* Apply indicator visibility immediately — before any rendering */
   const isTrader = role === 'trader';
-  document.getElementById('indBar').style.display         = isTrader ? ''     : 'none';
-  document.getElementById('indicatorsCard').style.display = isTrader ? 'none' : '';
+  document.getElementById('indBar').style.display      = isTrader ? ''     : 'none';
+  document.getElementById('basicBar').style.display    = isTrader ? 'none' : '';
+  document.getElementById('indicatorsCard').style.display = 'none';
 
   const ROLES = {
     guest: {
@@ -645,8 +653,9 @@
     });
 
     /* Indicator bar visibility already set at top of IIFE — just re-affirm */
-    document.getElementById('indBar').style.display         = isTrader ? ''     : 'none';
-    document.getElementById('indicatorsCard').style.display = isTrader ? 'none' : '';
+    document.getElementById('indBar').style.display   = isTrader ? ''     : 'none';
+    document.getElementById('basicBar').style.display = isTrader ? 'none' : '';
+    document.getElementById('indicatorsCard').style.display = 'none';
 
     /* Fundamental Analysis — investor only */
     const fundEl = document.getElementById('fundamentalsSection');
@@ -1010,8 +1019,8 @@
       }
     }
 
-    /* Guest/Investor: update indicator cards */
-    if (!isTrader) updateIndicatorCards();
+    /* Guest/Investor: re-apply any active basic toggles */
+    if (!isTrader) _reapplyBasic();
 
     /* 1W gives ~52 candles — fit those in view too. Only 1D raw daily (up to ~7)
        needs no special handling. Always fitContent; user can zoom/pan freely. */
@@ -1284,6 +1293,32 @@
       `<div class="indicator-item"><div class="indicator-name">Volume</div><div class="indicator-value ind-muted">${fmtVol(volVal)}</div></div>`,
     ].join('');
   }
+
+  /* ================================================================
+     BASIC TOGGLES (guest + investor)
+  ================================================================ */
+  const _basicState = { sma: false, ema: false, rsi: false, vol: false };
+
+  function _reapplyBasic() {
+    if (!_chartData?.length) return;
+    if (_basicState.sma) applyOverlay('sma');
+    if (_basicState.ema) applyOverlay('ema');
+    if (_basicState.rsi) openSubPane('rsi');
+    if (_basicState.vol) applyOverlay('vol');
+  }
+
+  document.querySelectorAll('#basicBar .ind-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const k = btn.dataset.bkey;
+      _basicState[k] = !_basicState[k];
+      btn.classList.toggle('active', _basicState[k]);
+      if (k === 'rsi') {
+        _basicState[k] ? openSubPane('rsi') : closeSubPane('rsi');
+      } else {
+        _basicState[k] ? applyOverlay(k) : removeOverlay(k);
+      }
+    });
+  });
 
   /* ================================================================
      OVERLAY MANAGEMENT (trader)

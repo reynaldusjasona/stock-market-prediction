@@ -1,10 +1,142 @@
 import asyncio
 import math
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import Optional
 
+import yfinance as yf
+
 from app.core.api_clients import alphaVantageGet, finnhubGet
 from app.core.database import supabase
+
+_executor = ThreadPoolExecutor(max_workers=10)
+
+# ---- yfinance helpers (sync, run in executor) ----
+
+def _yf_quote_sync(ticker: str) -> dict:
+    try:
+        hist = yf.Ticker(ticker).history(period="5d")
+        if hist.empty:
+            return {"ticker": ticker, "error": "no data"}
+        current_price = float(hist["Close"].iloc[-1])
+        prev_close    = float(hist["Close"].iloc[-2]) if len(hist) > 1 else current_price
+        change        = round(current_price - prev_close, 4)
+        change_pct    = round((change / prev_close) * 100, 2) if prev_close else 0
+        return {
+            "ticker":         ticker,
+            "current_price":  current_price,
+            "open":           float(hist["Open"].iloc[-1]),
+            "high":           float(hist["High"].iloc[-1]),
+            "low":            float(hist["Low"].iloc[-1]),
+            "prev_close":     prev_close,
+            "volume":         int(hist["Volume"].iloc[-1]),
+            "timestamp":      0,
+            "change":         change,
+            "change_percent": change_pct,
+        }
+    except Exception as exc:
+        return {"ticker": ticker, "error": str(exc)}
+
+
+def _yf_history_sync(ticker: str, period: str) -> list:
+    _map = {"1W": "5d", "1M": "1mo", "3M": "3mo", "1Y": "1y"}
+
+    def _f(v, default=0.0):
+        try:
+            f = float(v)
+            return default if math.isnan(f) or math.isinf(f) else f
+        except (TypeError, ValueError):
+            return default
+
+    try:
+        hist = yf.Ticker(ticker).history(period=_map.get(period, "1mo"))
+        if hist.empty:
+            return []
+        rows = []
+        for idx, row in hist.iterrows():
+            close = _f(row["Close"])
+            if close == 0.0:
+                continue  # skip rows with no close price
+            rows.append({
+                "date":   str(idx.date()),
+                "open":   round(_f(row["Open"]),  4),
+                "high":   round(_f(row["High"]),  4),
+                "low":    round(_f(row["Low"]),   4),
+                "close":  round(close, 4),
+                "volume": int(_f(row["Volume"])),
+            })
+        return rows
+    except Exception:
+        return []
+
+
+async def _yf_quote(ticker: str) -> dict:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(_executor, _yf_quote_sync, ticker)
+
+
+async def _yf_history(ticker: str, period: str) -> list:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(_executor, _yf_history_sync, ticker, period)
+
+
+# ---- interval-based history (candle size: 5M / 15M / 1H / 1D / 1W) ----
+
+_INTERVAL_YF_MAP = {
+    "5M":  {"yf_interval": "5m",  "yf_period": "30d"},   # ~1560 candles (yfinance max 60d for 5m)
+    "15M": {"yf_interval": "15m", "yf_period": "30d"},   # ~520 candles
+    "1H":  {"yf_interval": "1h",  "yf_period": "90d"},   # ~630 candles
+    "1D":  {"yf_interval": "1d",  "yf_period": "2y"},    # ~500 candles
+    "1W":  {"yf_interval": "1wk", "yf_period": "5y"},    # ~260 candles
+}
+
+
+def _yf_interval_sync(ticker: str, interval: str) -> list:
+    cfg = _INTERVAL_YF_MAP.get(interval.upper(), _INTERVAL_YF_MAP["1D"])
+    is_intraday = interval.upper() in ("5M", "15M", "1H")
+
+    def _f(v, default=0.0):
+        try:
+            f = float(v)
+            return default if math.isnan(f) or math.isinf(f) else f
+        except (TypeError, ValueError):
+            return default
+
+    try:
+        hist = yf.Ticker(ticker).history(
+            period=cfg["yf_period"], interval=cfg["yf_interval"]
+        )
+        if hist.empty:
+            return []
+        rows = []
+        for idx, row in hist.iterrows():
+            close = _f(row["Close"])
+            if close == 0.0:
+                continue
+            # Intraday: use UTC Unix seconds (LightweightCharts requires integer)
+            # Daily/weekly: use YYYY-MM-DD string
+            time_val = int(idx.timestamp()) if is_intraday else str(idx.date())
+            rows.append({
+                "time":   time_val,
+                "open":   round(_f(row["Open"]),  4),
+                "high":   round(_f(row["High"]),  4),
+                "low":    round(_f(row["Low"]),   4),
+                "close":  round(close, 4),
+                "volume": int(_f(row["Volume"])),
+            })
+        return rows
+    except Exception:
+        return []
+
+
+async def _yf_interval(ticker: str, interval: str) -> list:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(_executor, _yf_interval_sync, ticker, interval)
+
+
+async def getIntervalHistory(ticker: str, interval: str = "1D") -> list:
+    return await _yf_interval(ticker.upper(), interval.upper())
+
 
 _TRENDING_FALLBACK = [
     "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
@@ -78,7 +210,7 @@ async def fetchStockList() -> list:
 async def fetchPriceData(ticker: str) -> dict:
     data = await finnhubGet("quote", {"symbol": ticker})
     if "error" in data:
-        return {"ticker": ticker, "error": data["error"]}
+        return await _yf_quote(ticker)
 
     current_price = data.get("c", 0)
     prev_close = data.get("pc", 0)
@@ -276,7 +408,7 @@ async def getPriceHistory(ticker: str, period: str = "1M") -> list:
     )
 
     if "error" in data or "Time Series (Daily)" not in data:
-        # Return DB cache on API failure
+        # Try DB cache first
         cutoff = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
         cached = (
             supabase.table("price_history")
@@ -286,7 +418,10 @@ async def getPriceHistory(ticker: str, period: str = "1M") -> list:
             .order("date", desc=False)
             .execute()
         )
-        return cached.data or []
+        if cached.data:
+            return cached.data
+        # Final fallback: yfinance
+        return await _yf_history(ticker, period)
 
     ts = data["Time Series (Daily)"]
     cutoff_dt = datetime.utcnow() - timedelta(days=days)
@@ -349,3 +484,39 @@ async def getLiveStockData(ticker: Optional[str] = None):
     if ticker:
         return await fetchPriceData(ticker)
     return await getLiveUpdates()
+
+
+# ---- Fundamental Analysis (yfinance) ----
+
+def _yf_fundamentals_sync(ticker: str) -> dict:
+    def _s(key, default=None):
+        v = info.get(key)
+        return v if v not in (None, "N/A", "None", "") else default
+
+    try:
+        info = yf.Ticker(ticker).info or {}
+        return {
+            "market_cap":     _s("marketCap"),
+            "pe_ratio":       _s("trailingPE"),
+            "forward_pe":     _s("forwardPE"),
+            "eps":            _s("trailingEps"),
+            "revenue":        _s("totalRevenue"),
+            "profit_margin":  _s("profitMargins"),
+            "dividend_yield": _s("dividendYield"),
+            "week52_high":    _s("fiftyTwoWeekHigh"),
+            "week52_low":     _s("fiftyTwoWeekLow"),
+            "beta":           _s("beta"),
+            "sector":         _s("sector"),
+            "industry":       _s("industry"),
+            "description":    _s("longBusinessSummary", ""),
+            "employees":      _s("fullTimeEmployees"),
+            "roe":            _s("returnOnEquity"),
+            "debt_to_equity": _s("debtToEquity"),
+        }
+    except Exception:
+        return {}
+
+
+async def fetchFundamentals(ticker: str) -> dict:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(_executor, _yf_fundamentals_sync, ticker)
