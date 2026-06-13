@@ -1,7 +1,8 @@
 import asyncio
 import math
-from datetime import datetime, timedelta
 from typing import Optional
+
+from fastapi import HTTPException
 
 from app.core.api_clients import finnhubGet
 from app.core.database import supabase
@@ -249,62 +250,49 @@ async def fetchTrendingTickers() -> list:
     return output
 
 
-async def getStockData(ticker: str) -> dict:
-    cutoff = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+async def getStockData() -> list:
     result = (
-        supabase.table("price_history")
-        .select("date, open, high, low, close, volume")
-        .eq("ticker", ticker)
-        .gte("date", cutoff)
-        .order("date", desc=False)
-        .execute()
-    )
-    if result.data:
-        return {"ticker": ticker, "history": result.data}
-    return await fetchPriceData(ticker)
-
-
-async def getLiveUpdates() -> list:
-    db_result = (
         supabase.table("stocks")
         .select("ticker, company_name")
         .limit(20)
         .execute()
     )
-    if db_result.data:
-        tickers = [s["ticker"] for s in db_result.data]
-        name_map = {
-            s["ticker"]: s.get("company_name", "")
-            for s in db_result.data
-        }
-    else:
-        tickers = _TRENDING_FALLBACK
-        name_map = {t: t for t in tickers}
+    if result.data:
+        return [
+            {"ticker": r["ticker"], "name": r.get("company_name", "")}
+            for r in result.data
+        ]
+    return [{"ticker": t, "name": t} for t in _TRENDING_FALLBACK]
 
-    price_results = await asyncio.gather(
-        *[fetchPriceData(t) for t in tickers],
-        return_exceptions=True,
-    )
 
+async def getLiveUpdates(tickers: list) -> list:
     output = []
-    for i, res in enumerate(price_results):
-        if (
-            isinstance(res, Exception)
-            or not isinstance(res, dict)
-            or "error" in res
-        ):
+    for item in tickers[:10]:
+        ticker = item["ticker"]
+        name = item.get("name", "")
+        data = await finnhubGet("quote", {"symbol": ticker})
+        if not data or "error" in data:
             continue
-        ticker = tickers[i]
-        output.append(
-            {
-                "ticker": ticker,
-                "company_name": name_map.get(ticker, ""),
-                "current_price": res.get("current_price", 0),
-                "change_percent": res.get("change_percent", 0),
-            }
-        )
-
+        output.append({
+            "ticker": ticker,
+            "name": name,
+            "price": data.get("c"),
+            "change": data.get("d"),
+            "change_percent": data.get("dp"),
+        })
     return output
+
+
+async def getTopGainersandLosers() -> dict:
+    stock_data = await getStockData()
+    updates = await getLiveUpdates(stock_data)
+    gainers = sorted(
+        updates, key=lambda x: x.get("change_percent") or 0, reverse=True
+    )[:5]
+    losers = sorted(
+        updates, key=lambda x: x.get("change_percent") or 0
+    )[:5]
+    return {"gainers": gainers, "losers": losers}
 
 
 async def getPriceHistory(stock: str) -> list:
@@ -333,21 +321,25 @@ async def getLivePrice(stock: str) -> dict:
     }
 
 
-async def getOrderBook(ticker: str) -> dict:
-    data = await finnhubGet("stock/bidask", {"symbol": ticker})
-    if "error" in data:
-        return {"ticker": ticker, "error": data["error"]}
+async def getOrderBook(stock: str) -> dict:
+    data = await finnhubGet("stock/bidask", {"symbol": stock.upper()})
+    if not data or "error" in data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Order book unavailable for {stock}",
+        )
     return {
-        "ticker": ticker,
-        "bid": data.get("b", 0),
-        "ask": data.get("a", 0),
-        "bid_volume": data.get("bv", 0),
-        "ask_volume": data.get("av", 0),
-        "timestamp": data.get("t", 0),
+        "ticker": stock.upper(),
+        "ask": data.get("a"),
+        "bid": data.get("b"),
+        "ask_volume": data.get("av"),
+        "bid_volume": data.get("bv"),
+        "timestamp": data.get("t"),
     }
 
 
 async def getLiveStockData(ticker: Optional[str] = None):
     if ticker:
         return await fetchPriceData(ticker)
-    return await getLiveUpdates()
+    stock_data = await getStockData()
+    return await getLiveUpdates(stock_data)
