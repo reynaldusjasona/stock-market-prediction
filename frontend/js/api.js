@@ -43,7 +43,7 @@ const api = {
 
     if (res.status === 401) {
       this.clearAuth();
-      window.location.href = 'login.html';
+      window.location.href = '/login';
       return;
     }
 
@@ -85,7 +85,7 @@ const api = {
       });
     } catch {}
     this.clearAuth();
-    window.location.href = 'login.html';
+    window.location.href = '/login';
   },
 
   async getUser_(userId) {
@@ -172,14 +172,14 @@ const api = {
 /* ---- Guard: redirect if not logged in ---- */
 function requireAuth() {
   if (!api.isLoggedIn()) {
-    window.location.href = 'login.html';
+    window.location.href = '/login';
     return false;
   }
   return true;
 }
 
 /* ---- Guard: redirect if already logged in ---- */
-function redirectIfLoggedIn(dest = 'dashboard.html') {
+function redirectIfLoggedIn(dest = '/dashboard') {
   if (api.isLoggedIn()) {
     window.location.href = dest;
   }
@@ -327,6 +327,6 @@ function populateAvatar() {
 
 /* ---- Logo navigation: dashboard if logged in, index if not ---- */
 document.addEventListener('DOMContentLoaded', () => {
-  const dest = api.isLoggedIn() ? 'dashboard.html' : 'index.html';
+  const dest = api.isLoggedIn() ? '/dashboard' : '/';
   document.querySelectorAll('a.logo-btn, a.sidebar-logo').forEach(a => { a.href = dest; });
 });
