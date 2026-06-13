@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import '../styles/shared.css'
 import '../styles/dashboard.css'
+import api, { requireAuth, closeSidebar, showToast, fmt, fmtChange, escHtml, debounce, initHoverSidebar, initAvatarDropdown, populateAvatar } from '../js/api'
 
 export default function Dashboard() {
   useEffect(() => {
@@ -8,9 +9,7 @@ export default function Dashboard() {
 
     if (!requireAuth()) return;
 
-    /* ================================================================
-       AVATAR COLOURS — consistent per ticker
-    ================================================================ */
+    // AVATAR COLOURS — consistent per ticker
     const AVT_COLORS = ['#2563eb','#7c3aed','#0891b2','#0d9488','#d97706','#dc2626','#9333ea','#16a34a'];
     function avatarColor(str) {
       let h = 0;
@@ -18,9 +17,7 @@ export default function Dashboard() {
       return AVT_COLORS[h];
     }
 
-    /* ================================================================
-       BAR CHART SPARKLINE
-    ================================================================ */
+    // BAR CHART SPARKLINE
     function barSparkline(prices, up) {
       if (!prices || prices.length < 2) {
         const bars = Array.from({length: 8}, (_, i) => {
@@ -46,9 +43,7 @@ export default function Dashboard() {
       return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${bars}</svg>`;
     }
 
-    /* ================================================================
-       SIGNAL BADGE
-    ================================================================ */
+    // SIGNAL BADGE
     function signalBadge(raw) {
       const s = (raw ?? '').toString().toUpperCase().replace(/_/g, ' ').trim();
       if (s === 'STRONG BUY' || s === 'STRONG BUY SIGNAL') return ['sig-strong-buy', 'STRONG BUY'];
@@ -71,9 +66,7 @@ export default function Dashboard() {
       return 'var(--text-subtle)';
     }
 
-    /* ================================================================
-       TRENDING TICKER CARDS  (pinned 4)
-    ================================================================ */
+    // TRENDING TICKER CARDS  (pinned 4)
     const PINNED = ['NVDA', 'AAPL', 'TSLA', 'MSFT'];
 
     function skeletonCard() {
@@ -129,9 +122,7 @@ export default function Dashboard() {
 
     loadTickerCards();
 
-    /* ================================================================
-       TOP GAINERS + LOSERS
-    ================================================================ */
+    // TOP GAINERS + LOSERS
     async function loadGainersLosers() {
       const gBody = document.getElementById('gainersBody');
       const lBody = document.getElementById('losersBody');
@@ -177,9 +168,7 @@ export default function Dashboard() {
     }
     loadGainersLosers();
 
-    /* ================================================================
-       AI RECOMMENDATIONS — personalized by user sector preferences
-    ================================================================ */
+    // AI RECOMMENDATIONS — personalized by user sector preferences
     const SECTOR_TICKERS = {
       'Technology':  ['AAPL','MSFT','NVDA','GOOGL','META','AMD','INTC','ORCL','CRM','ADBE'],
       'Finance':     ['JPM','BAC','GS','MS','V','MA','AXP','WFC','C','BLK'],
@@ -516,9 +505,7 @@ export default function Dashboard() {
       });
     }
 
-    /* ================================================================
-       NAV SEARCH — trending + recent dropdown
-    ================================================================ */
+    // NAV SEARCH — trending + recent dropdown
     const navInput = document.getElementById('navSearchInput');
     const navDrop  = document.getElementById('navSearchDrop');
 
@@ -585,9 +572,7 @@ export default function Dashboard() {
       });
     }
 
-    /* ================================================================
-       SHARED INITS
-    ================================================================ */
+    // SHARED INITS
     initHoverSidebar();
     initAvatarDropdown();
     populateAvatar();

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import '../styles/shared.css'
 import '../styles/login.css'
+import api, { redirectIfLoggedIn, closeSidebar, escHtml, initHoverSidebar, initAvatarDropdown, populateAvatar } from '../js/api'
 
 export default function Login() {
   useEffect(() => {

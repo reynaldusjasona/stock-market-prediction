@@ -1,6 +1,4 @@
-/* =============================================
-   RESET & DESIGN TOKENS
-============================================= */
+/* RESET & DESIGN TOKENS */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -62,9 +60,7 @@ ul  { list-style: none; }
 img { display: block; max-width: 100%; }
 button { font-family: inherit; }
 
-/* =============================================
-   SIDEBAR DRAWER
-============================================= */
+/* SIDEBAR DRAWER */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -191,9 +187,7 @@ button { font-family: inherit; }
 .sidebar-user-name  { font-size: 0.875rem; font-weight: 600; }
 .sidebar-user-email { font-size: 0.75rem; color: var(--text-muted); }
 
-/* =============================================
-   NAVBAR
-============================================= */
+/* NAVBAR */
 .navbar {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -233,9 +227,7 @@ button { font-family: inherit; }
 .navbar-center { flex: 1; max-width: 420px; }
 .navbar-actions { display: flex; align-items: center; gap: 0.625rem; flex-shrink: 0; }
 
-/* =============================================
-   SEARCH
-============================================= */
+/* SEARCH */
 .search-wrap { position: relative; }
 .search-wrap input {
   width: 100%;
@@ -285,9 +277,7 @@ button { font-family: inherit; }
 .search-name   { font-size: 0.8125rem; color: var(--text-muted); }
 .search-empty  { padding: 1.25rem; text-align: center; font-size: 0.875rem; color: var(--text-muted); }
 
-/* =============================================
-   BUTTONS
-============================================= */
+/* BUTTONS */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -339,9 +329,7 @@ button { font-family: inherit; }
 }
 .btn-icon:hover { border-color: var(--border-hover); color: var(--text-primary); }
 
-/* =============================================
-   FORMS
-============================================= */
+/* FORMS */
 .form-group { display: flex; flex-direction: column; gap: 0.375rem; }
 .form-label { font-size: 0.875rem; font-weight: 500; color: var(--text-muted); }
 .form-input {
@@ -373,9 +361,7 @@ button { font-family: inherit; }
 .form-error { font-size: 0.8125rem; color: var(--red); margin-top: 0.25rem; }
 .form-hint  { font-size: 0.8125rem; color: var(--text-subtle); }
 
-/* =============================================
-   CARDS
-============================================= */
+/* CARDS */
 .card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -390,9 +376,7 @@ button { font-family: inherit; }
 .card-title  { font-size: 0.9375rem; font-weight: 600; }
 .card-sub    { font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.125rem; }
 
-/* =============================================
-   BADGES & SIGNALS
-============================================= */
+/* BADGES & SIGNALS */
 .badge {
   display: inline-flex;
   align-items: center; gap: 0.25rem;
@@ -415,9 +399,7 @@ button { font-family: inherit; }
 .signal-sell { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,68,68,0.25); }
 .signal-hold { background: rgba(240,192,96,0.1); color: var(--yellow); border: 1px solid rgba(240,192,96,0.25); }
 
-/* =============================================
-   STOCK CARD
-============================================= */
+/* STOCK CARD */
 .stock-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -441,9 +423,7 @@ button { font-family: inherit; }
 .stock-change-dn  { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--red); }
 .stock-name       { font-size: 0.8125rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* =============================================
-   TICKER TAPE
-============================================= */
+/* TICKER TAPE */
 .ticker-wrap {
   overflow: hidden;
   background: var(--bg-surface);
@@ -467,9 +447,7 @@ button { font-family: inherit; }
 .t-up  { color: var(--accent); }
 .t-dn  { color: var(--red); }
 
-/* =============================================
-   LOADING
-============================================= */
+/* LOADING */
 .skeleton {
   background: linear-gradient(90deg, var(--bg-elevated) 25%, rgba(255,255,255,0.03) 50%, var(--bg-elevated) 75%);
   background-size: 200% 100%;
@@ -490,9 +468,7 @@ button { font-family: inherit; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* =============================================
-   TOAST
-============================================= */
+/* TOAST */
 #toast-container {
   position: fixed; bottom: 1.5rem; right: 1.5rem;
   z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem;
@@ -514,9 +490,7 @@ button { font-family: inherit; }
 .toast.success { border-left: 3px solid var(--accent); }
 .toast.error   { border-left: 3px solid var(--red); }
 
-/* =============================================
-   LAYOUT UTILITIES
-============================================= */
+/* LAYOUT UTILITIES */
 .container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; }
 .page-top  { padding-top: var(--navbar-h); }
 
@@ -537,9 +511,7 @@ button { font-family: inherit; }
 .empty-state svg { opacity: 0.4; }
 .empty-state p   { font-size: 0.875rem; }
 
-/* =============================================
-   RESPONSIVE
-============================================= */
+/* RESPONSIVE */
 @media (max-width: 768px) {
   .navbar-center { display: none; }
   .hide-mobile   { display: none !important; }
@@ -549,9 +521,7 @@ button { font-family: inherit; }
   .ticker-track { animation: none; }
 }
 
-/* =============================================
-   NAV AVATAR DROPDOWN
-============================================= */
+/* NAV AVATAR DROPDOWN */
 .nav-avatar-wrap { position: relative; }
 
 .nav-avatar-btn {

@@ -327,3 +327,5 @@ document.addEventListener('DOMContentLoaded', () => {
   const dest = api.isLoggedIn() ? '/dashboard' : '/';
   document.querySelectorAll('a.logo-btn, a.sidebar-logo').forEach(a => { a.href = dest; });
 });
+
+export { api as default, requireAuth, redirectIfLoggedIn, closeSidebar, showToast, fmt, fmtChange, fmtSignal, escHtml, debounce, initHoverSidebar, initAvatarDropdown, populateAvatar };

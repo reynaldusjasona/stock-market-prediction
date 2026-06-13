@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import '../styles/shared.css'
 import '../styles/register.css'
+import api, { redirectIfLoggedIn, closeSidebar, showToast, escHtml, initHoverSidebar, initAvatarDropdown, populateAvatar } from '../js/api'
 
 export default function Register() {
   useEffect(() => {
