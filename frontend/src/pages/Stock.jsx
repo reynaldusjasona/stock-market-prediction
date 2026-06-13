@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import * as LightweightCharts from 'lightweight-charts'
 import '../styles/shared.css'
 import '../styles/stock.css'
+import api, { closeSidebar, escHtml, fmt, fmtChange, fmtSignal, initHoverSidebar, initAvatarDropdown, populateAvatar } from '../js/api'
 
 export default function Stock() {
   const role = localStorage.getItem('sw_token')
@@ -41,9 +42,7 @@ export default function Stock() {
       return `<div class="upgrade-card">${LOCK_SVG}<div class="upgrade-card-info"><div class="upgrade-card-title">${title}</div><div class="upgrade-card-desc">${desc}</div></div><a href="/register?plan=${feature}" class="btn btn-accent btn-sm" style="flex-shrink:0;">Upgrade</a></div>`;
     }
 
-    /* ================================================================
-       APPLY ROLE GATING
-    ================================================================ */
+    // APPLY ROLE GATING
     function applyRoleGating() {
       const meta = document.getElementById('stockMeta');
       if (role === 'trader') {
@@ -91,9 +90,7 @@ export default function Stock() {
       if (cfg.showPrediction) { loadPrediction(); }
     }
 
-    /* ================================================================
-       STOCK INFO
-    ================================================================ */
+    // STOCK INFO
     async function loadStockInfo() {
       try {
         const data   = await api.getStock(ticker);
@@ -114,9 +111,7 @@ export default function Stock() {
       } catch { document.getElementById('stockCompany').textContent = ticker; }
     }
 
-    /* ================================================================
-       LIVE PRICE
-    ================================================================ */
+    // LIVE PRICE
     async function refreshPrice() {
       const el = document.getElementById('liveQuoteBody');
       el.innerHTML = '<div class="skeleton" style="height:80px;"></div>';
@@ -136,9 +131,7 @@ export default function Stock() {
     }
     window.refreshPrice = refreshPrice;
 
-    /* ================================================================
-       CHART
-    ================================================================ */
+    // CHART
     let _lwChart = null, _series = {}, _chartRo = null, _scrollDragCleanup = null, _chartData = null;
     let currentPeriod = cfg.defaultPeriod;
 
@@ -300,9 +293,7 @@ export default function Stock() {
       });
     });
 
-    /* ================================================================
-       INDICATOR TOGGLE BUTTONS (trader)
-    ================================================================ */
+    // INDICATOR TOGGLE BUTTONS (trader)
     document.querySelectorAll('.ind-period').forEach(input => {
       input.addEventListener('pointerdown', e=>e.stopPropagation());
       input.addEventListener('click', e=>e.stopPropagation());
@@ -328,9 +319,7 @@ export default function Stock() {
       });
     });
 
-    /* ================================================================
-       BASIC TOGGLES (guest + investor)
-    ================================================================ */
+    // BASIC TOGGLES (guest + investor)
     const _basicState = { sma:false, ema:false, rsi:false, vol:false };
     function _reapplyBasic(){if(!_chartData?.length)return;if(_basicState.sma)applyOverlay('sma');if(_basicState.ema)applyOverlay('ema');if(_basicState.rsi)openSubPane('rsi');if(_basicState.vol)applyOverlay('vol');}
 
@@ -344,9 +333,7 @@ export default function Stock() {
       });
     });
 
-    /* ================================================================
-       OVERLAY MANAGEMENT (trader)
-    ================================================================ */
+    // OVERLAY MANAGEMENT (trader)
     function _rm(k){if(_ovSeries[k]&&_lwChart){try{_lwChart.removeSeries(_ovSeries[k]);}catch{}delete _ovSeries[k];}}
     function removeOverlay(key){
       switch(key){
@@ -373,9 +360,7 @@ export default function Stock() {
       }
     }
 
-    /* ================================================================
-       SUB-PANE MANAGEMENT
-    ================================================================ */
+    // SUB-PANE MANAGEMENT
     const PANE_NAMES = {rsi:'RSI',macd:'MACD',stoch:'Stoch',willr:'W%R',atr:'ATR',obv:'OBV'};
     function openSubPane(key){
       if(_subPanes[key]||!_chartData?.length)return;
@@ -422,9 +407,7 @@ export default function Stock() {
       document.querySelector(`.ind-btn[data-key="${key}"]`)?.classList.remove('active');
     };
 
-    /* ================================================================
-       NEWS
-    ================================================================ */
+    // NEWS
     function fmtPubDate(raw){if(!raw)return'';try{const d=typeof raw==='number'?new Date(raw*1000):new Date(raw);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch{return'';}}
     async function loadNews(){
       const list=document.getElementById('newsList');if(!list)return;
@@ -435,9 +418,7 @@ export default function Stock() {
       }catch{list.innerHTML='<div style="padding:1.5rem;text-align:center;font-size:.875rem;color:var(--text-muted);">News unavailable.</div>';}
     }
 
-    /* ================================================================
-       ORDER BOOK
-    ================================================================ */
+    // ORDER BOOK
     async function loadOrderBook(){
       try{
         const data=await api.getOrderBook(ticker);
@@ -452,9 +433,7 @@ export default function Stock() {
       }catch{const na='<p style="font-size:.8125rem;color:var(--text-muted);">Unavailable</p>';const bc=document.getElementById('bidsCol');const ac=document.getElementById('asksCol');if(bc)bc.innerHTML=na;if(ac)ac.innerHTML=na;}
     }
 
-    /* ================================================================
-       AI PREDICTION
-    ================================================================ */
+    // AI PREDICTION
     async function loadPrediction(){
       if(!api.isLoggedIn())return;
       const body=document.getElementById('predBody');
@@ -470,9 +449,7 @@ export default function Stock() {
     }
     window.loadPrediction = loadPrediction;
 
-    /* ================================================================
-       PREDICTION HISTORY
-    ================================================================ */
+    // PREDICTION HISTORY
     async function loadPredHistory(){
       if(!api.isLoggedIn())return;
       const content=document.getElementById('histContent');if(!content)return;
@@ -485,9 +462,7 @@ export default function Stock() {
       }catch{const c2=document.getElementById('histContent');if(c2)c2.innerHTML='<div class="hist-locked-msg">Could not load prediction history.</div>';}
     }
 
-    /* ================================================================
-       FUNDAMENTAL ANALYSIS
-    ================================================================ */
+    // FUNDAMENTAL ANALYSIS
     async function loadFundamentals(){
       const grid=document.getElementById('fundGrid');const desc=document.getElementById('fundDesc');if(!grid)return;
       function fmtLarge(n){if(n==null)return'—';const v=Number(n);if(isNaN(v))return'—';if(v>=1e12)return`$${(v/1e12).toFixed(2)}T`;if(v>=1e9)return`$${(v/1e9).toFixed(2)}B`;if(v>=1e6)return`$${(v/1e6).toFixed(2)}M`;return`$${fmt(v)}`;}
@@ -503,9 +478,7 @@ export default function Stock() {
       }catch{grid.innerHTML='<p style="color:var(--text-muted);font-size:.875rem;grid-column:1/-1;">Fundamental data unavailable.</p>';if(desc)desc.style.display='none';}
     }
 
-    /* ================================================================
-       BOOT
-    ================================================================ */
+    // BOOT
     applyRoleGating();
     loadStockInfo();
     loadChart(cfg.defaultPeriod);

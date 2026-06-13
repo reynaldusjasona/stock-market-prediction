@@ -625,9 +625,7 @@
 
   const cfg = ROLES[role] || ROLES.guest;
 
-  /* ================================================================
-     TICKER
-  ================================================================ */
+  // TICKER
   const params = new URLSearchParams(window.location.search);
   const ticker = (params.get('ticker') || '').toUpperCase();
   if (!ticker) { window.location.href = '/dashboard'; return; }
@@ -635,9 +633,7 @@
   document.getElementById('breadTicker').textContent = ticker;
   document.title = `${ticker} — StockWise AI`;
 
-  /* ================================================================
-     INDICATOR STATE (trader)
-  ================================================================ */
+  // INDICATOR STATE (trader)
   const _indState = {
     sma:      { on:false, period:20  },
     ema:      { on:false, period:20  },
@@ -657,9 +653,7 @@
   const OVERLAY_KEYS = ['sma','ema','bb','vwap','ichimoku','vol'];
   const PANE_KEYS    = ['rsi','macd','stoch','willr','atr','obv'];
 
-  /* ================================================================
-     HELPER: upgrade card HTML
-  ================================================================ */
+  // HELPER: upgrade card HTML
   const LOCK_SVG = `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="upgrade-card-lock"><rect x="6" y="13" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M9 13v-4a5 5 0 0110 0v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`;
 
   function upgradeCard(title, desc, feature) {
@@ -673,9 +667,7 @@
     </div>`;
   }
 
-  /* ================================================================
-     APPLY ROLE GATING — run once at startup
-  ================================================================ */
+  // APPLY ROLE GATING — run once at startup
   function applyRoleGating() {
     /* Role badge in header */
     const meta = document.getElementById('stockMeta');
@@ -790,9 +782,7 @@
 
   }
 
-  /* ================================================================
-     STOCK INFO
-  ================================================================ */
+  // STOCK INFO
   async function loadStockInfo() {
     try {
       const data   = await api.getStock(ticker);
@@ -819,9 +809,7 @@
     }
   }
 
-  /* ================================================================
-     LIVE PRICE
-  ================================================================ */
+  // LIVE PRICE
   async function refreshPrice() {
     const el = document.getElementById('liveQuoteBody');
     el.innerHTML = '<div class="skeleton" style="height:80px;"></div>';
@@ -843,9 +831,7 @@
   }
   window.refreshPrice = refreshPrice;
 
-  /* ================================================================
-     CHART — with overlay support for Trader
-  ================================================================ */
+  // CHART — with overlay support for Trader
   let _lwChart           = null;
   let _series            = {};
   let _chartRo           = null;
@@ -866,7 +852,7 @@
     return out;
   }
 
-  /* ---- Candle-based calculation functions (used by trader indicators) ---- */
+  // Candle-based calculation functions (used by trader indicators)
   function calcSMA(cs, p) {
     const r = [];
     for (let i = p-1; i < cs.length; i++) {
@@ -1270,9 +1256,7 @@
     });
   });
 
-  /* ================================================================
-     INDICATOR TOGGLE BUTTONS (trader)
-  ================================================================ */
+  // INDICATOR TOGGLE BUTTONS (trader)
   /* Period inputs: stop propagation so clicking doesn't toggle the button */
   document.querySelectorAll('.ind-period').forEach(input => {
     input.addEventListener('pointerdown', e => e.stopPropagation());
@@ -1308,9 +1292,7 @@
     });
   });
 
-  /* ================================================================
-     INDICATOR CARDS (guest + investor) — computed from _chartData
-  ================================================================ */
+  // INDICATOR CARDS (guest + investor) — computed from _chartData
   function updateIndicatorCards() {
     const grid = document.getElementById('indicatorsGrid');
     if (!grid) return;
@@ -1348,9 +1330,7 @@
     ].join('');
   }
 
-  /* ================================================================
-     BASIC TOGGLES (guest + investor)
-  ================================================================ */
+  // BASIC TOGGLES (guest + investor)
   const _basicState = { sma: false, ema: false, rsi: false, vol: false };
 
   function _reapplyBasic() {
@@ -1374,9 +1354,7 @@
     });
   });
 
-  /* ================================================================
-     OVERLAY MANAGEMENT (trader)
-  ================================================================ */
+  // OVERLAY MANAGEMENT (trader)
   function _rm(k) { if (_ovSeries[k]&&_lwChart){try{_lwChart.removeSeries(_ovSeries[k]);}catch{}delete _ovSeries[k];} }
 
   function removeOverlay(key) {
@@ -1430,9 +1408,7 @@
     }
   }
 
-  /* ================================================================
-     SUB-PANE MANAGEMENT (trader)
-  ================================================================ */
+  // SUB-PANE MANAGEMENT (trader)
   const PANE_NAMES = { rsi:'RSI', macd:'MACD', stoch:'Stoch', willr:'W%R', atr:'ATR', obv:'OBV' };
 
   function openSubPane(key) {
@@ -1522,9 +1498,7 @@
     document.querySelector(`.ind-btn[data-key="${key}"]`)?.classList.remove('active');
   };
 
-  /* ================================================================
-     NEWS (investor / trader)
-  ================================================================ */
+  // NEWS (investor / trader)
   function fmtPubDate(raw) {
     if (!raw) return '';
     try {
@@ -1556,9 +1530,7 @@
     }
   }
 
-  /* ================================================================
-     ORDER BOOK
-  ================================================================ */
+  // ORDER BOOK
   async function loadOrderBook() {
     try {
       const data = await api.getOrderBook(ticker);
@@ -1598,9 +1570,7 @@
     }
   }
 
-  /* ================================================================
-     AI PREDICTION
-  ================================================================ */
+  // AI PREDICTION
   async function loadPrediction() {
     if (!api.isLoggedIn()) return;
     const body = document.getElementById('predBody');
@@ -1639,9 +1609,7 @@
   }
   window.loadPrediction = loadPrediction;
 
-  /* ================================================================
-     PREDICTION HISTORY
-  ================================================================ */
+  // PREDICTION HISTORY
   async function loadPredHistory() {
     if (!api.isLoggedIn()) return;
     const content = document.getElementById('histContent');
@@ -1670,9 +1638,7 @@
     }
   }
 
-  /* ================================================================
-     FUNDAMENTAL ANALYSIS (investor only)
-  ================================================================ */
+  // FUNDAMENTAL ANALYSIS (investor only)
   async function loadFundamentals() {
     const grid = document.getElementById('fundGrid');
     const desc = document.getElementById('fundDesc');
@@ -1739,9 +1705,7 @@
     }
   }
 
-  /* ================================================================
-     BOOT
-  ================================================================ */
+  // BOOT
   applyRoleGating();
   loadStockInfo();
   loadChart(cfg.defaultPeriod);

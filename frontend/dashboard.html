@@ -9,9 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/shared.css"/>
   <style>
-    /* ================================================================
-       NAV overrides — Logo | Centered Search | Bell + Avatar
-    ================================================================ */
+    /* NAV overrides — Logo | Centered Search | Bell + Avatar */
     .navbar .dash-nav {
       position: relative; display: flex; align-items: center;
       justify-content: flex-start; height: 100%;
@@ -79,14 +77,10 @@
       background: var(--accent); border: 1.5px solid var(--bg-surface);
     }
 
-    /* ================================================================
-       PAGE SHELL
-    ================================================================ */
+    /* PAGE SHELL */
     .dash-page { padding-top: var(--navbar-h); min-height: 100vh; display: flex; flex-direction: column; }
 
-    /* ================================================================
-       HERO
-    ================================================================ */
+    /* HERO */
     .dash-hero {
       background: var(--bg);
       border-bottom: 1px solid var(--border);
@@ -105,9 +99,7 @@
       max-width: 540px; margin: 0 auto;
     }
 
-    /* ================================================================
-       CONTENT
-    ================================================================ */
+    /* CONTENT */
     .dash-content {
       flex: 1;
       max-width: 1280px; margin: 0 auto;
@@ -125,9 +117,7 @@
     .view-all-link { font-size: 0.8125rem; color: var(--accent); text-decoration: none; font-weight: 500; }
     .view-all-link:hover { text-decoration: underline; }
 
-    /* ================================================================
-       TRENDING TICKER CARDS
-    ================================================================ */
+    /* TRENDING TICKER CARDS */
     .ticker-grid {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
     }
@@ -150,9 +140,7 @@
     .ticker-sparkline svg { display: block; width: 100%; height: 48px; }
     .ticker-price { font-family: var(--font-mono); font-size: 1.125rem; font-weight: 700; color: var(--text-primary); }
 
-    /* ================================================================
-       TOP GAINERS / LOSERS
-    ================================================================ */
+    /* TOP GAINERS / LOSERS */
     .gl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
     .gl-panel {
       background: var(--bg-surface); border: 1px solid var(--border);
@@ -177,9 +165,7 @@
     .gl-ticker { font-family: var(--font-mono); font-weight: 700; }
     .gl-price  { font-family: var(--font-mono); font-weight: 600; }
 
-    /* ================================================================
-       AI RECOMMENDATIONS
-    ================================================================ */
+    /* AI RECOMMENDATIONS */
     .rec-header-row {
       display: flex; align-items: flex-start; justify-content: space-between;
       gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
@@ -252,7 +238,7 @@
     }
     .btn-view:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 
-    /* ---- Accordion rec rows ---- */
+    /* Accordion rec rows */
     .rec-row { cursor: pointer; }
     .rec-row.is-open { background: #0d1117 !important; border-left: 2px solid var(--accent); }
     .rec-row.is-open td:first-child { padding-left: calc(1.125rem - 2px); }
@@ -314,9 +300,7 @@
     .btn-load-more:hover { color: var(--text-primary); }
     .btn-load-more:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* ================================================================
-       FOOTER
-    ================================================================ */
+    /* FOOTER */
     .site-footer {
       background: #070809; border-top: 1px solid var(--border);
       margin-top: auto;
@@ -356,9 +340,7 @@
     }
     .footer-icon-btn:hover { border-color: var(--border-hover); color: var(--text-muted); }
 
-    /* ================================================================
-       RESPONSIVE
-    ================================================================ */
+    /* RESPONSIVE */
     @media (max-width: 1100px) { .ticker-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 768px) {
       .ticker-grid { grid-template-columns: repeat(2, 1fr); }
@@ -618,9 +600,7 @@
 (function () {
   if (!requireAuth()) return;
 
-  /* ================================================================
-     AVATAR COLOURS — consistent per ticker
-  ================================================================ */
+  // AVATAR COLOURS — consistent per ticker
   const AVT_COLORS = ['#2563eb','#7c3aed','#0891b2','#0d9488','#d97706','#dc2626','#9333ea','#16a34a'];
   function avatarColor(str) {
     let h = 0;
@@ -628,9 +608,7 @@
     return AVT_COLORS[h];
   }
 
-  /* ================================================================
-     BAR CHART SPARKLINE
-  ================================================================ */
+  // BAR CHART SPARKLINE
   function barSparkline(prices, up) {
     if (!prices || prices.length < 2) {
       /* fallback placeholder bars */
@@ -657,9 +635,7 @@
     return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${bars}</svg>`;
   }
 
-  /* ================================================================
-     SIGNAL BADGE
-  ================================================================ */
+  // SIGNAL BADGE
   function signalBadge(raw) {
     const s = (raw ?? '').toString().toUpperCase().replace(/_/g, ' ').trim();
     if (s === 'STRONG BUY' || s === 'STRONG BUY SIGNAL') return ['sig-strong-buy', 'STRONG BUY'];
@@ -682,9 +658,7 @@
     return 'var(--text-subtle)';
   }
 
-  /* ================================================================
-     TRENDING TICKER CARDS  (pinned 4)
-  ================================================================ */
+  // TRENDING TICKER CARDS  (pinned 4)
   const PINNED = ['NVDA', 'AAPL', 'TSLA', 'MSFT'];
 
   function skeletonCard() {
@@ -740,9 +714,7 @@
 
   loadTickerCards();
 
-  /* ================================================================
-     TOP GAINERS + LOSERS
-  ================================================================ */
+  // TOP GAINERS + LOSERS
   async function loadGainersLosers() {
     const gBody = document.getElementById('gainersBody');
     const lBody = document.getElementById('losersBody');
@@ -789,9 +761,7 @@
   }
   loadGainersLosers();
 
-  /* ================================================================
-     AI RECOMMENDATIONS — personalized by user sector preferences
-  ================================================================ */
+  // AI RECOMMENDATIONS — personalized by user sector preferences
 
   /* Tickers grouped by the same sectors offered in register.html */
   const SECTOR_TICKERS = {
@@ -815,7 +785,7 @@
     return [...new Set(Object.values(SECTOR_TICKERS).flat())];
   }
 
-  /* ---- Accordion helpers ---- */
+  // Accordion helpers
   const _recLoaded  = new Set();
 
   function _confInfo(pct) {
@@ -1130,9 +1100,7 @@
     renderRecRows();
   });
 
-  /* ================================================================
-     NAV SEARCH — trending + recent dropdown
-  ================================================================ */
+  // NAV SEARCH — trending + recent dropdown
   const navInput = document.getElementById('navSearchInput');
   const navDrop  = document.getElementById('navSearchDrop');
 
@@ -1196,9 +1164,7 @@
     if (!document.getElementById('navSearch').contains(e.target)) navDrop.classList.remove('open');
   });
 
-  /* ================================================================
-     SHARED INITS
-  ================================================================ */
+  // SHARED INITS
   initHoverSidebar();
   initAvatarDropdown();
   populateAvatar();

@@ -1,6 +1,6 @@
 body { display: flex; flex-direction: column; min-height: 100vh; }
 
-/* ---- Split layout ---- */
+/* Split layout */
 .auth-page {
   display: grid;
   grid-template-columns: 1fr 1fr;
