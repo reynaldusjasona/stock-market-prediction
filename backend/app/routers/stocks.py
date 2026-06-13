@@ -9,6 +9,7 @@ from app.services.stock_service import (
     getOrderBook as svcGetOrderBook,
     getPriceHistory as svcGetPriceHistory,
     getLivePrice as svcGetLivePrice,
+    getTopGainersandLosers as svcGetTopGainersandLosers,
     queryStockDB,
 )
 
@@ -27,6 +28,14 @@ async def search(
     q: str = Query(..., description="Ticker symbol or company name"),
 ):
     return await queryStockDB(q)
+
+
+@router.get("/stocks/movers", tags=["Stocks"])
+async def getTopGainersandLosers():
+    result = await svcGetTopGainersandLosers()
+    if not result.get("gainers") and not result.get("losers"):
+        raise HTTPException(status_code=404, detail="No mover data available")
+    return result
 
 
 @router.get("/stocks", tags=["Stocks"])
@@ -68,7 +77,10 @@ async def getLivePrice(ticker: str):
 
 
 @router.get("/stocks/{ticker}/orderbook", tags=["Stocks"])
-async def getOrderBook(ticker: str):
+async def getOrderBook(
+    ticker: str,
+    _user: dict = Depends(get_current_user),
+):
     return await svcGetOrderBook(ticker)
 
 
