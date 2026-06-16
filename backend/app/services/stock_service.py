@@ -10,8 +10,8 @@ from app.core.database import supabase
 from fastapi import HTTPException
 
 
-
 _executor = ThreadPoolExecutor(max_workers=10)
+
 
 # ---- yfinance helpers (sync, run in executor) ----
 def _yf_quote_sync(ticker: str) -> dict:
