@@ -1,7 +1,4 @@
 from fastapi import APIRouter
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-import yfinance as yf
 
 from app.services import news_service
 
