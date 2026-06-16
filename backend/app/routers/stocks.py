@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.core.security import get_current_user
 from app.services.stock_service import (
     calculateIndicators,
+    fetchFundamentals,
     fetchPriceData,
     fetchStockList,
     fetchTrendingTickers,
@@ -67,8 +68,11 @@ async def getStockChart(
 
 
 @router.get("/stocks/{ticker}/history", tags=["Stocks"])
-async def getPriceHistory(ticker: str):
-    return await svcGetPriceHistory(ticker)
+async def getPriceHistory(
+    ticker: str,
+    period: str = Query("1M", description="1W | 1M | 3M | 1Y"),
+):
+    return await svcGetPriceHistory(ticker, period)
 
 
 @router.get("/stocks/{ticker}/price", tags=["Stocks"])
@@ -82,6 +86,11 @@ async def getOrderBook(
     _user: dict = Depends(get_current_user),
 ):
     return await svcGetOrderBook(ticker)
+
+
+@router.get("/stocks/{ticker}/fundamentals", tags=["Stocks"])
+async def fundamentals(ticker: str):
+    return await fetchFundamentals(ticker.upper())
 
 
 @router.get("/stocks/{ticker}", tags=["Stocks"])
