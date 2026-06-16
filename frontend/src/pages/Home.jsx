@@ -1,3 +1,4 @@
+import api, { requireAuth, redirectIfLoggedIn, closeSidebar, showToast, fmt, fmtChange, fmtSignal, escHtml, debounce, initHoverSidebar, initAvatarDropdown, populateAvatar } from "../js/api.js"
 import { useEffect } from 'react'
 import '../styles/shared.css'
 import '../styles/home.css'
