@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import * as LightweightCharts from 'lightweight-charts'
 import '../styles/shared.css'
 import '../styles/stock.css'
@@ -9,6 +9,7 @@ export default function Stock() {
     ? (localStorage.getItem('sw_role') || 'guest').toLowerCase()
     : 'guest';
   const isTrader = role === 'trader';
+  const [showAllNews, setShowAllNews] = useState(false);
 
   useEffect(() => {
     const ROLES = {
@@ -408,15 +409,31 @@ export default function Stock() {
     };
 
     // NEWS
+    let _allNewsItems = [];
+    let _newsShowAll = false;
     function fmtPubDate(raw){if(!raw)return'';try{const d=typeof raw==='number'?new Date(raw*1000):new Date(raw);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch{return'';}}
+    function renderNewsList(show){
+      const list=document.getElementById('newsList');if(!list||!_allNewsItems.length)return;
+      const sorted=[..._allNewsItems].sort((a,b)=>{const da=a.published_at?(typeof a.published_at==='number'?a.published_at*1000:new Date(a.published_at).getTime()):0;const db=b.published_at?(typeof b.published_at==='number'?b.published_at*1000:new Date(b.published_at).getTime()):0;return db-da;});
+      const toShow=show?sorted:sorted.slice(0,3);
+      const articlesHTML=toShow.map(n=>`<a class="news-item" href="${escHtml(n.url||'#')}" target="_blank" rel="noopener noreferrer">${n.thumbnail?`<img class="news-thumb" src="${escHtml(n.thumbnail)}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<div class="news-info"><div class="news-title">${escHtml(n.title)}</div><div class="news-meta">${escHtml(n.source||'')}${n.published_at?' · '+fmtPubDate(n.published_at):''}</div></div><svg class="news-ext" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 10L10 2M10 2H5M10 2v5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg></a>`).join('');
+      const btnHTML=sorted.length>3?`<div style="padding:0.75rem 1rem;text-align:center;"><button class="btn btn-ghost btn-sm" onclick="window._toggleShowAllNews()">${show?'Show Less':'See All'}</button></div>`:'';
+      list.innerHTML=articlesHTML+btnHTML;
+    }
     async function loadNews(){
       const list=document.getElementById('newsList');if(!list)return;
       try{
         const items=await api.getNews(ticker,6);
         if(!items||!items.length){list.innerHTML='<div style="padding:1.5rem;text-align:center;font-size:.875rem;color:var(--text-muted);">No news available.</div>';return;}
-        list.innerHTML=items.map(n=>`<a class="news-item" href="${escHtml(n.url||'#')}" target="_blank" rel="noopener noreferrer">${n.thumbnail?`<img class="news-thumb" src="${escHtml(n.thumbnail)}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}<div class="news-info"><div class="news-title">${escHtml(n.title)}</div><div class="news-meta">${escHtml(n.source||'')}${n.published_at?' · '+fmtPubDate(n.published_at):''}</div></div><svg class="news-ext" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 10L10 2M10 2H5M10 2v5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg></a>`).join('');
+        _allNewsItems=items;
+        renderNewsList(false);
       }catch{list.innerHTML='<div style="padding:1.5rem;text-align:center;font-size:.875rem;color:var(--text-muted);">News unavailable.</div>';}
     }
+    window._toggleShowAllNews=function(){
+      _newsShowAll=!_newsShowAll;
+      setShowAllNews(_newsShowAll);
+      renderNewsList(_newsShowAll);
+    };
 
     // ORDER BOOK
     async function loadOrderBook(){
