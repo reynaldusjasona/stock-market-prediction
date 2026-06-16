@@ -1,14 +1,14 @@
 import asyncio
 import math
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
 from typing import Optional
 
 import yfinance as yf
 
-from app.core.api_clients import alphaVantageGet, finnhubGet
+from app.core.api_clients import finnhubGet
 from app.core.database import supabase
 from fastapi import HTTPException
+
 
 _executor = ThreadPoolExecutor(max_workers=10)
 
