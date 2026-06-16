@@ -274,6 +274,26 @@
     /* Responsive */
     @media (max-width: 1024px) { .content-grid { grid-template-columns: 1fr; } .content-right { order: -1; } .indicators-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 640px) { .stock-header { flex-direction: column; } .price-change-row { justify-content: flex-start; } .indicators-grid { grid-template-columns: 1fr 1fr; } }
+
+    /* Stock section tabs */
+    .stock-tabs {
+      display: flex; overflow-x: auto; gap: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: 0 0.25rem;
+    }
+    .stock-tab {
+      padding: 0.75rem 1.125rem; font-size: 0.8125rem; font-weight: 500;
+      background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--text-muted); cursor: pointer; white-space: nowrap;
+      transition: color var(--transition), border-color var(--transition);
+      margin-bottom: -1px;
+    }
+    .stock-tab:hover:not(.active) { color: var(--text-primary); }
+    .stock-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
   </style>
 </head>
 <body>
@@ -282,7 +302,7 @@
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <a href="index.html" class="sidebar-logo">
+    <a href="/" class="sidebar-logo">
       <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#00ff41" fill-opacity="0.12"/><polyline points="5,18 10,12 14,15 19,8 23,11" stroke="#00ff41" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="11" r="2" fill="#00ff41"/></svg>
       StockWise <em>AI</em>
     </a>
@@ -292,22 +312,22 @@
   </div>
   <div class="sidebar-body">
     <nav class="sidebar-nav-top">
-      <a href="dashboard.html" class="sidebar-link">
+      <a href="/dashboard" class="sidebar-link">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/></svg>
         Dashboard
       </a>
-      <a href="alerts.html" class="sidebar-link">
+      <a href="/alerts" class="sidebar-link">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a5.5 5.5 0 00-5.5 5.5v3l-1 1.5h13l-1-1.5V7A5.5 5.5 0 008 1.5z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><path d="M6.5 12.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
         Alerts
       </a>
-      <a href="settings.html" class="sidebar-link">
+      <a href="/settings" class="sidebar-link">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.25"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
         Settings
       </a>
     </nav>
     <nav class="sidebar-nav-bottom">
       <div class="sidebar-divider"></div>
-      <a href="help.html" class="sidebar-link">
+      <a href="/help" class="sidebar-link">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.25"/><path d="M8 11v.5M8 5a2 2 0 010 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
         Help
       </a>
@@ -322,14 +342,14 @@
 <!-- Navbar -->
 <nav class="navbar">
   <div class="navbar-inner">
-    <a href="index.html" class="logo-btn">
+    <a href="/" class="logo-btn">
       <svg width="26" height="26" viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="6" fill="#00ff41" fill-opacity="0.12"/><polyline points="5,18 10,12 14,15 19,8 23,11" stroke="#00ff41" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="11" r="2" fill="#00ff41"/></svg>
       StockWise <em>AI</em>
     </a>
     <div class="navbar-actions">
       <div class="guest-only" style="display:flex;gap:0.5rem;align-items:center;">
-        <a href="login.html" class="btn btn-ghost btn-sm">Sign In</a>
-        <a href="register.html" class="btn btn-accent btn-sm">Get Started</a>
+        <a href="/login" class="btn btn-ghost btn-sm">Sign In</a>
+        <a href="/register" class="btn btn-accent btn-sm">Get Started</a>
       </div>
       <div class="nav-avatar-wrap" id="avatarWrap" style="display:none;">
         <button class="nav-avatar-btn" id="avatarBtn" aria-expanded="false" aria-haspopup="true">
@@ -340,7 +360,7 @@
         <div class="nav-dropdown" id="navDropdown" role="menu">
           <div class="nav-dropdown-user"><span id="ddName">—</span><span id="ddEmail" class="muted">—</span></div>
           <div class="nav-dropdown-divider"></div>
-          <a href="account.html" class="nav-dropdown-item">
+          <a href="/account" class="nav-dropdown-item">
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-3.038 2.462-5.5 5.5-5.5S13 9.962 13 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
             My Account
           </a>
@@ -365,7 +385,7 @@
       Back
     </button>
     <div class="breadcrumb">
-      <a href="dashboard.html" style="color:inherit;">Dashboard</a>
+      <a href="/dashboard" style="color:inherit;">Dashboard</a>
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
       <span id="breadTicker">…</span>
     </div>
@@ -389,6 +409,17 @@
     </div>
   </div>
 
+  <!-- Section tabs -->
+  <div class="stock-tabs" id="stockTabs">
+    <button class="stock-tab active" data-tab="overview">Overview</button>
+    <button class="stock-tab" data-tab="fundamentals">Fundamentals</button>
+    <button class="stock-tab" data-tab="news">News</button>
+    <button class="stock-tab" data-tab="orderbook">Order Book</button>
+    <button class="stock-tab" data-tab="prediction">Prediction History</button>
+  </div>
+
+  <!-- Overview panel -->
+  <div class="tab-panel active" id="tabOverview" data-panel="overview">
   <!-- Content grid -->
   <div class="content-grid">
 
@@ -437,6 +468,13 @@
           <button class="ind-btn" data-key="obv">OBV</button>
           <button class="ind-btn" data-key="vol">Volume</button>
         </div>
+        <!-- Indicator toggle bar — Guest / Investor -->
+        <div class="ind-bar" id="basicBar" style="display:none;">
+          <button class="ind-btn" data-bkey="sma">SMA 20</button>
+          <button class="ind-btn" data-bkey="ema">EMA 20</button>
+          <button class="ind-btn" data-bkey="rsi">RSI</button>
+          <button class="ind-btn" data-bkey="vol">Volume</button>
+        </div>
         <div class="chart-body">
           <div class="chart-loading" id="chartLoading">
             <span class="spinner" style="width:28px;height:28px;"></span>
@@ -465,17 +503,11 @@
         </div>
       </div>
 
-      <!-- Fundamental Analysis — investor only, rendered by JS -->
-      <div id="fundamentalsSection"></div>
+      <!-- Overview: key fundamentals summary (populated by JS) -->
+      <div id="overviewFundamentals"></div>
 
-      <!-- News & Sentiment — rendered by JS based on role -->
-      <div id="newsSection"></div>
-
-      <!-- Order Book — rendered by JS based on role -->
-      <div id="orderbookSection"></div>
-
-      <!-- AI Prediction History — rendered by JS based on role -->
-      <div id="histSection"></div>
+      <!-- Overview: latest news summary (populated by JS) -->
+      <div id="overviewNews"></div>
 
     </div><!-- /content-left -->
 
@@ -493,7 +525,7 @@
           <div class="pred-locked">
             <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect x="8" y="16" width="20" height="16" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M12 16v-5a6 6 0 0112 0v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             <p>Sign in to access AI price predictions and BUY/SELL/HOLD signals.</p>
-            <a href="login.html" class="btn btn-accent btn-sm" style="margin-top:0.25rem;">Sign In to Unlock</a>
+            <a href="/login" class="btn btn-accent btn-sm" style="margin-top:0.25rem;">Sign In to Unlock</a>
           </div>
         </div>
       </div>
@@ -514,8 +546,28 @@
     </div><!-- /content-right -->
 
   </div><!-- /content-grid -->
+  </div><!-- /tabOverview -->
 
-</div>
+  <!-- Fundamentals panel -->
+  <div class="tab-panel" id="tabFundamentals" data-panel="fundamentals">
+    <div id="fundamentalsSection"></div>
+  </div>
+
+  <!-- News panel -->
+  <div class="tab-panel" id="tabNews" data-panel="news">
+    <div id="newsSection"></div>
+  </div>
+
+  <!-- Order Book panel -->
+  <div class="tab-panel" id="tabOrderBook" data-panel="orderbook">
+    <div id="orderbookSection"></div>
+  </div>
+
+  <!-- Prediction History panel -->
+  <div class="tab-panel" id="tabPrediction" data-panel="prediction">
+    <div id="histSection"></div>
+  </div>
+
 </div>
 
 <div id="toast-container"></div>
@@ -534,8 +586,9 @@
 
   /* Apply indicator visibility immediately — before any rendering */
   const isTrader = role === 'trader';
-  document.getElementById('indBar').style.display         = isTrader ? ''     : 'none';
-  document.getElementById('indicatorsCard').style.display = isTrader ? 'none' : '';
+  document.getElementById('indBar').style.display      = isTrader ? ''     : 'none';
+  document.getElementById('basicBar').style.display    = isTrader ? 'none' : '';
+  document.getElementById('indicatorsCard').style.display = 'none';
 
   const ROLES = {
     guest: {
@@ -572,19 +625,15 @@
 
   const cfg = ROLES[role] || ROLES.guest;
 
-  /* ================================================================
-     TICKER
-  ================================================================ */
+  // TICKER
   const params = new URLSearchParams(window.location.search);
   const ticker = (params.get('ticker') || '').toUpperCase();
-  if (!ticker) { window.location.href = 'dashboard.html'; return; }
+  if (!ticker) { window.location.href = '/dashboard'; return; }
 
   document.getElementById('breadTicker').textContent = ticker;
   document.title = `${ticker} — StockWise AI`;
 
-  /* ================================================================
-     INDICATOR STATE (trader)
-  ================================================================ */
+  // INDICATOR STATE (trader)
   const _indState = {
     sma:      { on:false, period:20  },
     ema:      { on:false, period:20  },
@@ -604,9 +653,7 @@
   const OVERLAY_KEYS = ['sma','ema','bb','vwap','ichimoku','vol'];
   const PANE_KEYS    = ['rsi','macd','stoch','willr','atr','obv'];
 
-  /* ================================================================
-     HELPER: upgrade card HTML
-  ================================================================ */
+  // HELPER: upgrade card HTML
   const LOCK_SVG = `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="upgrade-card-lock"><rect x="6" y="13" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.4"/><path d="M9 13v-4a5 5 0 0110 0v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`;
 
   function upgradeCard(title, desc, feature) {
@@ -616,13 +663,11 @@
         <div class="upgrade-card-title">${title}</div>
         <div class="upgrade-card-desc">${desc}</div>
       </div>
-      <a href="register.html?plan=${feature}" class="btn btn-accent btn-sm" style="flex-shrink:0;">Upgrade</a>
+      <a href="/register?plan=${feature}" class="btn btn-accent btn-sm" style="flex-shrink:0;">Upgrade</a>
     </div>`;
   }
 
-  /* ================================================================
-     APPLY ROLE GATING — run once at startup
-  ================================================================ */
+  // APPLY ROLE GATING — run once at startup
   function applyRoleGating() {
     /* Role badge in header */
     const meta = document.getElementById('stockMeta');
@@ -645,8 +690,9 @@
     });
 
     /* Indicator bar visibility already set at top of IIFE — just re-affirm */
-    document.getElementById('indBar').style.display         = isTrader ? ''     : 'none';
-    document.getElementById('indicatorsCard').style.display = isTrader ? 'none' : '';
+    document.getElementById('indBar').style.display   = isTrader ? ''     : 'none';
+    document.getElementById('basicBar').style.display = isTrader ? 'none' : '';
+    document.getElementById('indicatorsCard').style.display = 'none';
 
     /* Fundamental Analysis — investor only */
     const fundEl = document.getElementById('fundamentalsSection');
@@ -666,8 +712,17 @@
         </div>
       </div>`;
       loadFundamentals();
+    } else if (role === 'guest') {
+      fundEl.innerHTML = `<div class="card"><div class="card-body"><div class="pred-locked">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect x="8" y="16" width="20" height="16" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M12 16v-5a6 6 0 0112 0v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <p>Sign in to access fundamental analysis.</p>
+        <a href="/login" class="btn btn-accent btn-sm" style="margin-top:0.25rem;">Sign In</a>
+      </div></div></div>`;
     } else {
-      fundEl.innerHTML = '';
+      fundEl.innerHTML = `<div class="card"><div class="card-body"><div class="pred-locked">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect x="8" y="16" width="20" height="16" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M12 16v-5a6 6 0 0112 0v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <p>Fundamentals are available for Investor accounts only.</p>
+      </div></div></div>`;
     }
 
     /* News section */
@@ -727,9 +782,7 @@
 
   }
 
-  /* ================================================================
-     STOCK INFO
-  ================================================================ */
+  // STOCK INFO
   async function loadStockInfo() {
     try {
       const data   = await api.getStock(ticker);
@@ -756,9 +809,7 @@
     }
   }
 
-  /* ================================================================
-     LIVE PRICE
-  ================================================================ */
+  // LIVE PRICE
   async function refreshPrice() {
     const el = document.getElementById('liveQuoteBody');
     el.innerHTML = '<div class="skeleton" style="height:80px;"></div>';
@@ -780,9 +831,7 @@
   }
   window.refreshPrice = refreshPrice;
 
-  /* ================================================================
-     CHART — with overlay support for Trader
-  ================================================================ */
+  // CHART — with overlay support for Trader
   let _lwChart           = null;
   let _series            = {};
   let _chartRo           = null;
@@ -803,7 +852,7 @@
     return out;
   }
 
-  /* ---- Candle-based calculation functions (used by trader indicators) ---- */
+  // Candle-based calculation functions (used by trader indicators)
   function calcSMA(cs, p) {
     const r = [];
     for (let i = p-1; i < cs.length; i++) {
@@ -1010,8 +1059,8 @@
       }
     }
 
-    /* Guest/Investor: update indicator cards */
-    if (!isTrader) updateIndicatorCards();
+    /* Guest/Investor: re-apply any active basic toggles */
+    if (!isTrader) _reapplyBasic();
 
     /* 1W gives ~52 candles — fit those in view too. Only 1D raw daily (up to ~7)
        needs no special handling. Always fitContent; user can zoom/pan freely. */
@@ -1207,9 +1256,7 @@
     });
   });
 
-  /* ================================================================
-     INDICATOR TOGGLE BUTTONS (trader)
-  ================================================================ */
+  // INDICATOR TOGGLE BUTTONS (trader)
   /* Period inputs: stop propagation so clicking doesn't toggle the button */
   document.querySelectorAll('.ind-period').forEach(input => {
     input.addEventListener('pointerdown', e => e.stopPropagation());
@@ -1245,9 +1292,7 @@
     });
   });
 
-  /* ================================================================
-     INDICATOR CARDS (guest + investor) — computed from _chartData
-  ================================================================ */
+  // INDICATOR CARDS (guest + investor) — computed from _chartData
   function updateIndicatorCards() {
     const grid = document.getElementById('indicatorsGrid');
     if (!grid) return;
@@ -1285,9 +1330,31 @@
     ].join('');
   }
 
-  /* ================================================================
-     OVERLAY MANAGEMENT (trader)
-  ================================================================ */
+  // BASIC TOGGLES (guest + investor)
+  const _basicState = { sma: false, ema: false, rsi: false, vol: false };
+
+  function _reapplyBasic() {
+    if (!_chartData?.length) return;
+    if (_basicState.sma) applyOverlay('sma');
+    if (_basicState.ema) applyOverlay('ema');
+    if (_basicState.rsi) openSubPane('rsi');
+    if (_basicState.vol) applyOverlay('vol');
+  }
+
+  document.querySelectorAll('#basicBar .ind-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const k = btn.dataset.bkey;
+      _basicState[k] = !_basicState[k];
+      btn.classList.toggle('active', _basicState[k]);
+      if (k === 'rsi') {
+        _basicState[k] ? openSubPane('rsi') : closeSubPane('rsi');
+      } else {
+        _basicState[k] ? applyOverlay(k) : removeOverlay(k);
+      }
+    });
+  });
+
+  // OVERLAY MANAGEMENT (trader)
   function _rm(k) { if (_ovSeries[k]&&_lwChart){try{_lwChart.removeSeries(_ovSeries[k]);}catch{}delete _ovSeries[k];} }
 
   function removeOverlay(key) {
@@ -1341,9 +1408,7 @@
     }
   }
 
-  /* ================================================================
-     SUB-PANE MANAGEMENT (trader)
-  ================================================================ */
+  // SUB-PANE MANAGEMENT (trader)
   const PANE_NAMES = { rsi:'RSI', macd:'MACD', stoch:'Stoch', willr:'W%R', atr:'ATR', obv:'OBV' };
 
   function openSubPane(key) {
@@ -1433,9 +1498,7 @@
     document.querySelector(`.ind-btn[data-key="${key}"]`)?.classList.remove('active');
   };
 
-  /* ================================================================
-     NEWS (investor / trader)
-  ================================================================ */
+  // NEWS (investor / trader)
   function fmtPubDate(raw) {
     if (!raw) return '';
     try {
@@ -1467,9 +1530,7 @@
     }
   }
 
-  /* ================================================================
-     ORDER BOOK
-  ================================================================ */
+  // ORDER BOOK
   async function loadOrderBook() {
     try {
       const data = await api.getOrderBook(ticker);
@@ -1509,9 +1570,7 @@
     }
   }
 
-  /* ================================================================
-     AI PREDICTION
-  ================================================================ */
+  // AI PREDICTION
   async function loadPrediction() {
     if (!api.isLoggedIn()) return;
     const body = document.getElementById('predBody');
@@ -1550,9 +1609,7 @@
   }
   window.loadPrediction = loadPrediction;
 
-  /* ================================================================
-     PREDICTION HISTORY
-  ================================================================ */
+  // PREDICTION HISTORY
   async function loadPredHistory() {
     if (!api.isLoggedIn()) return;
     const content = document.getElementById('histContent');
@@ -1581,9 +1638,7 @@
     }
   }
 
-  /* ================================================================
-     FUNDAMENTAL ANALYSIS (investor only)
-  ================================================================ */
+  // FUNDAMENTAL ANALYSIS (investor only)
   async function loadFundamentals() {
     const grid = document.getElementById('fundGrid');
     const desc = document.getElementById('fundDesc');
@@ -1650,9 +1705,7 @@
     }
   }
 
-  /* ================================================================
-     BOOT
-  ================================================================ */
+  // BOOT
   applyRoleGating();
   loadStockInfo();
   loadChart(cfg.defaultPeriod);
@@ -1661,6 +1714,45 @@
   initHoverSidebar();
   initAvatarDropdown();
   populateAvatar();
+
+  // Tab switching
+  window.switchTab = function(tabName) {
+    document.querySelectorAll('.stock-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tabName));
+  };
+  document.querySelectorAll('.stock-tab').forEach(t => {
+    t.addEventListener('click', () => window.switchTab(t.dataset.tab));
+  });
+
+  // Populate overview summaries from already-loaded section data
+  (function setupOverviewSummaries() {
+    const ovFund = document.getElementById('overviewFundamentals');
+    if (ovFund && cfg.showFundamentals) {
+      const obs = new MutationObserver(() => {
+        const grid = document.getElementById('fundGrid');
+        if (!grid) return;
+        const tiles = Array.from(grid.querySelectorAll('.fund-tile')).filter(t => !t.querySelector('.skeleton'));
+        if (!tiles.length) return;
+        obs.disconnect();
+        ovFund.innerHTML = '<div class="card"><div class="card-header"><div><div class="card-title">Key Metrics</div></div><button class="btn btn-ghost btn-sm" onclick="switchTab(\'fundamentals\')">See all →</button></div><div class="card-body"><div class="fund-grid" style="grid-template-columns:repeat(3,1fr)">' + tiles.slice(0, 3).map(t => t.outerHTML).join('') + '</div></div></div>';
+      });
+      const fundPanel = document.getElementById('tabFundamentals');
+      if (fundPanel) obs.observe(fundPanel, { childList: true, subtree: true, characterData: true });
+    }
+    const ovNews = document.getElementById('overviewNews');
+    if (ovNews && cfg.showNews) {
+      const obs2 = new MutationObserver(() => {
+        const list = document.getElementById('newsList');
+        if (!list) return;
+        const items = list.querySelectorAll('.news-item');
+        if (!items.length) return;
+        obs2.disconnect();
+        ovNews.innerHTML = '<div class="card"><div class="card-header"><div><div class="card-title">Latest News</div></div><button class="btn btn-ghost btn-sm" onclick="switchTab(\'news\')">See all →</button></div><div class="news-list">' + Array.from(items).slice(0, 2).map(i => i.outerHTML).join('') + '</div></div>';
+      });
+      const newsPanel = document.getElementById('tabNews');
+      if (newsPanel) obs2.observe(newsPanel, { childList: true, subtree: true });
+    }
+  })();
 })();
 </script>
 </body>
