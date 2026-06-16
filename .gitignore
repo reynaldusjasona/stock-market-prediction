@@ -11,9 +11,6 @@ venv/
 *.egg-info/
 
 # ML models
-backend/ml/saved_models/
-*.pkl
-*.joblib
 
 # OS
 .DS_Store
