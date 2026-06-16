@@ -9,9 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/shared.css"/>
   <style>
-    /* ================================================================
-       NAV overrides — Logo | Centered Search | Bell + Avatar
-    ================================================================ */
+    /* NAV overrides — Logo | Centered Search | Bell + Avatar */
     .navbar .dash-nav {
       position: relative; display: flex; align-items: center;
       justify-content: flex-start; height: 100%;
@@ -79,14 +77,10 @@
       background: var(--accent); border: 1.5px solid var(--bg-surface);
     }
 
-    /* ================================================================
-       PAGE SHELL
-    ================================================================ */
+    /* PAGE SHELL */
     .dash-page { padding-top: var(--navbar-h); min-height: 100vh; display: flex; flex-direction: column; }
 
-    /* ================================================================
-       HERO
-    ================================================================ */
+    /* HERO */
     .dash-hero {
       background: var(--bg);
       border-bottom: 1px solid var(--border);
@@ -105,9 +99,7 @@
       max-width: 540px; margin: 0 auto;
     }
 
-    /* ================================================================
-       CONTENT
-    ================================================================ */
+    /* CONTENT */
     .dash-content {
       flex: 1;
       max-width: 1280px; margin: 0 auto;
@@ -125,9 +117,7 @@
     .view-all-link { font-size: 0.8125rem; color: var(--accent); text-decoration: none; font-weight: 500; }
     .view-all-link:hover { text-decoration: underline; }
 
-    /* ================================================================
-       TRENDING TICKER CARDS
-    ================================================================ */
+    /* TRENDING TICKER CARDS */
     .ticker-grid {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
     }
@@ -150,9 +140,7 @@
     .ticker-sparkline svg { display: block; width: 100%; height: 48px; }
     .ticker-price { font-family: var(--font-mono); font-size: 1.125rem; font-weight: 700; color: var(--text-primary); }
 
-    /* ================================================================
-       TOP GAINERS / LOSERS
-    ================================================================ */
+    /* TOP GAINERS / LOSERS */
     .gl-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
     .gl-panel {
       background: var(--bg-surface); border: 1px solid var(--border);
@@ -177,9 +165,7 @@
     .gl-ticker { font-family: var(--font-mono); font-weight: 700; }
     .gl-price  { font-family: var(--font-mono); font-weight: 600; }
 
-    /* ================================================================
-       AI RECOMMENDATIONS
-    ================================================================ */
+    /* AI RECOMMENDATIONS */
     .rec-header-row {
       display: flex; align-items: flex-start; justify-content: space-between;
       gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
@@ -252,7 +238,7 @@
     }
     .btn-view:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 
-    /* ---- Accordion rec rows ---- */
+    /* Accordion rec rows */
     .rec-row { cursor: pointer; }
     .rec-row.is-open { background: #0d1117 !important; border-left: 2px solid var(--accent); }
     .rec-row.is-open td:first-child { padding-left: calc(1.125rem - 2px); }
@@ -314,9 +300,7 @@
     .btn-load-more:hover { color: var(--text-primary); }
     .btn-load-more:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* ================================================================
-       FOOTER
-    ================================================================ */
+    /* FOOTER */
     .site-footer {
       background: #070809; border-top: 1px solid var(--border);
       margin-top: auto;
@@ -356,9 +340,7 @@
     }
     .footer-icon-btn:hover { border-color: var(--border-hover); color: var(--text-muted); }
 
-    /* ================================================================
-       RESPONSIVE
-    ================================================================ */
+    /* RESPONSIVE */
     @media (max-width: 1100px) { .ticker-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 768px) {
       .ticker-grid { grid-template-columns: repeat(2, 1fr); }
@@ -379,7 +361,7 @@
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <aside class="sidebar" id="sidebar" aria-label="Main sidebar">
   <div class="sidebar-header">
-    <a href="index.html" class="sidebar-logo">
+    <a href="/" class="sidebar-logo">
       <svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">
         <rect width="28" height="28" rx="6" fill="#00ff41" fill-opacity="0.12"/>
         <polyline points="5,18 10,12 14,15 19,8 23,11" stroke="#00ff41" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -393,22 +375,22 @@
   </div>
   <div class="sidebar-body">
     <nav class="sidebar-nav-top">
-      <a href="dashboard.html" class="sidebar-link active">
+      <a href="/dashboard" class="sidebar-link active">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.25"/></svg>
         Dashboard
       </a>
-      <a href="alerts.html" class="sidebar-link">
+      <a href="/alerts" class="sidebar-link">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5a5.5 5.5 0 00-5.5 5.5v3l-1 1.5h13l-1-1.5V7A5.5 5.5 0 008 1.5z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><path d="M6.5 12.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
         Alerts
       </a>
-      <a href="settings.html" class="sidebar-link">
+      <a href="/settings" class="sidebar-link">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.25"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
         Settings
       </a>
     </nav>
     <nav class="sidebar-nav-bottom">
       <div class="sidebar-divider"></div>
-      <a href="help.html" class="sidebar-link">
+      <a href="/help" class="sidebar-link">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.25"/><path d="M8 11v.5M8 5a2 2 0 010 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
         Help
       </a>
@@ -424,7 +406,7 @@
 <nav class="navbar" aria-label="Main navigation">
   <div class="navbar-inner dash-nav">
 
-    <a href="index.html" class="logo-btn" aria-label="Go to homepage">
+    <a href="/" class="logo-btn" aria-label="Go to homepage">
       <svg width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
         <rect width="28" height="28" rx="6" fill="#00ff41" fill-opacity="0.12"/>
         <polyline points="5,18 10,12 14,15 19,8 23,11" stroke="#00ff41" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -464,7 +446,7 @@
             <span id="ddEmail" class="muted">—</span>
           </div>
           <div class="nav-dropdown-divider"></div>
-          <a href="account.html" class="nav-dropdown-item" role="menuitem">
+          <a href="/account" class="nav-dropdown-item" role="menuitem">
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><circle cx="7.5" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-3.038 2.462-5.5 5.5-5.5S13 9.962 13 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
             My Account
           </a>
@@ -497,7 +479,7 @@
     <section>
       <div class="section-row">
         <h2>Trending Tickers</h2>
-        <a href="index.html" class="view-all-link">View All</a>
+        <a href="/" class="view-all-link">View All</a>
       </div>
       <div class="ticker-grid" id="tickerGrid"></div>
     </section>
@@ -618,9 +600,7 @@
 (function () {
   if (!requireAuth()) return;
 
-  /* ================================================================
-     AVATAR COLOURS — consistent per ticker
-  ================================================================ */
+  // AVATAR COLOURS — consistent per ticker
   const AVT_COLORS = ['#2563eb','#7c3aed','#0891b2','#0d9488','#d97706','#dc2626','#9333ea','#16a34a'];
   function avatarColor(str) {
     let h = 0;
@@ -628,9 +608,7 @@
     return AVT_COLORS[h];
   }
 
-  /* ================================================================
-     BAR CHART SPARKLINE
-  ================================================================ */
+  // BAR CHART SPARKLINE
   function barSparkline(prices, up) {
     if (!prices || prices.length < 2) {
       /* fallback placeholder bars */
@@ -657,9 +635,7 @@
     return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${bars}</svg>`;
   }
 
-  /* ================================================================
-     SIGNAL BADGE
-  ================================================================ */
+  // SIGNAL BADGE
   function signalBadge(raw) {
     const s = (raw ?? '').toString().toUpperCase().replace(/_/g, ' ').trim();
     if (s === 'STRONG BUY' || s === 'STRONG BUY SIGNAL') return ['sig-strong-buy', 'STRONG BUY'];
@@ -682,9 +658,7 @@
     return 'var(--text-subtle)';
   }
 
-  /* ================================================================
-     TRENDING TICKER CARDS  (pinned 4)
-  ================================================================ */
+  // TRENDING TICKER CARDS  (pinned 4)
   const PINNED = ['NVDA', 'AAPL', 'TSLA', 'MSFT'];
 
   function skeletonCard() {
@@ -724,7 +698,7 @@
       const raw    = Array.isArray(hist) ? hist : (hist?.history || hist?.prices || hist?.data || []);
       const prices = raw.map(p => typeof p === 'number' ? p : (p?.close ?? p?.price ?? null)).filter(v => v != null);
 
-      return `<a href="stock.html?ticker=${ticker}" class="ticker-card">
+      return `<a href="/stock?ticker=${ticker}" class="ticker-card">
         <div class="ticker-card-top">
           <div>
             <div class="ticker-symbol">${ticker}</div>
@@ -740,9 +714,7 @@
 
   loadTickerCards();
 
-  /* ================================================================
-     TOP GAINERS + LOSERS
-  ================================================================ */
+  // TOP GAINERS + LOSERS
   async function loadGainersLosers() {
     const gBody = document.getElementById('gainersBody');
     const lBody = document.getElementById('losersBody');
@@ -771,7 +743,7 @@
         const rawPrice = priceMap[t] ?? s.price ?? null;
         const p       = rawPrice != null ? '$' + fmt(rawPrice) : '—';
         const { text: chgTxt, cls: chgCls } = fmtChange(s._chg);
-        return `<tr onclick="window.location='stock.html?ticker=${t}'">
+        return `<tr onclick="window.location='/stock?ticker=${t}'">
           <td><span class="gl-ticker">${t}</span></td>
           <td><span class="gl-price">${p}</span></td>
           <td style="text-align:right;"><span class="badge ${chgCls}">${chgTxt}</span></td>
@@ -789,9 +761,7 @@
   }
   loadGainersLosers();
 
-  /* ================================================================
-     AI RECOMMENDATIONS — personalized by user sector preferences
-  ================================================================ */
+  // AI RECOMMENDATIONS — personalized by user sector preferences
 
   /* Tickers grouped by the same sectors offered in register.html */
   const SECTOR_TICKERS = {
@@ -815,7 +785,7 @@
     return [...new Set(Object.values(SECTOR_TICKERS).flat())];
   }
 
-  /* ---- Accordion helpers ---- */
+  // Accordion helpers
   const _recLoaded  = new Set();
 
   function _confInfo(pct) {
@@ -945,7 +915,7 @@
 
     if (!api.isLoggedIn()) {
       document.getElementById('recBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-muted);">
-        <a href="login.html" style="color:var(--accent);font-weight:500;">Sign in</a> to view AI-powered recommendations.
+        <a href="/login" style="color:var(--accent);font-weight:500;">Sign in</a> to view AI-powered recommendations.
       </td></tr>`;
       setBtn('LOAD MORE DATA', false);
       recLoading = false;
@@ -1020,7 +990,7 @@
             <div class="stock-avatar" style="background:${bgColor};">${initials}</div>
             <div class="stock-cell-info">
               <div class="rec-ticker">
-                <a href="stock.html?ticker=${t}" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;">${t}</a>
+                <a href="/stock?ticker=${t}" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;">${t}</a>
               </div>
               <div class="rec-name">${name}</div>
             </div>
@@ -1088,7 +1058,7 @@
 
             </div>
             <div class="rec-detail-footer">
-              <a href="stock.html?ticker=${t}" class="btn-view-full">
+              <a href="/stock?ticker=${t}" class="btn-view-full">
                 View Full Analysis
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </a>
@@ -1130,9 +1100,7 @@
     renderRecRows();
   });
 
-  /* ================================================================
-     NAV SEARCH — trending + recent dropdown
-  ================================================================ */
+  // NAV SEARCH — trending + recent dropdown
   const navInput = document.getElementById('navSearchInput');
   const navDrop  = document.getElementById('navSearchDrop');
 
@@ -1150,7 +1118,7 @@
     const p = getRecent().filter(x => x !== t);
     localStorage.setItem('sw_recent_searches', JSON.stringify([t, ...p].slice(0, 5)));
   }
-  function navGo(ticker) { saveRecent(ticker); window.location.href = `stock.html?ticker=${encodeURIComponent(ticker)}`; }
+  function navGo(ticker) { saveRecent(ticker); window.location.href = `/stock?ticker=${encodeURIComponent(ticker)}`; }
   window.navGo = navGo;
 
   function showDefaultDrop() {
@@ -1196,9 +1164,7 @@
     if (!document.getElementById('navSearch').contains(e.target)) navDrop.classList.remove('open');
   });
 
-  /* ================================================================
-     SHARED INITS
-  ================================================================ */
+  // SHARED INITS
   initHoverSidebar();
   initAvatarDropdown();
   populateAvatar();
