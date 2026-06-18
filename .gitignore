@@ -27,3 +27,4 @@ frontend/build/
 
 # Claude
 .claude/
+CLAUDE.md
