@@ -77,14 +77,14 @@ def train_model(
         estimator=base_model,
         param_grid=param_grid,
         cv=cv,
-        scoring="accuracy",
+        scoring="f1_macro",
         n_jobs=1,
         verbose=1,
     )
     sample_weight = compute_sample_weight(class_weight="balanced", y=y_train)
     grid_search.fit(X_train, y_train, sample_weight=sample_weight)
     print(f"Best parameters: {grid_search.best_params_}")
-    print(f"Best CV accuracy: {grid_search.best_score_:.4f}")
+    print(f"Best CV f1 macro: {grid_search.best_score_:.4f}")
     return grid_search.best_estimator_
 
 
