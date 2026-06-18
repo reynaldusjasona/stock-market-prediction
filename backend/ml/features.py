@@ -86,19 +86,38 @@ def calculate_indicators(df: pd.DataFrame) -> pd.DataFrame:
     out["BB_Lower"] = out["SMA20"] - 2 * rolling_std
     out["BB_Width"] = out["BB_Upper"] - out["BB_Lower"]
 
+    # Return features
+    out["Return_1D"] = out["Close"].pct_change(1)
+    out["Return_5D"] = out["Close"].pct_change(5)
+    out["Return_10D"] = out["Close"].pct_change(10)
+
+    # Volatility feature
+    out["Volatility_10D"] = out["Close"].pct_change().rolling(window=10).std()
+
+    # Volume feature
+    out["Volume_Ratio"] = out["Volume"] / out["Volume"].rolling(window=20).mean()
+
+    # Price distance from moving averages
+    out["Dist_SMA20"] = (out["Close"] - out["SMA20"]) / out["SMA20"]
+    out["Dist_EMA20"] = (out["Close"] - out["EMA20"]) / out["EMA20"]
+
     # Label: compare next day close to current close
     next_close = out["Close"].shift(-1)
     pct_change = (next_close - out["Close"]) / out["Close"]
     out["Label"] = pd.cut(
         pct_change,
-        bins=[-np.inf, -0.02, 0.02, np.inf],
+        bins=[-np.inf, -0.01, 0.01, np.inf],
         labels=["Sell", "Hold", "Buy"],
     )
 
     column_order = [
         "Open", "High", "Low", "Close", "Volume",
         "SMA20", "EMA20", "RSI14", "MACD", "MACD_Signal",
-        "BB_Upper", "BB_Lower", "BB_Width", "Label",
+        "BB_Upper", "BB_Lower", "BB_Width",
+        "Return_1D", "Return_5D", "Return_10D",
+        "Volatility_10D", "Volume_Ratio",
+        "Dist_SMA20", "Dist_EMA20",
+        "Label",
     ]
     out = out[column_order]
     out.dropna(inplace=True)
@@ -120,6 +139,9 @@ def get_feature_matrix(ticker: str) -> tuple[pd.DataFrame, pd.Series]:
         "Open", "High", "Low", "Close", "Volume",
         "SMA20", "EMA20", "RSI14", "MACD", "MACD_Signal",
         "BB_Upper", "BB_Lower", "BB_Width",
+        "Return_1D", "Return_5D", "Return_10D",
+        "Volatility_10D", "Volume_Ratio",
+        "Dist_SMA20", "Dist_EMA20",
     ]
     X = processed[feature_cols]
     y = processed["Label"].astype(str)
