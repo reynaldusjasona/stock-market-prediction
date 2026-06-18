@@ -1,6 +1,7 @@
 import asyncio
 import math
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from typing import Optional
 
 import yfinance as yf
@@ -395,10 +396,14 @@ async def getTopGainersandLosers() -> dict:
 
 
 async def getPriceHistory(stock: str, period: str = "1M") -> list:
+    period_days = {"1W": 7, "1M": 30, "3M": 90, "1Y": 365}
+    days = period_days.get(period.upper(), 30)
+    cutoff = (datetime.today() - timedelta(days=days)).strftime("%Y-%m-%d")
     result = (
         supabase.table("price_history")
         .select("date, open, high, low, close, volume")
         .eq("ticker", stock.upper())
+        .gte("date", cutoff)
         .order("date", desc=False)
         .execute()
     )
