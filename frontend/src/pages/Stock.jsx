@@ -10,6 +10,7 @@ export default function Stock() {
     : 'guest';
   const isTrader = role === 'trader';
   const [showAllNews, setShowAllNews] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     const ROLES = {
@@ -61,7 +62,7 @@ export default function Stock() {
       });
 
       document.getElementById('indBar').style.display   = isTrader ? '' : 'none';
-      document.getElementById('basicBar').style.display = isTrader ? 'none' : '';
+      document.getElementById('basicBar').style.display = (isTrader || role === 'investor') ? 'none' : '';
       document.getElementById('indicatorsCard').style.display = 'none';
 
       const fundEl = document.getElementById('fundamentalsSection');
@@ -633,8 +634,19 @@ export default function Stock() {
             {/* Left column */}
             <div className="content-left">
 
+              {/* Investor tab navigation — only rendered for investor role */}
+              {role === 'investor' && (
+                <div className="investor-tabs">
+                  <button className={`investor-tab-btn${activeTab === 'overview' ? ' active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
+                  <button className={`investor-tab-btn${activeTab === 'fundamentals' ? ' active' : ''}`} onClick={() => setActiveTab('fundamentals')}>Fundamentals</button>
+                  <button className={`investor-tab-btn${activeTab === 'news' ? ' active' : ''}`} onClick={() => setActiveTab('news')}>News</button>
+                  <button className={`investor-tab-btn${activeTab === 'orderbook' ? ' active' : ''}`} onClick={() => setActiveTab('orderbook')}>Order Book</button>
+                  <button className={`investor-tab-btn${activeTab === 'history' ? ' active' : ''}`} onClick={() => setActiveTab('history')}>Prediction History</button>
+                </div>
+              )}
+
               {/* Chart */}
-              <div className="chart-card" id="chartCard">
+              <div className="chart-card" id="chartCard" style={role === 'investor' ? {display: activeTab === 'overview' ? '' : 'none'} : undefined}>
                 <div className="chart-header">
                   <div>
                     <div style={{fontSize:'0.9375rem',fontWeight:600}} id="chartTitle">Price History</div>
@@ -676,7 +688,7 @@ export default function Stock() {
                   <button className="ind-btn" data-key="vol">Volume</button>
                 </div>
                 {/* Indicator toggle bar — Guest / Investor */}
-                <div className="ind-bar" id="basicBar" style={{display: isTrader ? 'none' : ''}}>
+                <div className="ind-bar" id="basicBar" style={{display: (isTrader || role === 'investor') ? 'none' : ''}}>
                   <button className="ind-btn" data-bkey="sma">SMA 20</button>
                   <button className="ind-btn" data-bkey="ema">EMA 20</button>
                   <button className="ind-btn" data-bkey="rsi">RSI</button>
@@ -710,10 +722,10 @@ export default function Stock() {
                 </div>
               </div>
 
-              <div id="fundamentalsSection"></div>
-              <div id="newsSection"></div>
-              <div id="orderbookSection"></div>
-              <div id="histSection"></div>
+              <div id="fundamentalsSection" style={role === 'investor' ? {display: activeTab === 'fundamentals' ? '' : 'none'} : undefined}></div>
+              <div id="newsSection" style={role === 'investor' ? {display: activeTab === 'news' ? '' : 'none'} : undefined}></div>
+              <div id="orderbookSection" style={role === 'investor' ? {display: activeTab === 'orderbook' ? '' : 'none'} : undefined}></div>
+              <div id="histSection" style={role === 'investor' ? {display: activeTab === 'history' ? '' : 'none'} : undefined}></div>
 
             </div>{/* /content-left */}
 
