@@ -116,7 +116,7 @@ export default function Register() {
       spn.style.display = 'inline-block';
 
       try {
-        await api.register(name, email, password, sectors, level);
+        await api.register(name, email, password, sectors, level, role);
         showToast('Account created! Signing you in…', 'success');
         await api.login(email, password);
         localStorage.setItem('sw_role', role);

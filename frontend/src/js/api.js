@@ -66,10 +66,10 @@ const api = {
     return data;
   },
 
-  async register(name, email, password, sectors = [], level = 'moderate') {
+  async register(name, email, password, sectors = [], level = 'moderate', role = 'investor') {
     return this.fetch('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, sectors, level }),
+      body: JSON.stringify({ name, email, password, sectors, level, role }),
     });
   },
 
