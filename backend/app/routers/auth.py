@@ -30,6 +30,7 @@ router = APIRouter()
 
 _VALID_SELF_REGISTER_ROLES = {"investor", "trader"}
 
+
 class RegisterRequest(BaseModel):
     name: str
     email: str
