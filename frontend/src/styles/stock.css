@@ -57,6 +57,21 @@
 .content-left  { display: flex; flex-direction: column; gap: 1.5rem; }
 .content-right { display: flex; flex-direction: column; gap: 1.5rem; }
 
+/* Investor tab navigation */
+.investor-tabs {
+  display: flex; gap: 4px; background: var(--bg-elevated);
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px;
+  flex-wrap: wrap;
+}
+.investor-tab-btn {
+  padding: 0.4rem 0.875rem; border-radius: 4px;
+  font-size: 0.8125rem; font-weight: 500;
+  color: var(--text-muted); cursor: pointer; border: none; background: none;
+  transition: all var(--transition); white-space: nowrap;
+}
+.investor-tab-btn.active { background: var(--bg-surface); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.investor-tab-btn:hover:not(.active) { color: var(--text-primary); }
+
 /* Chart card */
 .chart-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
 .chart-header {
