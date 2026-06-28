@@ -62,7 +62,7 @@ export default function Stock() {
       });
 
       document.getElementById('indBar').style.display   = isTrader ? '' : 'none';
-      document.getElementById('basicBar').style.display = (isTrader || role === 'investor') ? 'none' : '';
+      document.getElementById('basicBar').style.display = isTrader ? 'none' : '';
       document.getElementById('indicatorsCard').style.display = 'none';
 
       const fundEl = document.getElementById('fundamentalsSection');
@@ -688,7 +688,7 @@ export default function Stock() {
                   <button className="ind-btn" data-key="vol">Volume</button>
                 </div>
                 {/* Indicator toggle bar — Guest / Investor */}
-                <div className="ind-bar" id="basicBar" style={{display: (isTrader || role === 'investor') ? 'none' : ''}}>
+                <div className="ind-bar" id="basicBar" style={{display: isTrader ? 'none' : ''}}>
                   <button className="ind-btn" data-bkey="sma">SMA 20</button>
                   <button className="ind-btn" data-bkey="ema">EMA 20</button>
                   <button className="ind-btn" data-bkey="rsi">RSI</button>
