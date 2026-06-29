@@ -1,5 +1,3 @@
-from tkinter.filedialog import test
-
 import pytest
 import requests
 
@@ -11,7 +9,6 @@ ADMIN_TOKEN = "REPLACE_WITH_ADMIN_JWT"        # role=admin
 
 INVESTOR_HEADERS = {"Authorization": f"Bearer {INVESTOR_TOKEN}"}
 ADMIN_HEADERS = {"Authorization": f"Bearer {ADMIN_TOKEN}"}
-
 
 def _server_available() -> bool:
     try:
