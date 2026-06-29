@@ -55,7 +55,9 @@ class TestFeedbackAPI:
 
         # ---- Test 3: POST with investor token, empty body → 422 ----
         r = requests.post(f"{BASE_URL}/api/feedback", json={}, headers=INVESTOR_HEADERS)
-        test("Test 3: POST /api/feedback with investor token, empty body → 422", r.status_code == 422)
+        test("Test 3: POST /api/feedback with investor token, empty body → 422", 
+            r.status_code == 422
+        )
 
         # ---- Test 4: POST valid feedback as investor → 201 ----
         r = requests.post(
