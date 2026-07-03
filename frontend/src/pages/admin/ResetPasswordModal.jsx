@@ -1,30 +1,30 @@
-import {useState} from 'react'
+import { useState } from 'react'
 import adminApi from '../../js/adminApi'
 import '../../styles/admin/adminShared.css'
 
-function ResetPasswordPage({onClose}) {
-  const [email,setEmail]= useState('')
-  const [loading,setLoading]= useState(false)
-  const [alert,setAlert]= useState({msg:'', type:''})
+function ResetPasswordModal({onClose}) {
+  const[email,setEmail]= useState('')
+  const[loading,setLoading]= useState(false)
+  const[alert,setAlert]= useState({ msg:'', type:'' })
 
   const handleSubmit = async(e)=>{
     e.preventDefault()
-    setAlert({ msg:'', type:'' })
+    setAlert({msg:'', type:''})
     if (!email.trim()){ 
-		setAlert({ msg:'Please enter an email address.', type:'error' }); 
+		setAlert({msg:'Please enter an email address.', type:'error'}); 
 		return 
-		}
+	}
     setLoading(true)
     try{
       await adminApi.adminResetPassword(email.trim())
-      setAlert({ msg:`Reset link sent to ${email}.`, type:'success' })
+      setAlert({msg:`Reset link sent to ${email}.`, type:'success'})
       setEmail('')
     } 
 	catch (err){
-      setAlert({ msg: err.message||'Failed to send reset link.', type:'error' })
+      setAlert({msg: err.message || 'Failed to send reset link.', type:'error'})
     } 
-	finally { 
-	  setLoading(false) 
+	finally{ 
+		setLoading(false) 
 	}
   }
 
@@ -62,4 +62,4 @@ function ResetPasswordPage({onClose}) {
   )
 }
 
-export default ResetPasswordPage
+export default ResetPasswordModal
