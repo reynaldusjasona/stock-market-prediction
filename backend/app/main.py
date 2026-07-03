@@ -2,7 +2,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import (
-    auth, stocks, predictions, news, alerts, notifications, admin, watchlist, portfolio, subscription, feedback
+    auth,
+    stocks,
+    predictions,
+    news,
+    alerts,
+    notifications,
+    admin,
+    watchlist,
+    portfolio,
+    subscription,
+    feedback,
 )
 
 app = FastAPI(
