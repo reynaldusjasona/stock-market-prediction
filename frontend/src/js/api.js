@@ -194,10 +194,10 @@ const api = {
     return this.fetch(`/portfolio/${ticker.toUpperCase()}`);
   },
 
-  async addToPortfolio({ ticker, shares, avg_price }) {
+  async addToPortfolio({ ticker, shares, average_buy_price }) {
     return this.fetch('/portfolio', {
       method: 'POST',
-      body: JSON.stringify({ ticker, shares, avg_price }),
+      body: JSON.stringify({ ticker, shares, average_buy_price }),
     });
   },
 
