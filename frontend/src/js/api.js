@@ -111,6 +111,13 @@ const api = {
     });
   },
 
+  async resendVerification(email) {
+    return this.fetch('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
   // Stock endpoints
   async getTrending() {
     return this.fetch('/stocks/trending');
