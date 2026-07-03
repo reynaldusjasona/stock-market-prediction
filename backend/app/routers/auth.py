@@ -4,9 +4,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.core.database import supabase
-from app.core.email import sendConfirmationEmail
 from app.core.security import hashPassword
 from app.services.auth_service import (
+    createAndSendVerificationEmail,
     deleteAccountAndData,
     getDeleteConfirm,
     getInvestorRecordForEdit as svcGetInvestorRecordForEdit,
@@ -16,6 +16,7 @@ from app.services.auth_service import (
     invalidateSession,
     login as svcLogin,
     logout as svcLogout,
+    resendVerification as svcResendVerification,
     savePreferences,
     updateAccount as svcUpdateAccount,
     updatePreferences as svcUpdatePreferences,
@@ -23,6 +24,7 @@ from app.services.auth_service import (
     updateRiskTolerance as svcUpdateRiskTolerance,
     validateFormInput,
     validateInputs,
+    verifyEmailToken as svcVerifyEmailToken,
 )
 
 router = APIRouter()
@@ -62,6 +64,10 @@ class LogoutRequest(BaseModel):
     session_token: str
 
 
+class ResendVerificationRequest(BaseModel):
+    email: str
+
+
 @router.post("/auth/register", tags=["Auth"])
 async def register(body: RegisterRequest):
     validation = await validateInputs(body.name, body.email, body.password)
@@ -98,7 +104,7 @@ async def register(body: RegisterRequest):
     await savePreferences(
         user_id, body.sectors or [], body.level or "moderate"
     )
-    await sendConfirmationEmail(body.email, body.name)
+    await createAndSendVerificationEmail(user_id, body.name, body.email)
 
     return {"message": "Registration successful", "user_id": user_id}
 
@@ -106,6 +112,20 @@ async def register(body: RegisterRequest):
 @router.post("/auth/login", tags=["Auth"])
 async def login(body: LoginRequest):
     return await svcLogin(body.email, body.password)
+
+
+@router.get("/auth/verify/{token}", tags=["Auth"])
+async def verifyEmail(token: str):
+    return await svcVerifyEmailToken(token)
+
+
+@router.post("/auth/resend-verification", tags=["Auth"])
+async def resendVerification(body: ResendVerificationRequest):
+    await svcResendVerification(body.email)
+    return {
+        "message": "If the email exists and is not verified, "
+        "a new link has been sent."
+    }
 
 
 @router.get("/auth/user/{investorID}", tags=["Auth"])
