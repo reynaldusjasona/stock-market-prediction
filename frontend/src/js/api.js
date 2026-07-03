@@ -164,6 +164,111 @@ const api = {
   async getFundamentals(ticker) {
     return this.fetch(`/stocks/${ticker.toUpperCase()}/fundamentals`);
   },
+
+  // Watchlist endpoints (auth required)
+  async getWatchlist() {
+    return this.fetch('/watchlist');
+  },
+
+  async addToWatchlist(ticker) {
+    return this.fetch(`/watchlist/${ticker.toUpperCase()}`, { method: 'POST' });
+  },
+
+  async removeFromWatchlist(ticker) {
+    return this.fetch(`/watchlist/${ticker.toUpperCase()}`, { method: 'DELETE' });
+  },
+
+  // Portfolio endpoints (auth required)
+  async getPortfolio() {
+    return this.fetch('/portfolio');
+  },
+
+  async getPortfolioStock(ticker) {
+    return this.fetch(`/portfolio/${ticker.toUpperCase()}`);
+  },
+
+  async addToPortfolio({ ticker, shares, avg_price }) {
+    return this.fetch('/portfolio', {
+      method: 'POST',
+      body: JSON.stringify({ ticker, shares, avg_price }),
+    });
+  },
+
+  async removeFromPortfolio(ticker) {
+    return this.fetch(`/portfolio/${ticker.toUpperCase()}`, { method: 'DELETE' });
+  },
+
+  // Alerts endpoints (auth required)
+  async getAlerts(ticker) {
+    return this.fetch(`/alerts/${ticker.toUpperCase()}`);
+  },
+
+  async createAlert(ticker, { target_price, condition }) {
+    return this.fetch(`/alerts/${ticker.toUpperCase()}`, {
+      method: 'POST',
+      body: JSON.stringify({ target_price, condition }),
+    });
+  },
+
+  async updateAlert(alertId, updates) {
+    return this.fetch(`/alerts/${alertId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  async deleteAlert(alertId) {
+    return this.fetch(`/alerts/${alertId}`, { method: 'DELETE' });
+  },
+
+  // Notification endpoints (auth required)
+  async getNotifications() {
+    return this.fetch('/notifications');
+  },
+
+  async markNotificationRead(id) {
+    return this.fetch(`/notifications/${id}/read`, { method: 'PATCH' });
+  },
+
+  // Feedback endpoints (investor for submit/list, admin for approve/reject)
+  async submitFeedback({ subject, message }) {
+    return this.fetch('/feedback', {
+      method: 'POST',
+      body: JSON.stringify({ subject, message }),
+    });
+  },
+
+  async getFeedback() {
+    return this.fetch('/feedback');
+  },
+
+  async approveFeedback(id) {
+    return this.fetch(`/feedback/${id}/approve`, { method: 'PATCH' });
+  },
+
+  async rejectFeedback(id) {
+    return this.fetch(`/feedback/${id}/reject`, { method: 'PATCH' });
+  },
+
+  // Subscription endpoints (mixed auth)
+  async getSubscriptionPlans() {
+    return this.fetch('/subscription/plans');
+  },
+
+  async getSubscription() {
+    return this.fetch('/subscription');
+  },
+
+  async subscribe({ plan }) {
+    return this.fetch('/subscription', {
+      method: 'POST',
+      body: JSON.stringify({ plan }),
+    });
+  },
+
+  async cancelSubscription() {
+    return this.fetch('/subscription/cancel', { method: 'POST' });
+  },
 };
 
 // Guard: redirect if not logged in
