@@ -3,14 +3,7 @@ import api from '../../js/api'
 import '../../styles/shared.css'
 
 const apiFetch= async (path, options={})=>{
-  const res= await fetch(`/api${path}`,{
-    headers: {'Content-Type': 'application/json'},
-    ...options,
-  })
-  const data= await res.json().catch(() => ({}))
-  if (!res.ok) 
-	  throw new Error(data.detail||data.message||'Request failed')
-  return data
+  return api.fetch(path, options)
 }
 
 function LoginPage(){
