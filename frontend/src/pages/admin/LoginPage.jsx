@@ -76,16 +76,13 @@ function LoginPage(){
         setCredLoad(false)
         return
       }
-      sessionStorage.setItem('sw_token_pending', data.token)
-      sessionStorage.setItem('sw_user_pending',  JSON.stringify(data.user))
-
-      await apiFetch('/auth/send-2fa',{
-        method: 'POST',
-        body: JSON.stringify({email: email.trim()}),
-      })
+      sessionStorage.setItem('sw_token', data.token)
+      sessionStorage.setItem('sw_role', data.user.role)
+      sessionStorage.setItem('sw_user', JSON.stringify(data.user))
+      sessionStorage.setItem('sw_uid', data.user.id)
 
       setCredLoad(false)
-      setStep('2fa')
+      window.location.replace('/admin')
     } 
 	catch (err){
       setCredAlert({msg: err.message || 'Login failed. Please check your credentials.', type:'error'})
