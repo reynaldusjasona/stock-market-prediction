@@ -1,39 +1,39 @@
 import {useEffect, useState, useRef} from 'react'
 import adminApi from '../../js/adminApi'
-import {showToast, debounce} from '../../js/api'
+import {showToast} from '../../js/api'
 import ViewAlertModal from './ViewAlertModal'
+import SearchAlertsComponent from './SearchAlertsComponent'
 import '../../styles/admin/adminShared.css'
 
-const PAGE= 15
-const dbs= debounce((fn, q)=>fn(q), 280)
+const PAGE = 15
 
 function ViewAlertsPage(){
-  const[alerts,setAlerts]= useState([])
-  const[summary,setSummary]= useState({critical:0, warning:0, info:0, resolved:0})
-  const[loading,setLoading]= useState(true)
-  const[filter,setFilter]= useState('open')
-  const[sevFilter,setSevFilter]= useState('all')
-  const[page,setPage]= useState(1)
-  const[detail,setDetail]= useState(null)
-  const timer = useRef(null)
+  const [alerts,setAlerts]= useState([])
+  const [summary,setSummary]= useState({critical:0, warning:0, info:0, resolved:0})
+  const [loading,setLoading]= useState(true)
+  const [filter,setFilter]= useState('open')
+  const [sevFilter,setSevFilter]= useState('all')
+  const [page,setPage]= useState(1)
+  const [detail,setDetail]= useState(null)
+  const timer= useRef(null)
 
-  const loadAlerts=async(q='')=>{
+  const loadAlerts= async(q = '')=>{
     setLoading(true)
     try{
-      const d=await adminApi.getAllAlerts(q?{q}:{})
-      setAlerts(Array.isArray(d)?d:(d?.alerts||[]))
+      const d= await adminApi.getAllAlerts(q ? {q} : {})
+      setAlerts(Array.isArray(d) ? d : (d?.alerts || []))
     } 
-	catch (err){ 
-		showToast(err.message||'Failed to load alerts', 'error') 
+	catch (err){
+		showToast(err.message||'Failed to load alerts', 'error')
 	}
-    finally{ 
+    finally{
 		setLoading(false) 
 	}
   }
 
   const loadSummary=async()=>{
     try{
-      const s=await adminApi.getAlertSummary()
+      const s= await adminApi.getAlertSummary()
       setSummary({critical:s?.critical??0, warning:s?.warning??0, info:s?.info??0, resolved:s?.resolved??0})
     } 
 	catch{ /* optional */ }
@@ -42,30 +42,32 @@ function ViewAlertsPage(){
   useEffect(()=>{
     loadAlerts(); 
 	loadSummary()
-    timer.current=setInterval(()=>{loadAlerts(); loadSummary()},60000)
+    timer.current= setInterval(()=> {loadAlerts(); 
+									 loadSummary() 
+									 },60000)
     return ()=>clearInterval(timer.current)
-  },[])
+  }, [])
 
-  const handleDismissed=(id)=>{
+  const handleDismissed= (id)=>{
     setAlerts(prev=>prev.map(a=>
-      String(a.id) === String(id) ? {...a, is_resolved:true, status:'resolved'}:a
+      String(a.id)===String(id) ? { ...a, is_resolved:true, status:'resolved' } : a
     ))
     loadSummary()
   }
 
-  const filtered=alerts.filter(a=>{
-    const res=a.is_resolved||a.status==='resolved'
+  const filtered= alerts.filter(a => {
+    const res= a.is_resolved || a.status === 'resolved'
     if (filter==='open' &&  res) 
 		return false
     if (filter==='resolved' && !res) 
 		return false
-    const sev=(a.severity||'info').toLowerCase()
+    const sev= (a.severity || 'info').toLowerCase()
     if (sevFilter !== 'all' && sev !== sevFilter) 
 		return false
     return true
   })
   const totalPages= Math.ceil(filtered.length/PAGE)
-  const paged= filtered.slice((page-1)*PAGE, page*PAGE)
+  const paged= filtered.slice((page - 1)*PAGE, page*PAGE)
 
   return(
     <div>
@@ -90,23 +92,15 @@ function ViewAlertsPage(){
       </div>
 
       <div className="admin-card">
-        <div className="admin-card-header" style={{ flexDirection:'column', alignItems:'flex-start', gap:'0.75rem' }}>
-          <div style={{ display:'flex', width:'100%', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'0.75rem' }}>
-            <div className="admin-search-wrap">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.25"/>
-                <path d="M9.5 9.5l3 3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round"/>
-              </svg>
-              <input className="admin-search-input" type="text" placeholder="Search alerts…"
-                onChange={e => { setPage(1); dbs(loadAlerts, e.target.value.trim()) }}
-                autoComplete="off"/>
-            </div>
-            <span style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>
+        <div className="admin-card-header" style={{flexDirection:'column', alignItems:'flex-start', gap:'0.75rem'}}>
+          <div style={{display:'flex', width:'100%', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'0.75rem'}}>
+            <SearchAlertsComponent onSearch={q => { setPage(1); loadAlerts(q) }}/>
+            <span style={{fontSize:'0.78rem', color:'var(--text-muted)'}}>
               {filtered.length} alert{filtered.length !== 1 ? 's' : ''}
             </span>
           </div>
 
-          <div style={{ display:'flex', gap:'0.5rem', flexWrap:'wrap' }}>
+          <div style={{display:'flex', gap:'0.5rem', flexWrap:'wrap'}}>
             <div className="admin-subtabs">
               {['open','resolved','all'].map(f => (
                 <button key={f} className={`admin-subtab${filter===f?' active':''}`}
@@ -118,13 +112,13 @@ function ViewAlertsPage(){
             <div className="admin-subtabs">
               {[
                 {k:'all',l:'All Severity'},
-                {k:'critical',l:'Critical', c:'#ff4444' },
-                {k:'warning',l:'Warning',c:'#ff8c00' },
-                {k:'info',l:'Info',c:'#60a5fa' },
+                {k:'critical',l:'Critical',c:'#ff4444'},
+                {k:'warning',l:'Warning',c:'#ff8c00'},
+                {k:'info',l:'Info',c:'#60a5fa'},
               ].map(({k, l, c})=>(
                 <button key={k}
                   className={`admin-subtab${sevFilter===k?' active':''}`}
-                  onClick={()=>{ setSevFilter(k); setPage(1) }}
+                  onClick={()=>{setSevFilter(k); setPage(1)}}
                   style={c && sevFilter===k ? { color:c } : {}}>
                   {l}
                 </button>
@@ -140,17 +134,17 @@ function ViewAlertsPage(){
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="5" style={{ textAlign:'center', padding:'2.5rem' }}><span className="admin-spinner"/></td></tr>
+                <tr><td colSpan="5" style={{textAlign:'center', padding:'2.5rem'}}><span className="admin-spinner"/></td></tr>
               ) : !paged.length ? (
                 <tr><td colSpan="5">
                   <div className="admin-empty">
                     <p>{filter==='open' ? 'No open alerts. Platform is healthy.' : 'No alerts match your filters.'}</p>
                   </div>
                 </td></tr>
-              ) : paged.map(a => {
-                const sev=(a.severity || 'info').toLowerCase()
-                const res=a.is_resolved || a.status === 'resolved'
-                return (
+              ) : paged.map(a=>{
+                const sev= (a.severity || 'info').toLowerCase()
+                const res= a.is_resolved || a.status === 'resolved'
+                return(
                   <tr key={a.id} style={{ cursor:'pointer' }} onClick={() => setDetail(a)}>
                     <td>
                       <span className={`status-badge status-${res ? 'resolved' : sev}`}>
@@ -192,7 +186,7 @@ function ViewAlertsPage(){
             </span>
             <button disabled={page===1} onClick={() => setPage(p=>p-1)}>‹</button>
             {Array.from({length:totalPages},(_,i)=>i+1)
-              .filter(i => i===1 || i===totalPages || Math.abs(i-page)<=1)
+              .filter(i=>i===1 || i===totalPages || Math.abs(i-page)<=1)
               .map((i, idx, arr) => (
                 <span key={i} style={{ display:'contents' }}>
                   {idx>0 && arr[idx-1]!==i-1 && <span style={{ padding:'0 0.2rem', color:'var(--text-subtle)' }}>…</span>}
