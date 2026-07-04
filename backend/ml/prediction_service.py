@@ -25,4 +25,7 @@ def get_prediction_history(ticker: str, limit: int = 10) -> list[dict]:
         .limit(limit)
         .execute()
     )
-    return response.data if response.data else []
+    rows = response.data if response.data else []
+    for row in rows:
+        row["confidence"] = row.get("confidence_score")
+    return rows
