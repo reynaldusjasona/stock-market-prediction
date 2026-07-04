@@ -1,11 +1,141 @@
 import asyncio
 import math
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import HTTPException
+import yfinance as yf
 
 from app.core.api_clients import finnhubGet
 from app.core.database import supabase
+from fastapi import HTTPException
+
+
+_executor = ThreadPoolExecutor(max_workers=10)
+
+
+# ---- yfinance helpers (sync, run in executor) ----
+def _yf_quote_sync(ticker: str) -> dict:
+    try:
+        hist = yf.Ticker(ticker).history(period="5d")
+        if hist.empty:
+            return {"ticker": ticker, "error": "no data"}
+        current_price = float(hist["Close"].iloc[-1])
+        prev_close = float(hist["Close"].iloc[-2]) if len(hist) > 1 else current_price
+        change = round(current_price - prev_close, 4)
+        change_pct = round((change / prev_close) * 100, 2) if prev_close else 0
+        return {
+            "ticker": ticker,
+            "current_price": current_price,
+            "open": float(hist["Open"].iloc[-1]),
+            "high": float(hist["High"].iloc[-1]),
+            "low": float(hist["Low"].iloc[-1]),
+            "prev_close": prev_close,
+            "volume": int(hist["Volume"].iloc[-1]),
+            "timestamp": 0,
+            "change": change,
+            "change_percent": change_pct,
+        }
+    except Exception as exc:
+        return {"ticker": ticker, "error": str(exc)}
+
+
+def _yf_history_sync(ticker: str, period: str) -> list:
+    _map = {"1W": "5d", "1M": "1mo", "3M": "3mo", "1Y": "1y"}
+
+    def _f(v, default=0.0):
+        try:
+            f = float(v)
+            return default if math.isnan(f) or math.isinf(f) else f
+        except (TypeError, ValueError):
+            return default
+
+    try:
+        hist = yf.Ticker(ticker).history(period=_map.get(period, "1mo"))
+        if hist.empty:
+            return []
+        rows = []
+        for idx, row in hist.iterrows():
+            close = _f(row["Close"])
+            if close == 0.0:
+                continue
+            rows.append({
+                "date": str(idx.date()),
+                "open": round(_f(row["Open"]), 4),
+                "high": round(_f(row["High"]), 4),
+                "low": round(_f(row["Low"]), 4),
+                "close": round(close, 4),
+                "volume": int(_f(row["Volume"])),
+            })
+        return rows
+    except Exception:
+        return []
+
+
+async def _yf_quote(ticker: str) -> dict:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(_executor, _yf_quote_sync, ticker)
+
+
+async def _yf_history(ticker: str, period: str) -> list:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(_executor, _yf_history_sync, ticker, period)
+
+
+# ---- interval-based history (candle size: 5M / 15M / 1H / 1D / 1W) ----
+_INTERVAL_YF_MAP = {
+    "5M":  {"yf_interval": "5m",  "yf_period": "30d"},
+    "15M": {"yf_interval": "15m", "yf_period": "30d"},
+    "1H":  {"yf_interval": "1h",  "yf_period": "90d"},
+    "1D":  {"yf_interval": "1d",  "yf_period": "2y"},
+    "1W":  {"yf_interval": "1wk", "yf_period": "5y"},
+}
+
+
+def _yf_interval_sync(ticker: str, interval: str) -> list:
+    cfg = _INTERVAL_YF_MAP.get(interval.upper(), _INTERVAL_YF_MAP["1D"])
+    is_intraday = interval.upper() in ("5M", "15M", "1H")
+
+    def _f(v, default=0.0):
+        try:
+            f = float(v)
+            return default if math.isnan(f) or math.isinf(f) else f
+        except (TypeError, ValueError):
+            return default
+
+    try:
+        hist = yf.Ticker(ticker).history(
+            period=cfg["yf_period"], interval=cfg["yf_interval"]
+        )
+        if hist.empty:
+            return []
+        rows = []
+        for idx, row in hist.iterrows():
+            close = _f(row["Close"])
+            if close == 0.0:
+                continue
+            time_val = int(idx.timestamp()) if is_intraday else str(idx.date())
+            rows.append({
+                "time": time_val,
+                "open": round(_f(row["Open"]), 4),
+                "high": round(_f(row["High"]), 4),
+                "low": round(_f(row["Low"]), 4),
+                "close": round(close, 4),
+                "volume": int(_f(row["Volume"])),
+            })
+        return rows
+    except Exception:
+        return []
+
+
+async def _yf_interval(ticker: str, interval: str) -> list:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(_executor, _yf_interval_sync, ticker, interval)
+
+
+async def getIntervalHistory(ticker: str, interval: str = "1D") -> list:
+    return await _yf_interval(ticker.upper(), interval.upper())
+
 
 _TRENDING_FALLBACK = [
     "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
@@ -14,7 +144,6 @@ _TRENDING_FALLBACK = [
 
 
 # ---- pure-Python indicator helpers (no pandas, no ta-lib) ----
-
 def _ema_list(values: list, period: int) -> list:
     """Returns EMA series starting from index period-1 of the input."""
     if len(values) < period:
@@ -35,7 +164,6 @@ def _stddev(values: list) -> float:
 
 
 # ---- service functions ----
-
 async def fetchStockList() -> list:
     raw = await finnhubGet("stock/symbol", {"exchange": "US"})
     if "error" in raw or not isinstance(raw, list):
@@ -46,10 +174,7 @@ async def fetchStockList() -> list:
             .execute()
         )
         return cached.data or []
-
-    # Limit to common-stock type to avoid thousands of exotic instruments
     stocks = [s for s in raw if s.get("type") == "CS"][:500]
-
     rows = [
         {
             "ticker": s["symbol"],
@@ -59,8 +184,6 @@ async def fetchStockList() -> list:
         for s in stocks
         if s.get("symbol")
     ]
-
-    # Batch upsert in chunks of 100
     for i in range(0, len(rows), 100):
         chunk = rows[i:i + 100]
         try:
@@ -69,7 +192,6 @@ async def fetchStockList() -> list:
             ).execute()
         except Exception:
             pass
-
     return [
         {
             "ticker": r["ticker"],
@@ -83,12 +205,10 @@ async def fetchStockList() -> list:
 async def fetchPriceData(ticker: str) -> dict:
     data = await finnhubGet("quote", {"symbol": ticker})
     if "error" in data:
-        return {"ticker": ticker, "error": data["error"]}
-
+        return await _yf_quote(ticker)
     current_price = data.get("c", 0)
     prev_close = data.get("pc", 0)
-    change_pct = data.get("dp", 0)  # Finnhub provides this directly
-
+    change_pct = data.get("dp", 0)
     return {
         "ticker": ticker,
         "current_price": current_price,
@@ -117,22 +237,15 @@ async def queryStockDB(query: str) -> list:
 async def calculateIndicators(priceData: list) -> dict:
     if not priceData:
         return {}
-
     closes = [
         float(d["close"]) for d in priceData
         if d.get("close") is not None
     ]
     if not closes:
         return {}
-
-    # SMA 20
     sma20 = round(sum(closes[-20:]) / 20, 4) if len(closes) >= 20 else None
-
-    # EMA 20
     ema20_series = _ema_list(closes, 20)
     ema20 = round(ema20_series[-1], 4) if ema20_series else None
-
-    # RSI 14 (Wilder smoothing)
     rsi14 = None
     if len(closes) >= 15:
         deltas = [closes[i] - closes[i - 1] for i in range(1, len(closes))]
@@ -147,12 +260,10 @@ async def calculateIndicators(priceData: list) -> dict:
             rsi14 = 100.0
         else:
             rsi14 = round(100.0 - (100.0 / (1.0 + avg_gain / avg_loss)), 2)
-
-    # MACD (12, 26, 9)
     macd_result = {"macd_line": None, "signal_line": None, "histogram": None}
     if len(closes) >= 26:
-        ema12 = _ema_list(closes, 12)  # len = n - 11
-        ema26 = _ema_list(closes, 26)  # len = n - 25
+        ema12 = _ema_list(closes, 12)
+        ema26 = _ema_list(closes, 26)
         if ema12 and ema26:
             overlap = len(ema26)
             ema12_aligned = ema12[len(ema12) - overlap:]
@@ -175,8 +286,6 @@ async def calculateIndicators(priceData: list) -> dict:
                     if histogram is not None else None
                 ),
             }
-
-    # Bollinger Bands (20, 2)
     bollinger = {"upper": None, "middle": None, "lower": None}
     if len(closes) >= 20:
         window = closes[-20:]
@@ -187,7 +296,6 @@ async def calculateIndicators(priceData: list) -> dict:
             "middle": round(mid, 4),
             "lower": round(mid - 2 * std, 4),
         }
-
     return {
         "sma20": sma20,
         "ema20": ema20,
@@ -198,15 +306,12 @@ async def calculateIndicators(priceData: list) -> dict:
 
 
 async def fetchTrendingTickers() -> list:
-    # Check market status
     market_status = await finnhubGet("stock/market-status", {"exchange": "US"})
     is_open = (
         market_status.get("isOpen", False)
         if "error" not in market_status
         else False
     )
-
-    # Prefer DB-cached tickers; fall back to hardcoded list
     db_result = (
         supabase.table("stocks")
         .select("ticker, company_name")
@@ -222,12 +327,10 @@ async def fetchTrendingTickers() -> list:
     else:
         tickers = _TRENDING_FALLBACK
         name_map = {t: t for t in tickers}
-
     price_results = await asyncio.gather(
         *[fetchPriceData(t) for t in tickers],
         return_exceptions=True,
     )
-
     output = []
     for i, res in enumerate(price_results):
         if (
@@ -237,16 +340,13 @@ async def fetchTrendingTickers() -> list:
         ):
             continue
         ticker = tickers[i]
-        output.append(
-            {
-                "ticker": ticker,
-                "company_name": name_map.get(ticker, ""),
-                "current_price": res.get("current_price", 0),
-                "change_percent": res.get("change_percent", 0),
-                "market_open": is_open,
-            }
-        )
-
+        output.append({
+            "ticker": ticker,
+            "company_name": name_map.get(ticker, ""),
+            "current_price": res.get("current_price", 0),
+            "change_percent": res.get("change_percent", 0),
+            "market_open": is_open,
+        })
     return output
 
 
@@ -295,15 +395,21 @@ async def getTopGainersandLosers() -> dict:
     return {"gainers": gainers, "losers": losers}
 
 
-async def getPriceHistory(stock: str) -> list:
+async def getPriceHistory(stock: str, period: str = "1M") -> list:
+    period_days = {"1W": 7, "1M": 30, "3M": 90, "1Y": 365}
+    days = period_days.get(period.upper(), 30)
+    cutoff = (datetime.today() - timedelta(days=days)).strftime("%Y-%m-%d")
     result = (
         supabase.table("price_history")
         .select("date, open, high, low, close, volume")
         .eq("ticker", stock.upper())
+        .gte("date", cutoff)
         .order("date", desc=False)
         .execute()
     )
-    return result.data or []
+    if result.data:
+        return result.data
+    return await _yf_history(stock.upper(), period)
 
 
 async def getLivePrice(stock: str) -> dict:
@@ -343,3 +449,38 @@ async def getLiveStockData(ticker: Optional[str] = None):
         return await fetchPriceData(ticker)
     stock_data = await getStockData()
     return await getLiveUpdates(stock_data)
+
+
+# ---- Fundamental Analysis (yfinance) ----
+def _yf_fundamentals_sync(ticker: str) -> dict:
+    def _s(key, default=None):
+        v = info.get(key)
+        return v if v not in (None, "N/A", "None", "") else default
+
+    try:
+        info = yf.Ticker(ticker).info or {}
+        return {
+            "market_cap": _s("marketCap"),
+            "pe_ratio": _s("trailingPE"),
+            "forward_pe": _s("forwardPE"),
+            "eps": _s("trailingEps"),
+            "revenue": _s("totalRevenue"),
+            "profit_margin": _s("profitMargins"),
+            "dividend_yield": _s("dividendYield"),
+            "week52_high": _s("fiftyTwoWeekHigh"),
+            "week52_low": _s("fiftyTwoWeekLow"),
+            "beta": _s("beta"),
+            "sector": _s("sector"),
+            "industry": _s("industry"),
+            "description": _s("longBusinessSummary", ""),
+            "employees": _s("fullTimeEmployees"),
+            "roe": _s("returnOnEquity"),
+            "debt_to_equity": _s("debtToEquity"),
+        }
+    except Exception:
+        return {}
+
+
+async def fetchFundamentals(ticker: str) -> dict:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(_executor, _yf_fundamentals_sync, ticker)

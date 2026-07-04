@@ -28,12 +28,16 @@ from app.services.auth_service import (
 router = APIRouter()
 
 
+_VALID_SELF_REGISTER_ROLES = {"investor", "trader"}
+
+
 class RegisterRequest(BaseModel):
     name: str
     email: str
     password: str
     sectors: Optional[List[str]] = []
     level: Optional[str] = "moderate"
+    role: Optional[str] = "investor"
 
 
 class LoginRequest(BaseModel):
@@ -70,6 +74,8 @@ async def register(body: RegisterRequest):
     if existing.data:
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    role = body.role if body.role in _VALID_SELF_REGISTER_ROLES else "investor"
+
     hashed = hashPassword(body.password)
     insert_result = (
         supabase.table("users")
@@ -78,7 +84,7 @@ async def register(body: RegisterRequest):
                 "name": body.name,
                 "email": body.email,
                 "password_hash": hashed,
-                "role": "investor",
+                "role": role,
                 "status": "active",
             }
         )

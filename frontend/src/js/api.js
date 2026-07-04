@@ -1,11 +1,8 @@
-/* StockWise AI — API Helper
-   Base: http://localhost:8000/api
-   Auth: JWT stored in localStorage as sw_token
-*/
-const API_BASE = 'http://localhost:8000/api';
+// StockWise AI — API helper (base: http://localhost:8000/api)
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const api = {
-  /* ---- Auth helpers ---- */
+  // Auth helpers
   getToken()   { return localStorage.getItem('sw_token'); },
   getUserId()  { return localStorage.getItem('sw_uid'); },
   getUser()    { try { return JSON.parse(localStorage.getItem('sw_user') || 'null'); } catch { return null; } },
@@ -25,7 +22,7 @@ const api = {
     localStorage.removeItem('sw_role');
   },
 
-  /* ---- Core fetch wrapper ---- */
+  // Core fetch wrapper
   async fetch(path, options = {}) {
     const token = this.getToken();
     const headers = {
@@ -43,7 +40,7 @@ const api = {
 
     if (res.status === 401) {
       this.clearAuth();
-      window.location.href = 'login.html';
+      window.location.href = '/login';
       return;
     }
 
@@ -59,7 +56,7 @@ const api = {
     return res.json();
   },
 
-  /* ---- Auth endpoints ---- */
+  // Auth endpoints
   async login(email, password) {
     const data = await this.fetch('/auth/login', {
       method: 'POST',
@@ -69,10 +66,10 @@ const api = {
     return data;
   },
 
-  async register(name, email, password, sectors = [], level = 'moderate') {
+  async register(name, email, password, sectors = [], level = 'moderate', role = 'investor') {
     return this.fetch('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, sectors, level }),
+      body: JSON.stringify({ name, email, password, sectors, level, role }),
     });
   },
 
@@ -85,7 +82,7 @@ const api = {
       });
     } catch {}
     this.clearAuth();
-    window.location.href = 'login.html';
+    window.location.href = '/login';
   },
 
   async getUser_(userId) {
@@ -114,7 +111,7 @@ const api = {
     });
   },
 
-  /* ---- Stock endpoints ---- */
+  // Stock endpoints
   async getTrending() {
     return this.fetch('/stocks/trending');
   },
@@ -147,7 +144,7 @@ const api = {
     return this.fetch(`/stocks/${ticker.toUpperCase()}/orderbook`);
   },
 
-  /* ---- Prediction endpoints (auth required) ---- */
+  // Prediction endpoints (auth required)
   async getPrediction(ticker) {
     return this.fetch(`/predictions/${ticker.toUpperCase()}`);
   },
@@ -169,23 +166,23 @@ const api = {
   },
 };
 
-/* ---- Guard: redirect if not logged in ---- */
+// Guard: redirect if not logged in
 function requireAuth() {
   if (!api.isLoggedIn()) {
-    window.location.href = 'login.html';
+    window.location.href = '/login';
     return false;
   }
   return true;
 }
 
-/* ---- Guard: redirect if already logged in ---- */
-function redirectIfLoggedIn(dest = 'dashboard.html') {
+// Guard: redirect if already logged in
+function redirectIfLoggedIn(dest = '/dashboard') {
   if (api.isLoggedIn()) {
     window.location.href = dest;
   }
 }
 
-/* ---- Sidebar toggle helpers ---- */
+// Sidebar toggle helpers
 function openSidebar() {
   document.getElementById('sidebar')?.classList.add('open');
   document.getElementById('sidebarOverlay')?.classList.add('open');
@@ -202,7 +199,7 @@ function toggleSidebar() {
   sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
 }
 
-/* ---- Toast notifications ---- */
+// Toast notifications
 function showToast(message, type = 'success', duration = 3500) {
   let container = document.getElementById('toast-container');
   if (!container) {
@@ -220,7 +217,7 @@ function showToast(message, type = 'success', duration = 3500) {
   setTimeout(() => toast.remove(), duration);
 }
 
-/* ---- Format helpers ---- */
+// Format helpers
 function fmt(n) {
   if (n == null) return '—';
   return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -249,7 +246,7 @@ function escHtml(str) {
   return el.innerHTML;
 }
 
-/* ---- Debounce ---- */
+// Debounce
 function debounce(fn, delay = 300) {
   let t;
   return (...args) => {
@@ -258,7 +255,7 @@ function debounce(fn, delay = 300) {
   };
 }
 
-/* ---- Hover sidebar (left-edge trigger, replaces click) ---- */
+// Hover sidebar (left-edge trigger, replaces click)
 function initHoverSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
@@ -281,7 +278,7 @@ function initHoverSidebar() {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSidebar(); closeDropdown(); } });
 }
 
-/* ---- Avatar dropdown ---- */
+// Avatar dropdown
 function initAvatarDropdown() {
   const btn  = document.getElementById('avatarBtn');
   const drop = document.getElementById('navDropdown');
@@ -303,7 +300,7 @@ function closeDropdown() {
   btn?.setAttribute('aria-expanded', 'false');
 }
 
-/* ---- Populate avatar from stored user ---- */
+// Populate avatar from stored user
 function populateAvatar() {
   const user       = api.getUser();
   const avatarWrap = document.getElementById('avatarWrap');
@@ -325,8 +322,10 @@ function populateAvatar() {
   }
 }
 
-/* ---- Logo navigation: dashboard if logged in, index if not ---- */
+// Logo navigation: dashboard if logged in, index if not
 document.addEventListener('DOMContentLoaded', () => {
-  const dest = api.isLoggedIn() ? 'dashboard.html' : 'index.html';
+  const dest = api.isLoggedIn() ? '/dashboard' : '/';
   document.querySelectorAll('a.logo-btn, a.sidebar-logo').forEach(a => { a.href = dest; });
 });
+
+export { api as default, requireAuth, redirectIfLoggedIn, closeSidebar, showToast, fmt, fmtChange, fmtSignal, escHtml, debounce, initHoverSidebar, initAvatarDropdown, populateAvatar };
