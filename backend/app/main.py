@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import (
-    auth, stocks, predictions, news, alerts, notifications, admin
+    auth, stocks, predictions, news, alerts, notifications, admin, watchlist, portfolio,
+    feedback
 )
 
 app = FastAPI(
@@ -26,6 +27,9 @@ app.include_router(news.router, prefix="/api", tags=["News"])
 app.include_router(alerts.router, prefix="/api", tags=["Alerts"])
 app.include_router(notifications.router, prefix="/api", tags=["Notifications"])
 app.include_router(admin.router, prefix="/api", tags=["Admin"])
+app.include_router(watchlist.router, prefix="/api", tags=["Watchlist"])
+app.include_router(portfolio.router, prefix="/api", tags=["Portfolio"])
+app.include_router(feedback.router, prefix="/api/feedback", tags=["Feedback"])
 
 
 @app.get("/")
