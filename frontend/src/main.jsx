@@ -7,7 +7,7 @@ import './styles/shared.css'
 // Intercepts all /api/admin/* calls with fake data.
 // Login: any @stockwise.ai email + password "admin123"
 // Remove this import when backend is ready.
-import './pages/admin/adminMock'
+// import './pages/admin/adminMock'
 // ─────────────────────────────────────────────────────
 
 ReactDOM.createRoot(document.getElementById('root')).render(
