@@ -3,8 +3,8 @@ import adminApi from '../../js/adminApi'
 import {showToast} from '../../js/api'
 import '../../styles/admin/adminShared.css'
 
-function ViewAPIPage({target, onClose, onEdit}){
-  const[api,setApi]= useState(target || null)
+function ViewAPIModal({target, onClose, onEdit}){
+  const[api,setApi]= useState(target||null)
   const[loading,setLoading]= useState(false)
 
   useEffect(()=>{
@@ -12,7 +12,7 @@ function ViewAPIPage({target, onClose, onEdit}){
       setLoading(true)
       adminApi.getApiById(target.id)
         .then(setApi)
-        .catch(err=>showToast(err.message || 'Failed to load API source', 'error'))
+        .catch(err=>showToast(err.message||'Failed to load API source', 'error'))
         .finally(()=>setLoading(false))
     }
   }, [target?.id])
@@ -29,28 +29,28 @@ function ViewAPIPage({target, onClose, onEdit}){
 
         <div className="admin-modal-body">
           {loading ? (
-            <div style={{ textAlign:'center', padding:'2rem' }}><span className="admin-spinner"/></div>
+            <div style={{textAlign:'center', padding:'2rem'}}><span className="admin-spinner"/></div>
           ) : !api ? (
             <div className="admin-empty"><p>API source not found.</p></div>
           ) : (
-            <div style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
+            <div style={{display:'flex', flexDirection:'column', gap:'1rem'}}>
               {[
-                { label:'Source Name', val: api.name || '—', mono: false },
-                { label:'Base URL',    val: api.base_url || api.url || '—', mono: true },
-                { label:'Purpose',     val: api.purpose || api.description || '—', mono: false },
-                { label:'Rate Limit',  val: api.rate_limit != null ? `${api.rate_limit} req/min` : '—', mono: false },
-                { label:'API Key',     val: '•••••••••••• (stored encrypted)', mono: false },
-              ].map(f => (
+                {label:'Source Name', val: api.name || '—', mono: false},
+                {label:'Base URL',val: api.base_url || api.url || '—', mono: true},
+                {label:'Purpose',val: api.purpose || api.description || '—', mono: false},
+                {label:'Rate Limit',val: api.rate_limit != null ? `${api.rate_limit} req/min` : '—', mono: false},
+                {label:'API Key',val: '•••••••••••• (stored encrypted)', mono: false},
+              ].map(f=>(
                 <div key={f.label}>
                   <div className="admin-form-label">{f.label}</div>
-                  <div style={{ fontSize:'0.875rem', color:'var(--text)', marginTop:'0.2rem', fontFamily: f.mono ? 'var(--font-mono)' : 'inherit', wordBreak:'break-all' }}>
+                  <div style={{fontSize:'0.875rem', color:'var(--text)', marginTop:'0.2rem', fontFamily: f.mono ? 'var(--font-mono)' : 'inherit', wordBreak:'break-all'}}>
                     {f.val}
                   </div>
                 </div>
               ))}
               <div>
                 <div className="admin-form-label">Status</div>
-                <span className={`status-badge ${api.is_active!==false?'status-active':'status-suspended'}`} style={{ marginTop:'0.2rem', display:'inline-flex' }}>
+                <span className={`status-badge ${api.is_active!==false?'status-active':'status-suspended'}`} style={{marginTop:'0.2rem', display:'inline-flex'}}>
                   {api.is_active !== false ? 'Active' : 'Inactive'}
                 </span>
               </div>
@@ -61,7 +61,7 @@ function ViewAPIPage({target, onClose, onEdit}){
         {api && (
           <div className="admin-modal-footer">
             <button className="btn-admin btn-ghost" onClick={onClose}>Close</button>
-            <button className="btn-admin btn-primary" onClick={() => { onClose?.(); onEdit?.(api) }}>
+            <button className="btn-admin btn-primary" onClick={()=>{onClose?.(); onEdit?.(api)}}>
               Edit Source
             </button>
           </div>
@@ -71,4 +71,4 @@ function ViewAPIPage({target, onClose, onEdit}){
   )
 }
 
-export default ViewAPIPage
+export default ViewAPIModal
