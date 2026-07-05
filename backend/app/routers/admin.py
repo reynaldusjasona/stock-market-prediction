@@ -72,6 +72,7 @@ async def getPerformanceMetric(
 ):
     return await getLatestMetrics()
 
+
 @router.get("/admin/alerts", tags=["Admin"])
 async def getPriceAlertsRoute(
     current_user: dict = Depends(_require_admin),
