@@ -124,6 +124,7 @@ async def getLatestMetrics() -> list:
     )
     return result.data or []
 
+
 async def getPriceAlerts() -> dict:
     result = (
         supabase.table("price_alerts")
