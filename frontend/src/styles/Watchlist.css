@@ -1,0 +1,84 @@
+.watchlist-page {
+    display: flex;
+    min-height: 100vh;
+}
+
+.watchlist-content {
+    margin-left: 220px;
+    padding: 40px;
+    flex: 1;
+}
+
+.watchlist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.watchlist-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.watchlist-header p {
+    color: #888;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.btn-add {
+    background: #00ff41;
+    color: #000000;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+
+.add-form {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    align-items: center;
+}
+
+.add-form input {
+    width: 250px;
+}
+
+.table-wrap {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.btn-remove {
+    background: transparent;
+    color: #ff4444;
+    border: 1px solid #ff4444;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.btn-remove:hover {
+    background: #ff4444;
+    color: #ffffff;
+}
+
+.ticker-cell {
+    color: #00ff41;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.error-msg {
+    color: #ff4444;
+    font-size: 14px;
+    margin-bottom: 16px;
+}

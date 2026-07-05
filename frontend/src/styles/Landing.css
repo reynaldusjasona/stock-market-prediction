@@ -1,0 +1,234 @@
+/* navbar */
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 40px;
+    border-bottom: 1px solid #1a1b20;
+}
+
+.nav-logo {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.nav-logo span {
+    color: #00ff41;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-login {
+    background: transparent;
+    color: #ffffff;
+    border: 1px solid #2a2b30;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.btn-register {
+    background: #00ff41;
+    color: #000000;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* hero */
+.hero {
+    padding: 80px 40px;
+    max-width: 700px;
+}
+
+.hero-tag {
+    color: #00ff41;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+}
+
+.hero h1 {
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 20px;
+}
+
+.hero h1 span {
+    color: #00ff41;
+}
+
+.hero p {
+    color: #888;
+    font-size: 16px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 16px;
+}
+
+.btn-primary {
+    background: #00ff41;
+    color: #000000;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: #ffffff;
+    border: 1px solid #2a2b30;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+/* sections */
+.section {
+    padding: 80px 40px;
+    border-top: 1px solid #1a1b20;
+}
+
+.section-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.section-sub {
+    color: #888;
+    margin-bottom: 48px;
+}
+
+/* cards grid */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.card {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.card p {
+    color: #888;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* testimonials */
+.testimonial-card {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.testimonial-card .stars {
+    color: #00ff41;
+    margin-bottom: 12px;
+}
+
+.testimonial-card .quote {
+    color: #ccc;
+    font-size: 14px;
+    font-style: italic;
+    margin-bottom: 16px;
+}
+
+.testimonial-card .author {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* subscription */
+.plan-card {
+    background: #13141a;
+    border: 1px solid #00ff41;
+    border-radius: 8px;
+    padding: 40px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.plan-card .plan-name {
+    color: #00ff41;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+}
+
+.plan-card .plan-price {
+    font-size: 52px;
+    font-weight: 700;
+    margin-bottom: 24px;
+}
+
+.plan-card .plan-price span {
+    font-size: 18px;
+    color: #888;
+}
+
+.plan-card ul {
+    list-style: none;
+    margin-bottom: 32px;
+}
+
+.plan-card ul li {
+    color: #ccc;
+    font-size: 14px;
+    padding: 8px 0;
+    border-bottom: 1px solid #1a1b20;
+}
+
+.plan-card .btn-primary {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    text-align: center;
+    border-radius: 6px;
+}
+
+/* faq */
+.faq-item {
+    border-bottom: 1px solid #1a1b20;
+}
+
+.faq-question {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.faq-answer {
+    color: #888;
+    font-size: 14px;
+    padding-bottom: 20px;
+    line-height: 1.6;
+}
