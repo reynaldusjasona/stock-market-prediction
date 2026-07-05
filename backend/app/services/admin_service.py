@@ -123,3 +123,19 @@ async def getLatestMetrics() -> list:
         .execute()
     )
     return result.data or []
+
+
+async def getPriceAlerts() -> dict:
+    result = (
+        supabase.table("price_alerts")
+        .select("*")
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    data = result.data or []
+
+    return {
+        "data": data,
+        "total": len(data)
+    }

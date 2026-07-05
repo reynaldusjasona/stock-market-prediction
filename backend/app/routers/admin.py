@@ -7,11 +7,13 @@ from app.core.security import get_current_user
 from app.services.admin_service import (
     getAllUserAccount,
     getLatestMetrics,
+    getPriceAlerts,
     searchUserByKeywords,
     suspendAccount as svcSuspendAccount,
     updateUserDetails as svcUpdateUserDetails,
     validatePermission,
 )
+
 
 router = APIRouter()
 
@@ -69,3 +71,10 @@ async def getPerformanceMetric(
     current_user: dict = Depends(_require_admin),
 ):
     return await getLatestMetrics()
+
+
+@router.get("/admin/alerts", tags=["Admin"])
+async def getPriceAlertsRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    return await getPriceAlerts()
