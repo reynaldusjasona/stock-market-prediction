@@ -8,6 +8,8 @@ import ViewModelPerformancePage from './ViewModelPerformancePage'
 import ManageAPIPage from './ManageAPIPage'
 import ManageFeedbacksPage from './ManageFeedbacksPage'
 import ViewAlertsPage from './ViewAlertsPage'
+import ViewActivityLogPage from './ViewActivityLogPage'
+import ViewAdminAccountModal from './ViewAdminAccountModal'
 import ResetPasswordModal from './ResetPasswordModal'
 import LogoutPage from './LogoutPage'
 import '../../styles/shared.css'
@@ -15,50 +17,55 @@ import '../../styles/admin/adminShared.css'
 
 const NAV =[
   {key:'overview',label:'Dashboard',icon:'grid'},
-  {key:'users',label:'Manage Users',icon:'users'},
+  {key:'users',label:'User Accounts',icon:'users'},
   {key:'landing',label:'Landing Page',icon:'monitor'},
-  {key:'model',label:'Model Performance',icon:'chart'},
-  {key:'apis',label:'API Sources',icon:'code'},
+  {key:'model',label:'Model Performance', icon:'chart'},
+  {key:'apis',label:'API',icon:'code'},
   {key:'feedback',label:'Feedback',icon:'chat'},
   {key:'alerts',label:'Alerts',icon:'bell'},
+  {key:'activity',label:'Activity Log',icon:'log'},
 ]
 
 function Icon({name, size=15}){
   const p = {stroke:'currentColor', strokeWidth:'1.3', strokeLinecap:'round', strokeLinejoin:'round'}
   const icons={
     grid:<svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-			<rect x="2" y="2" width="5" height="5" rx="1" {...p}/>
-			<rect x="9" y="2" width="5" height="5" rx="1" {...p}/>
-			<rect x="2" y="9" width="5" height="5" rx="1" {...p}/>
-			<rect x="9" y="9" width="5" height="5" rx="1" {...p}/>
-		</svg>,
+      <rect x="2" y="2" width="5" height="5" rx="1" {...p}/>
+      <rect x="9" y="2" width="5" height="5" rx="1" {...p}/>
+      <rect x="2" y="9" width="5" height="5" rx="1" {...p}/>
+      <rect x="9" y="9" width="5" height="5" rx="1" {...p}/>
+    </svg>,
     users:<svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-			<circle cx="6" cy="5" r="3" {...p}/>
-			<path d="M1 14c0-3.314 2.239-5 5-5s5 1.686 5 5" {...p}/>
-			<path d="M11 7.5a2.5 2.5 0 100-5M13 13.5c0-2.5-1.5-4-3-4.5" {...p}/>
-		 </svg>,
+      <circle cx="6" cy="5" r="3" {...p}/>
+      <path d="M1 14c0-3.314 2.239-5 5-5s5 1.686 5 5" {...p}/>
+      <path d="M11 7.5a2.5 2.5 0 100-5M13 13.5c0-2.5-1.5-4-3-4.5" {...p}/>
+    </svg>,
     monitor:<svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-				<rect x="1" y="2" width="14" height="9" rx="1.5" {...p}/>
-				<path d="M5 14h6M8 11v3" {...p}/>
-			</svg>,
+      <rect x="1" y="2" width="14" height="9" rx="1.5" {...p}/>
+      <path d="M5 14h6M8 11v3" {...p}/>
+    </svg>,
     chart:<svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-			<path d="M2 11l3-5 3 3 2-4 4 6" {...p}/>
-			<rect x="1" y="1" width="14" height="14" rx="2" {...p}/>
-		</svg>,
+      <path d="M2 11l3-5 3 3 2-4 4 6" {...p}/>
+      <rect x="1" y="1" width="14" height="14" rx="2" {...p}/>
+    </svg>,
     code:<svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-			<path d="M5 4L2 8l3 4M11 4l3 4-3 4" {...p}/>
-			<path d="M9.5 2l-3 12" {...p}/>
-		</svg>,
+      <path d="M5 4L2 8l3 4M11 4l3 4-3 4" {...p}/>
+      <path d="M9.5 2l-3 12" {...p}/>
+    </svg>,
     chat:<svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-			<path d="M2 2h12a1 1 0 011 1v7a1 1 0 01-1 1H5l-3 3V3a1 1 0 011-1z" {...p}/>
-		</svg>,
+      <path d="M2 2h12a1 1 0 011 1v7a1 1 0 01-1 1H5l-3 3V3a1 1 0 011-1z" {...p}/>
+    </svg>,
     bell:<svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-			<path d="M8 1.5a5.5 5.5 0 00-5.5 5.5v3l-1 1.5h13l-1-1.5V7A5.5 5.5 0 008 1.5z" {...p}/>
-			<path d="M6.5 12.5a1.5 1.5 0 003 0" {...p}/>
-		</svg>,
+      <path d="M8 1.5a5.5 5.5 0 00-5.5 5.5v3l-1 1.5h13l-1-1.5V7A5.5 5.5 0 008 1.5z" {...p}/>
+      <path d="M6.5 12.5a1.5 1.5 0 003 0" {...p}/>
+    </svg>,
+    log:<svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="1" width="12" height="14" rx="1.5" {...p}/>
+      <path d="M5 5h6M5 8h6M5 11h4" {...p}/>
+    </svg>,
     reset:<svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-			<path d="M13.5 8A5.5 5.5 0 012.5 8M2.5 8V5M2.5 8H5.5M2.5 5a5.5 5.5 0 0111 0" {...p}/>
-		</svg>,
+      <path d="M13.5 8A5.5 5.5 0 012.5 8M2.5 8V5M2.5 8H5.5M2.5 5a5.5 5.5 0 0111 0" {...p}/>
+    </svg>,
   }
   return icons[name]||null
 }
@@ -68,6 +75,7 @@ function DashboardPage(){
   const initial = NAV.find(n => n.key===searchParams.get('tab'))?.key || 'overview'
   const[activeTab,setActiveTab]= useState(initial)
   const[showReset,setShowReset]= useState(false)
+  const[showAccount,setShowAccount]= useState(false)
   const[stats,setStats]= useState(null)
   const[alertCount,setAlertCount]= useState(0)
   const[authed,setAuthed]= useState(false)
@@ -86,14 +94,10 @@ function DashboardPage(){
       .catch(()=>{})
   }, [])
 
-  const goTab=(key)=>{setActiveTab(key); 
-					  setSearchParams({tab: key}) 
-					  }
+  const goTab=(key)=>{setActiveTab(key); setSearchParams({tab: key})}
 
-  if (!sessionStorage.getItem('sw_token') || sessionStorage.getItem('sw_role') !== 'admin') 
-	  return null
-  if (!authed) 
-	  return null
+  if (!sessionStorage.getItem('sw_token') || sessionStorage.getItem('sw_role') !== 'admin') return null
+  if (!authed) return null
 
   const user= api.getUser()
   const initials= (user?.name || 'A').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -201,14 +205,19 @@ function DashboardPage(){
                   borderRadius:'50%', background:'#ff4444'}}/>
               )}
             </button>
-            <div style={{width:'28px', height:'28px', borderRadius:'50%', background:'var(--accent)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              fontSize:'0.68rem', fontWeight:700, color:'#000'}}>
-              {initials}
-            </div>
-            <span style={{fontSize:'0.8rem', color:'var(--text)', fontWeight:600}}>
-              {user?.name || 'Admin'}
-            </span>
+            <button
+              onClick={() => setShowAccount(true)}
+              style={{ display:'flex', alignItems:'center', gap:'0.6rem', background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'var(--font-sans)' }}
+              title="View my account">
+              <div style={{width:'28px', height:'28px', borderRadius:'50%', background:'var(--accent)',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:'0.68rem', fontWeight:700, color:'#000'}}>
+                {initials}
+              </div>
+              <span style={{fontSize:'0.8rem', color:'var(--text)', fontWeight:600}}>
+                {user?.name || 'Admin'}
+              </span>
+            </button>
           </div>
         </header>
 
@@ -225,17 +234,19 @@ function DashboardPage(){
 
         {/* Content */}
         <div style={{ flex:1, padding:'1.75rem', maxWidth:'1200px', width:'100%' }}>
-          {activeTab==='overview' && <OverviewPanel stats={stats} onNav={goTab}/>}
-          {activeTab==='users' && <ManageUserAccountsPage/>}
-          {activeTab==='landing' && <LandingPageEditorPage/>}
-          {activeTab==='model' && <ViewModelPerformancePage/>}
-          {activeTab==='apis' && <ManageAPIPage/>}
-          {activeTab==='feedback' && <ManageFeedbacksPage/>}
-          {activeTab==='alerts' && <ViewAlertsPage/>}
+          {activeTab==='overview'  && <OverviewPanel stats={stats} onNav={goTab}/>}
+          {activeTab==='users'     && <ManageUserAccountsPage/>}
+          {activeTab==='landing'   && <LandingPageEditorPage/>}
+          {activeTab==='model'     && <ViewModelPerformancePage/>}
+          {activeTab==='apis'      && <ManageAPIPage/>}
+          {activeTab==='feedback'  && <ManageFeedbacksPage/>}
+          {activeTab==='alerts'    && <ViewAlertsPage/>}
+          {activeTab==='activity'  && <ViewActivityLogPage/>}
         </div>
       </div>
 
-      {showReset && <ResetPasswordModal onClose={()=>setShowReset(false)}/>}
+      {showReset   && <ResetPasswordModal      onClose={()=>setShowReset(false)}/>}
+      {showAccount && <ViewAdminAccountModal   onClose={()=>setShowAccount(false)}/>}
       <div id="toast-container"/>
     </div>
   )
@@ -245,19 +256,19 @@ function OverviewPanel({stats, onNav}){
   const s = stats || {}
 
   const cards=[
-    {label:'Total Users', val: s.total_users ?? '—', nav:'users',color:''},
-    {label:'Model Accuracy', val: s.model_accuracy != null ? s.model_accuracy.toFixed(1)+'%' : '—', nav:'model',color:'var(--accent)'},
+    {label:'Total Users',      val: s.total_users      ?? '—', nav:'users',    color:''},
+    {label:'Model Accuracy',   val: s.model_accuracy   != null ? s.model_accuracy.toFixed(1)+'%' : '—', nav:'model', color:'var(--accent)'},
     {label:'Pending Feedback', val: s.pending_feedback ?? '—', nav:'feedback', color:''},
-    {label:'Open Alerts',val: s.open_alerts ?? '—', nav:'alerts',color: (s.open_alerts > 0) ? '#ff4444' : ''},
+    {label:'Open Alerts',      val: s.open_alerts      ?? '—', nav:'alerts',   color: (s.open_alerts > 0) ? '#ff4444' : ''},
   ]
 
   const attention = []
-  if (s.open_alerts > 0)      
-	  attention.push({label:`${s.open_alerts} open alert${s.open_alerts!==1?'s':''}`, nav:'alerts',color:'#ff4444'})
-  if (s.pending_feedback > 0) 
-	  attention.push({ label:`${s.pending_feedback} feedback item${s.pending_feedback!==1?'s':''} awaiting review`, nav:'feedback', color:'#ffd600'})
-  if (s.suspended_users > 0)  
-	  attention.push({ label:`${s.suspended_users} suspended user${s.suspended_users!==1?'s':''}`,   nav:'users',    color:'#ff8c00'})
+  if (s.open_alerts > 0)
+    attention.push({label:`${s.open_alerts} open alert${s.open_alerts!==1?'s':''}`, nav:'alerts', color:'#ff4444'})
+  if (s.pending_feedback > 0)
+    attention.push({label:`${s.pending_feedback} feedback item${s.pending_feedback!==1?'s':''} awaiting review`, nav:'feedback', color:'#ffd600'})
+  if (s.suspended_users > 0)
+    attention.push({label:`${s.suspended_users} suspended user${s.suspended_users!==1?'s':''}`, nav:'users', color:'#ff8c00'})
 
   return(
     <div>
@@ -270,7 +281,6 @@ function OverviewPanel({stats, onNav}){
         </p>
       </div>
 
-      {/* Needs attention — only renders if there's something to flag */}
       {attention.length > 0 && (
         <div style={{marginBottom:'1.75rem'}}>
           <div style={{fontSize:'0.7rem', fontWeight:600, letterSpacing:'0.07em', textTransform:'uppercase', color:'var(--text-muted)', marginBottom:'0.6rem'}}>
@@ -295,7 +305,6 @@ function OverviewPanel({stats, onNav}){
         </div>
       )}
 
-      {/* Core stats */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(165px,1fr))', gap:'1rem' }}>
         {cards.map(c => (
           <div key={c.label} onClick={() => onNav(c.nav)}
