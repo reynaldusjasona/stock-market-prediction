@@ -1,17 +1,6 @@
-import {useEffect, useState} from 'react'
+import { useEffect, useState } from 'react'
 import api from '../../js/api'
 import '../../styles/shared.css'
-
-const apiFetch= async (path, options={})=>{
-  const res= await fetch(`/api${path}`,{
-    headers: {'Content-Type': 'application/json'},
-    ...options,
-  })
-  const data= await res.json().catch(() => ({}))
-  if (!res.ok) 
-	  throw new Error(data.detail||data.message||'Request failed')
-  return data
-}
 
 function LoginPage(){
   const[step,setStep]= useState('credentials')
@@ -24,14 +13,12 @@ function LoginPage(){
   const[credAlert,setCredAlert]= useState({ msg:'', type:'' })
   const[credLoad,setCredLoad]= useState(false)
 
-  // 2FA
   const[pin,setPin]= useState(['','','','','',''])
   const[twoFaAlert,setTwoFaAlert]= useState({ msg:'', type:'' })
   const[twoFaLoad,setTwoFaLoad]= useState(false)
   const[resendLoad,setResendLoad]= useState(false)
   const[resendCool,setResendCool]= useState(0)
 
-  // Forgot password
   const[fpEmail,setFpEmail]= useState('')
   const[fpAlert,setFpAlert]= useState({ msg:'', type:'' })
   const[fpLoad,setFpLoad]= useState(false)
@@ -40,17 +27,16 @@ function LoginPage(){
     document.title= 'Admin Login — StockWise AI'
     const token= sessionStorage.getItem('sw_token')
     const role= sessionStorage.getItem('sw_role')
-    if (token && role==='admin'){
+    if (token && role === 'admin') {
       window.location.replace('/admin')
     }
   }, [])
 
-  // Resend cooldown ticker
   useEffect(()=>{
-    if (resendCool<=0) 
+    if (resendCool <= 0) 
 		return
-    const t= setTimeout(()=> setResendCool(c=>c-1),1000)
-    return ()=> clearTimeout(t)
+    const t=setTimeout(()=>setResendCool(c => c - 1),1000)
+    return ()=>clearTimeout(t)
   }, [resendCool])
 
   const handleCredentials= async(e)=>{
@@ -59,30 +45,25 @@ function LoginPage(){
     if (!email.trim()){ 
 		setCredAlert({msg:'Please enter your email address.', type:'error'}); 
 		return 
-		}
+	}
     if (!password.trim()){ 
-		setCredAlert({ msg:'Please enter your password.', type:'error'}); 
+		setCredAlert({ msg:'Please enter your password.',type:'error'}); 
 		return 
-		}
+	}
     setCredLoad(true)
     try{
-      const data= await apiFetch('/auth/login',{
-        method: 'POST',
-        body: JSON.stringify({email: email.trim(), password}),
-      })
+      const data= await api.fetch('/auth/login',{method:'POST', body:JSON.stringify({email: email.trim(), password})})
 
       if (data?.user?.role !== 'admin'){
         setCredAlert({msg:'Access denied. Administrator accounts only.', type:'error'})
         setCredLoad(false)
         return
       }
-      sessionStorage.setItem('sw_token_pending', data.token)
-      sessionStorage.setItem('sw_user_pending',  JSON.stringify(data.user))
 
-      await apiFetch('/auth/send-2fa',{
-        method: 'POST',
-        body: JSON.stringify({email: email.trim()}),
-      })
+      sessionStorage.setItem('sw_token_pending',data.token)
+      sessionStorage.setItem('sw_user_pending',JSON.stringify(data.user))
+
+      await api.fetch('/auth/send-2fa', {method:'POST', body:JSON.stringify({email: email.trim()})})
 
       setCredLoad(false)
       setStep('2fa')
@@ -93,23 +74,20 @@ function LoginPage(){
     }
   }
 
-  const handleVerify2fa = async(e)=>{
+  const handleVerify2fa= async(e)=>{
     e.preventDefault()
     setTwoFaAlert({msg:'', type:''})
     const code = pin.join('')
     if (code.length < 6){ 
 		setTwoFaAlert({msg:'Please enter the full 6-digit PIN.', type:'error'}); 
 		return 
-	 }
+	}
     setTwoFaLoad(true)
     try{
-      await apiFetch('/auth/verify-2fa',{
-        method: 'POST',
-        body: JSON.stringify({email: email.trim(), code}),
-      })
+      await api.fetch('/auth/verify-2fa', {method:'POST', body:JSON.stringify({email: email.trim(), code})})
 
       const token= sessionStorage.getItem('sw_token_pending')
-      const user= JSON.parse(sessionStorage.getItem('sw_user_pending')||'{}')
+      const user= JSON.parse(sessionStorage.getItem('sw_user_pending') || '{}')
       sessionStorage.removeItem('sw_token_pending')
       sessionStorage.removeItem('sw_user_pending')
       sessionStorage.setItem('sw_token',token)
@@ -120,22 +98,16 @@ function LoginPage(){
       window.location.replace('/admin')
     } 
 	catch (err){
-      setTwoFaAlert({msg: err.message||'Invalid or expired PIN. Please try again.', type:'error'})
+      setTwoFaAlert({msg: err.message || 'Invalid or expired PIN. Please try again.', type:'error'})
       setPin(['','','','','',''])
       document.getElementById('pin-0')?.focus()
-    } 
-	finally{ 
-		setTwoFaLoad(false) 
-	}
+    } finally { setTwoFaLoad(false) }
   }
 
-  const handleResend = async()=>{
+  const handleResend= async()=>{
     setResendLoad(true)
     try{
-      await apiFetch('/auth/send-2fa',{
-        method: 'POST',
-        body: JSON.stringify({email: email.trim()}),
-      })
+      await api.fetch('/auth/send-2fa', {method:'POST', body:JSON.stringify({email: email.trim()})})
       setTwoFaAlert({msg:'A new PIN has been sent to your email.', type:'success'})
       setResendCool(30)
     } 
@@ -143,18 +115,18 @@ function LoginPage(){
       setTwoFaAlert({msg: err.message || 'Failed to resend PIN.', type:'error'})
     } 
 	finally{ 
-		setResendLoad(false) 
+	  setResendLoad(false) 
 	}
   }
 
-  const handlePinChange=(i,val)=>{
+  const handlePinChange=(i, val)=>{
     const v= val.replace(/\D/,'').slice(-1)
     const next= [...pin]; next[i] = v; setPin(next)
     if (v && i < 5) 
 		document.getElementById(`pin-${i+1}`)?.focus()
   }
 
-  const handlePinKeyDown=(i,e)=>{
+  const handlePinKeyDown = (i, e)=>{
     if (e.key==='Backspace' && !pin[i] && i > 0) 
 		document.getElementById(`pin-${i-1}`)?.focus()
     if (e.key==='ArrowLeft'  && i > 0) 
@@ -168,25 +140,22 @@ function LoginPage(){
     if (!text) 
 		return
     e.preventDefault()
-    const next=['','','','','','']
-    text.split('').forEach((c,i)=>{next[i] = c})
+    const next= ['','','','','','']
+    text.split('').forEach((c, i)=> { next[i] = c })
     setPin(next)
     document.getElementById(`pin-${Math.min(text.length, 5)}`)?.focus()
   }
 
-  const handleForgotPassword=async(e)=>{
+  const handleForgotPassword= async(e)=>{
     e.preventDefault()
     setFpAlert({msg:'', type:''})
-    if (!fpEmail.trim()){
+    if (!fpEmail.trim()){ 
 		setFpAlert({msg:'Please enter your email address.', type:'error'}); 
 		return 
-		}
+	}
     setFpLoad(true)
     try{
-      await apiFetch('/auth/reset-password', {
-        method: 'POST',
-        body: JSON.stringify({ email: fpEmail.trim() }),
-      })
+      await api.fetch('/auth/reset-password', {method:'POST', body:JSON.stringify({email: fpEmail.trim()})})
       setFpAlert({msg:`Reset link sent to ${fpEmail}. Check your inbox.`, type:'success'})
       setFpEmail('')
     } 
@@ -194,18 +163,14 @@ function LoginPage(){
       setFpAlert({msg: err.message || 'Failed to send reset link.', type:'error'})
     } 
 	finally{ 
-		setFpLoad(false) 
+	  setFpLoad(false) 
 	}
   }
 
-  const closeForgot =()=>{setModal(null); 
-						   setFpAlert({msg:'', type:''}); 
-						   setFpEmail('')
-						}
+  const closeForgot=()=>{setModal(null); setFpAlert({msg:'', type:''}); setFpEmail('')}
 
   return(
     <div style={S.page}>
-
       {/* Top bar */}
       <div style={S.topbar}>
         <div style={S.topbarBrand}>
@@ -297,7 +262,6 @@ function LoginPage(){
                   }
                 </button>
               </form>
-
               <div style={S.sessionInfo}><span>🔒 ENCRYPTED TLS 1.3 SESSION</span></div>
             </>
           )}
@@ -331,7 +295,6 @@ function LoginPage(){
                     />
                   ))}
                 </div>
-
                 <button type="submit"
                   style={{ ...S.submitBtn, opacity: (twoFaLoad || pin.join('').length < 6) ? 0.6 : 1 }}
                   disabled={twoFaLoad || pin.join('').length < 6}>
@@ -356,7 +319,6 @@ function LoginPage(){
                   {resendLoad ? 'Sending…' : resendCool > 0 ? `Resend in ${resendCool}s` : 'Resend PIN'}
                 </button>
               </div>
-
               <div style={{ ...S.sessionInfo, marginTop:'1rem' }}>
                 <span>PIN expires in 10 minutes</span>
               </div>
@@ -426,30 +388,30 @@ function LoginPage(){
 }
 
 const S = {
-  page:        { minHeight:'100vh', background:'var(--bg)', display:'flex', flexDirection:'column', fontFamily:'var(--font-sans)' },
-  topbar:      { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0.75rem 2rem', borderBottom:'1px solid var(--border)', background:'var(--surface)' },
-  topbarBrand: { display:'flex', alignItems:'center', gap:'0.6rem' },
-  topbarName:  { fontSize:'1rem', fontWeight:700, color:'var(--text)' },
-  adminPill:   { fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.1em', background:'rgba(255,140,0,0.15)', color:'#ff8c00', border:'1px solid rgba(255,140,0,0.3)', borderRadius:'4px', padding:'0.15rem 0.45rem' },
-  topbarRight: { fontSize:'0.72rem', color:'var(--text-subtle)', letterSpacing:'0.05em' },
-  center:      { flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'2rem' },
-  card:        { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'14px', padding:'2.5rem 2rem', width:'100%', maxWidth:'400px', boxShadow:'0 8px 32px rgba(0,0,0,0.4)' },
-  iconWrap:    { width:'52px', height:'52px', borderRadius:'14px', background:'rgba(0,255,65,0.08)', border:'1px solid rgba(0,255,65,0.2)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 1.25rem' },
-  title:       { fontSize:'1.35rem', fontWeight:700, color:'var(--text)', textAlign:'center', margin:'0 0 0.35rem' },
-  sub:         { fontSize:'0.82rem', color:'var(--text-muted)', textAlign:'center', margin:'0 0 1.5rem', lineHeight:1.6 },
-  warnBanner:  { display:'flex', alignItems:'flex-start', gap:'0.5rem', background:'rgba(255,140,0,0.07)', border:'1px solid rgba(255,140,0,0.2)', borderRadius:'8px', padding:'0.65rem 0.85rem', fontSize:'0.75rem', color:'#ff8c00', lineHeight:1.5, marginBottom:'1.5rem' },
-  form:        { display:'flex', flexDirection:'column' },
-  fieldGroup:  { marginBottom:'1.1rem' },
-  label:       { display:'block', fontSize:'0.68rem', fontWeight:700, letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:'0.4rem', textTransform:'uppercase' },
-  input:       { width:'100%', padding:'0.6rem 0.85rem', background:'var(--bg)', border:'1px solid var(--border)', borderRadius:'8px', color:'var(--text)', fontSize:'0.875rem', fontFamily:'var(--font-sans)', boxSizing:'border-box', transition:'border-color 0.15s' },
-  submitBtn:   { width:'100%', padding:'0.7rem 1rem', marginTop:'0.5rem', background:'var(--accent)', color:'#000', border:'none', borderRadius:'8px', fontSize:'0.82rem', fontWeight:700, letterSpacing:'0.06em', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem', transition:'opacity 0.15s', fontFamily:'var(--font-sans)' },
-  ghostBtn:    { padding:'0.55rem 1rem', background:'transparent', border:'1px solid var(--border)', borderRadius:'8px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:600, cursor:'pointer', fontFamily:'var(--font-sans)' },
-  sessionInfo: { marginTop:'1.5rem', paddingTop:'1rem', borderTop:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.65rem', color:'var(--text-subtle)', letterSpacing:'0.04em' },
-  footer:      { display:'flex', justifyContent:'space-between', alignItems:'center', padding:'1rem 2rem', borderTop:'1px solid var(--border)', fontSize:'0.75rem', color:'var(--text-subtle)' },
-  footerLink:  { color:'var(--text-subtle)', textDecoration:'none' },
-  overlay:     { position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', backdropFilter:'blur(4px)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' },
-  modalBox:    { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'14px', width:'100%', maxWidth:'440px', boxShadow:'0 24px 64px rgba(0,0,0,0.5)' },
-  modalHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'1.2rem 1.5rem', borderBottom:'1px solid var(--border)' },
+  page:{ minHeight:'100vh', background:'var(--bg)', display:'flex', flexDirection:'column', fontFamily:'var(--font-sans)' },
+  topbar:{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0.75rem 2rem', borderBottom:'1px solid var(--border)', background:'var(--surface)' },
+  topbarBrand:{ display:'flex', alignItems:'center', gap:'0.6rem' },
+  topbarName:{ fontSize:'1rem', fontWeight:700, color:'var(--text)' },
+  adminPill:{ fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.1em', background:'rgba(255,140,0,0.15)', color:'#ff8c00', border:'1px solid rgba(255,140,0,0.3)', borderRadius:'4px', padding:'0.15rem 0.45rem' },
+  topbarRight:{ fontSize:'0.72rem', color:'var(--text-subtle)', letterSpacing:'0.05em' },
+  center:{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'2rem' },
+  card:{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'14px', padding:'2.5rem 2rem', width:'100%', maxWidth:'400px', boxShadow:'0 8px 32px rgba(0,0,0,0.4)' },
+  iconWrap:{ width:'52px', height:'52px', borderRadius:'14px', background:'rgba(0,255,65,0.08)', border:'1px solid rgba(0,255,65,0.2)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 1.25rem' },
+  title:{ fontSize:'1.35rem', fontWeight:700, color:'var(--text)', textAlign:'center', margin:'0 0 0.35rem' },
+  sub:{ fontSize:'0.82rem', color:'var(--text-muted)', textAlign:'center', margin:'0 0 1.5rem', lineHeight:1.6 },
+  warnBanner:{ display:'flex', alignItems:'flex-start', gap:'0.5rem', background:'rgba(255,140,0,0.07)', border:'1px solid rgba(255,140,0,0.2)', borderRadius:'8px', padding:'0.65rem 0.85rem', fontSize:'0.75rem', color:'#ff8c00', lineHeight:1.5, marginBottom:'1.5rem' },
+  form:{ display:'flex', flexDirection:'column' },
+  fieldGroup:{ marginBottom:'1.1rem' },
+  label:{ display:'block', fontSize:'0.68rem', fontWeight:700, letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:'0.4rem', textTransform:'uppercase' },
+  input:{ width:'100%', padding:'0.6rem 0.85rem', background:'var(--bg)', border:'1px solid var(--border)', borderRadius:'8px', color:'var(--text)', fontSize:'0.875rem', fontFamily:'var(--font-sans)', boxSizing:'border-box', transition:'border-color 0.15s' },
+  submitBtn:{ width:'100%', padding:'0.7rem 1rem', marginTop:'0.5rem', background:'var(--accent)', color:'#000', border:'none', borderRadius:'8px', fontSize:'0.82rem', fontWeight:700, letterSpacing:'0.06em', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem', transition:'opacity 0.15s', fontFamily:'var(--font-sans)' },
+  ghostBtn:{ padding:'0.55rem 1rem', background:'transparent', border:'1px solid var(--border)', borderRadius:'8px', color:'var(--text-muted)', fontSize:'0.8rem', fontWeight:600, cursor:'pointer', fontFamily:'var(--font-sans)' },
+  sessionInfo:{ marginTop:'1.5rem', paddingTop:'1rem', borderTop:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.65rem', color:'var(--text-subtle)', letterSpacing:'0.04em' },
+  footer:{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'1rem 2rem', borderTop:'1px solid var(--border)', fontSize:'0.75rem', color:'var(--text-subtle)' },
+  footerLink:{ color:'var(--text-subtle)', textDecoration:'none' },
+  overlay:{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', backdropFilter:'blur(4px)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' },
+  modalBox:{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'14px', width:'100%', maxWidth:'440px', boxShadow:'0 24px 64px rgba(0,0,0,0.5)' },
+  modalHeader:{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'1.2rem 1.5rem', borderBottom:'1px solid var(--border)' },
 }
 
 export default LoginPage
