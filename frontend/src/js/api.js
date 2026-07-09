@@ -1,8 +1,6 @@
-// StockWise AI — API helper (base: http://localhost:8000/api)
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const api = {
-  // Auth helpers
   getToken()   { return localStorage.getItem('sw_token'); },
   getUserId()  { return localStorage.getItem('sw_uid'); },
   getUser()    { try { return JSON.parse(localStorage.getItem('sw_user') || 'null'); } catch { return null; } },
@@ -175,14 +173,12 @@ function requireAuth() {
   return true;
 }
 
-// Guard: redirect if already logged in
 function redirectIfLoggedIn(dest = '/dashboard') {
   if (api.isLoggedIn()) {
     window.location.href = dest;
   }
 }
 
-// Sidebar toggle helpers
 function openSidebar() {
   document.getElementById('sidebar')?.classList.add('open');
   document.getElementById('sidebarOverlay')?.classList.add('open');
@@ -246,7 +242,6 @@ function escHtml(str) {
   return el.innerHTML;
 }
 
-// Debounce
 function debounce(fn, delay = 300) {
   let t;
   return (...args) => {
@@ -255,7 +250,6 @@ function debounce(fn, delay = 300) {
   };
 }
 
-// Hover sidebar (left-edge trigger, replaces click)
 function initHoverSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
@@ -278,7 +272,6 @@ function initHoverSidebar() {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSidebar(); closeDropdown(); } });
 }
 
-// Avatar dropdown
 function initAvatarDropdown() {
   const btn  = document.getElementById('avatarBtn');
   const drop = document.getElementById('navDropdown');
@@ -300,7 +293,6 @@ function closeDropdown() {
   btn?.setAttribute('aria-expanded', 'false');
 }
 
-// Populate avatar from stored user
 function populateAvatar() {
   const user       = api.getUser();
   const avatarWrap = document.getElementById('avatarWrap');
