@@ -1,6 +1,8 @@
 import os
+import random
 import re
 import secrets
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 
@@ -124,6 +126,40 @@ async def login(identifier: str, password: str) -> dict:
         {"session_token": token}
     ).eq("id", user["id"]).execute()
     return {"token": token, "user": _strip_hash(user)}
+
+
+async def generateOtp() -> str:
+    return f"{random.randint(0, 999999):06d}"
+
+
+async def saveOtp(email: str, otpCode: str) -> None:
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+    supabase.table("users").update(
+        {"otp_code": otpCode, "otp_expires_at": expires_at.isoformat()}
+    ).eq("email", email).execute()
+
+
+async def verifyOtp(email: str, otpCode: str) -> bool:
+    result = (
+        supabase.table("users")
+        .select("otp_code, otp_expires_at")
+        .eq("email", email)
+        .execute()
+    )
+    if not result.data:
+        return False
+    user = result.data[0]
+    if not user.get("otp_code") or user["otp_code"] != otpCode:
+        return False
+    expires_at = user.get("otp_expires_at")
+    if not expires_at or datetime.fromisoformat(expires_at) <= datetime.now(
+        timezone.utc
+    ):
+        return False
+    supabase.table("users").update(
+        {"otp_code": None, "otp_expires_at": None}
+    ).eq("email", email).execute()
+    return True
 
 
 async def getUserDetails(investorID: str) -> dict:
