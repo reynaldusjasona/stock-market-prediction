@@ -4,10 +4,12 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.core.database import supabase
+from app.core.email import sendOtpEmail
 from app.core.security import hashPassword
 from app.services.auth_service import (
     createAndSendVerificationEmail,
     deleteAccountAndData,
+    generateOtp,
     getDeleteConfirm,
     getInvestorRecordForEdit as svcGetInvestorRecordForEdit,
     getPreferences as svcGetPreferences,
@@ -17,6 +19,7 @@ from app.services.auth_service import (
     login as svcLogin,
     logout as svcLogout,
     resendVerification as svcResendVerification,
+    saveOtp,
     savePreferences,
     updateAccount as svcUpdateAccount,
     updatePreferences as svcUpdatePreferences,
@@ -25,6 +28,7 @@ from app.services.auth_service import (
     validateFormInput,
     validateInputs,
     verifyEmailToken as svcVerifyEmailToken,
+    verifyOtp,
 )
 
 router = APIRouter()
@@ -45,6 +49,15 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+
+class SendTwoFactorRequest(BaseModel):
+    email: str
+
+
+class VerifyTwoFactorRequest(BaseModel):
+    email: str
+    otp_code: str
 
 
 class UpdateAccountRequest(BaseModel):
@@ -112,6 +125,38 @@ async def register(body: RegisterRequest):
 @router.post("/auth/login", tags=["Auth"])
 async def login(body: LoginRequest):
     return await svcLogin(body.email, body.password)
+
+
+@router.post("/auth/send-2fa", tags=["Auth"])
+async def sendTwoFactorCode(body: SendTwoFactorRequest):
+    user_result = (
+        supabase.table("users")
+        .select("id, role")
+        .eq("email", body.email)
+        .execute()
+    )
+    if not user_result.data or user_result.data[0].get("role") != "admin":
+        raise HTTPException(status_code=400, detail="Invalid request.")
+
+    otp_code = await generateOtp()
+    await saveOtp(body.email, otp_code)
+    sent = await sendOtpEmail(body.email, otp_code)
+    if not sent:
+        print(
+            f"[2fa] Failed to send OTP email to {body.email}. "
+            f"Fallback code: {otp_code}"
+        )
+    return {"message": "Verification code sent to your email."}
+
+
+@router.post("/auth/verify-2fa", tags=["Auth"])
+async def verifyTwoFactorCode(body: VerifyTwoFactorRequest):
+    verified = await verifyOtp(body.email, body.otp_code)
+    if not verified:
+        raise HTTPException(
+            status_code=401, detail="Invalid or expired verification code."
+        )
+    return {"verified": True, "message": "2FA verification successful."}
 
 
 @router.get("/auth/verify/{token}", tags=["Auth"])
