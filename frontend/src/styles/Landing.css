@@ -17,6 +17,21 @@
     color: #00ff41;
 }
 
+.nav-links {
+    display: flex;
+    gap: 32px;
+}
+
+.nav-links span {
+    color: #888;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.nav-links span:hover {
+    color: #ffffff;
+}
+
 .nav-buttons {
     display: flex;
     gap: 12px;
