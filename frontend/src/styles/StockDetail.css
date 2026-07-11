@@ -1,0 +1,264 @@
+.back-link {
+    display: inline-block;
+    color: #888;
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.back-link:hover {
+    color: #ffffff;
+}
+
+.stock-header-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.stock-price-big {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.stat-item {
+    color: #888;
+    font-size: 13px;
+}
+
+/* tabs */
+.tab-bar {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #1a1b20;
+    margin: 24px 0;
+}
+
+.tab-item {
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #888;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-item:hover {
+    color: #ffffff;
+}
+
+.tab-item.active {
+    color: #00ff41;
+    border-bottom: 2px solid #00ff41;
+}
+
+.tab-content {
+    margin-bottom: 32px;
+}
+
+/* chart timeframe buttons */
+.chart-timeframes {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.timeframe-btn {
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    background: transparent;
+    color: #888;
+    border: 1px solid #2a2b30;
+    border-radius: 4px;
+}
+
+.timeframe-btn:hover {
+    color: #ffffff;
+}
+
+.timeframe-btn.active {
+    background: #00ff41;
+    color: #000000;
+    border: 1px solid #00ff41;
+    border-radius: 4px;
+}
+
+/* news cards */
+.news-card {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+}
+
+.news-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.news-card-top h3 {
+    font-size: 15px;
+    color: #ffffff;
+    margin: 0;
+}
+
+.sentiment-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.sentiment-positive {
+    background: rgba(0, 255, 65, 0.15);
+    color: #00ff41;
+}
+
+.sentiment-negative {
+    background: rgba(255, 68, 68, 0.15);
+    color: #ff4444;
+}
+
+.sentiment-neutral {
+    background: rgba(136, 136, 136, 0.15);
+    color: #888;
+}
+
+.news-summary {
+    color: #aaa;
+    font-size: 13px;
+    margin: 10px 0;
+}
+
+.news-card-bottom {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #666;
+}
+
+.news-card-bottom a {
+    color: #00ff41;
+    text-decoration: none;
+}
+
+/* prediction */
+.prediction-box {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+}
+
+.signal-big {
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+}
+
+.signal-buy {
+    color: #00ff41;
+}
+
+.signal-sell {
+    color: #ff4444;
+}
+
+.signal-hold {
+    color: #888;
+}
+
+.confidence-line,
+.risk-line {
+    color: #ccc;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.reasoning-text {
+    color: #888;
+    font-size: 13px;
+    margin-top: 16px;
+    text-align: left;
+}
+
+/* fundamentals */
+.fund-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.fund-box {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fund-label {
+    color: #888;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.fund-value {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* order book */
+.orderbook-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.orderbook-col {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.orderbook-col h3 {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 12px;
+}
+
+.orderbook-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 14px;
+    border-bottom: 1px solid #1a1b20;
+}
+
+.orderbook-row:last-child {
+    border-bottom: none;
+}
+
+.bid-row span:first-child {
+    color: #00ff41;
+}
+
+.ask-row span:first-child {
+    color: #ff4444;
+}

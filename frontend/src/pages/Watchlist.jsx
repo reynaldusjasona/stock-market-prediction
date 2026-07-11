@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
 import '../styles/Watchlist.css'
+import AddStock from '../components/watchlist/AddStock'
+import RemoveStock from '../components/watchlist/RemoveStock'
 
 function Watchlist() {
     const [watchlist, setWatchlist] = useState([])
@@ -11,7 +14,13 @@ function Watchlist() {
     const [searchResults, setSearchResults] = useState([])
     const [showDropdown, setShowDropdown] = useState(false)
     const [selectedFromSearch, setSelectedFromSearch] = useState(false)
+    const { logout } = useAuth()
     const navigate = useNavigate()
+
+    function handleLogout() {
+        logout()
+        navigate('/login')
+    }
 
     useEffect(() => {
         getMyStocks()
@@ -85,9 +94,14 @@ function Watchlist() {
             <aside className="sidebar">
                 <div className="sidebar-logo">StockWise <span>AI</span></div>
                 <span className="sidebar-link" onClick={() => navigate('/dashboard')}>Dashboard</span>
+                <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
+                <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
                 <span className="sidebar-link active">Watchlist</span>
                 <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
+                <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
+                <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
                 <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
+                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
             </aside>
 
             <div className="watchlist-content">
@@ -100,36 +114,15 @@ function Watchlist() {
 
                 {error && <p className="error-msg">{error}</p>}
 
-                <div className="add-form">
-                    <div className="search-wrap">
-                        <input
-                            value={ticker}
-                            onChange={(e) => searchStocks(e.target.value)}
-                            placeholder="Search ticker or company..."
-                        />
-                        {showDropdown && searchResults.length > 0 && (
-                            <div className="search-dropdown">
-                                {searchResults.map((stock) => (
-                                    <div
-                                        key={stock.ticker}
-                                        className="search-item"
-                                        onClick={() => selectStock(stock.ticker)}
-                                    >
-                                        <span className="search-ticker">{stock.ticker}</span>
-                                        <span className="search-name">{stock.company_name}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                    <button
-                        className="btn-add"
-                        onClick={addStock}
-                        style={{ opacity: selectedFromSearch ? 1 : 0.5 }}
-                    >
-                        + Add Stock
-                    </button>
-                </div>
+                <AddStock
+                    ticker={ticker}
+                    onChange={searchStocks}
+                    searchResults={searchResults}
+                    showDropdown={showDropdown}
+                    onSelect={selectStock}
+                    onAdd={addStock}
+                    selectedFromSearch={selectedFromSearch}
+                />
 
                 <div className="table-wrap">
                     <table>
@@ -144,9 +137,7 @@ function Watchlist() {
                                 <tr key={item.id}>
                                     <td className="ticker-cell">{item.ticker}</td>
                                     <td>
-                                        <button className="btn-remove" onClick={() => removeStock(item.ticker)}>
-                                            Remove
-                                        </button>
+                                        <RemoveStock ticker={item.ticker} onRemove={removeStock} />
                                     </td>
                                 </tr>
                             ))}

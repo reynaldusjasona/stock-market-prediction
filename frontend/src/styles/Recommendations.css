@@ -1,0 +1,88 @@
+.recommendations-page {
+    display: flex;
+    min-height: 100vh;
+}
+
+.recommendations-content {
+    margin-left: 220px;
+    padding: 40px;
+    flex: 1;
+}
+
+.recommendations-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.recommendations-header p {
+    color: #888;
+    font-size: 14px;
+    margin-top: 4px;
+    margin-bottom: 24px;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.recommendation-card {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.rec-ticker {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.rec-signal {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    margin: 12px 0;
+}
+
+.signal-buy {
+    color: #00ff41;
+}
+
+.signal-sell {
+    color: #ff4444;
+}
+
+.signal-hold {
+    color: #ffcc00;
+}
+
+.rec-confidence {
+    color: #ccc;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.rec-risk {
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.rec-reasoning {
+    color: #888;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.recommendation-history {
+    margin-top: 40px;
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    color: #888;
+}
