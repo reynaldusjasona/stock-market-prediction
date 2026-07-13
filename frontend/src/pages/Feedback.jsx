@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
 import '../styles/Feedback.css'
 
@@ -9,7 +10,13 @@ function Feedback() {
     const [rating, setRating] = useState(0)
     const [error, setError] = useState(null)
     const [success, setSuccess] = useState(false)
+    const { logout } = useAuth()
     const navigate = useNavigate()
+
+    function handleLogout() {
+        logout()
+        navigate('/login')
+    }
 
     // submit feedback to backend
     async function submitFeedback() {
@@ -30,9 +37,14 @@ function Feedback() {
             <aside className="sidebar">
                 <div className="sidebar-logo">StockWise <span>AI</span></div>
                 <span className="sidebar-link" onClick={() => navigate('/dashboard')}>Dashboard</span>
+                <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
+                <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
                 <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
                 <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
+                <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
+                <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
                 <span className="sidebar-link active">Feedback</span>
+                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
             </aside>
 
             <div className="feedback-content">
