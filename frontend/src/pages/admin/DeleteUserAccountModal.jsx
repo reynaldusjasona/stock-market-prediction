@@ -1,6 +1,6 @@
 import {useState} from 'react'
 import adminApi from '../../js/adminApi'
-import {showToast} from '../../js/api'
+import {showToast} from '../../js/adminUi'
 import '../../styles/admin/adminShared.css'
 
 function DeleteUserAccountModal({target,onClose,onDone}){
