@@ -1,6 +1,6 @@
 import {useState, useEffect} from 'react'
 import adminApi from '../../js/adminApi'
-import {showToast} from '../../js/api'
+import {showToast} from '../../js/adminUi'
 import '../../styles/admin/adminShared.css'
 
 const AVT = ['#2563eb','#7c3aed','#0891b2','#0d9488','#d97706','#dc2626','#9333ea','#16a34a']

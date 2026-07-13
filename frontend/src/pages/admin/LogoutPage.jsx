@@ -1,15 +1,9 @@
-import api from '../../js/api'
+import {adminLogout} from '../../js/adminUi'
 import '../../styles/admin/adminShared.css'
 
 function LogoutPage(){
   const handleLogout=()=>{
-    sessionStorage.removeItem('sw_token')
-    sessionStorage.removeItem('sw_role')
-    sessionStorage.removeItem('sw_user')
-    sessionStorage.removeItem('sw_uid')
-    sessionStorage.removeItem('sw_token_pending')
-    sessionStorage.removeItem('sw_user_pending')
-    api.logout().finally(()=>window.location.replace('/admin/login'))
+    adminLogout().finally(()=>window.location.replace('/admin/login'))
   }
 
   return(
