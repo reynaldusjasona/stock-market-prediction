@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
 from app.core.security import get_current_user
@@ -50,6 +50,25 @@ async def cancelSubscription(
         return await subscription_service.cancelSubscription(userID)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.post("/checkout")
+async def createCheckoutSession(
+    current_user: dict = Depends(get_current_user),
+):
+    userID = current_user["sub"]
+    email = current_user.get("email", "")
+    return await subscription_service.createCheckoutSession(userID, email)
+
+
+@router.post("/webhook")
+async def stripeWebhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    try:
+        return await subscription_service.handleWebhookEvent(payload, sig_header)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @admin_router.get("")
