@@ -1,6 +1,6 @@
 import {useEffect, useState, useRef} from 'react'
 import adminApi from '../../js/adminApi'
-import {showToast} from '../../js/api'
+import {showToast} from '../../js/adminUi'
 import ViewAlertModal from './ViewAlertModal'
 import SearchAlertsComponent from './SearchAlertsComponent'
 import '../../styles/admin/adminShared.css'

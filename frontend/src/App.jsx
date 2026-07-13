@@ -16,6 +16,9 @@ import Feedback from './pages/Feedback'
 
 import Landing from './pages/Landing'
 
+import AdminLoginPage from './pages/admin/LoginPage'
+import AdminDashboardPage from './pages/admin/DashboardPage'
+
 
 function App() {
   return (
@@ -45,6 +48,10 @@ function App() {
           <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
 
           <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+
+          <Route path="/admin" element={<AdminDashboardPage />} />
 
         </Routes>
       </BrowserRouter>
