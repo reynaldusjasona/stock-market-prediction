@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
 import '../styles/Subscription.css'
@@ -12,6 +12,7 @@ function Subscription() {
     const [success, setSuccess] = useState(null)
     const { logout } = useAuth()
     const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams()
 
     function handleLogout() {
         logout()
@@ -42,13 +43,27 @@ function Subscription() {
         loadSubscription().finally(() => setLoading(false))
     }, [])
 
-    async function subscribe(planId) {
+    // handle redirect back from Stripe Checkout
+    useEffect(() => {
+        const status = searchParams.get('status')
+        if (status === 'success') {
+            setSuccess('Payment successful! Activating your subscription...')
+            // fallback activation in case the webhook hasn't fired yet
+            api.post('/subscription').catch(() => {}).finally(() => loadSubscription())
+            setSearchParams({}, { replace: true })
+        } else if (status === 'cancelled') {
+            setError('Payment cancelled.')
+            setSearchParams({}, { replace: true })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    async function startCheckout() {
         setError(null)
         setSuccess(null)
         try {
-            await api.post('/subscription', { plan: planId })
-            setSuccess('Subscription successful!')
-            loadSubscription()
+            const data = await api.post('/subscription/checkout')
+            window.location.href = data.checkout_url
         } catch (err) {
             setError(err.message)
         }
@@ -120,7 +135,7 @@ function Subscription() {
                             {currentSub && currentSub.plan === p.plan && currentSub.status === 'active' ? (
                                 <button className="btn-subscribed" disabled>Current Plan</button>
                             ) : (
-                                <button className="btn-subscribe" onClick={() => subscribe(p.plan)}>Subscribe</button>
+                                <button className="btn-subscribe" onClick={startCheckout}>Subscribe</button>
                             )}
                         </div>
                     ))}
