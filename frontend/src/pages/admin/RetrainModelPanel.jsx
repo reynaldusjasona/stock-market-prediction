@@ -1,6 +1,6 @@
 import {useEffect,useState,useRef} from 'react'
 import adminApi from '../../js/adminApi'
-import {showToast} from '../../js/api'
+import {showToast} from '../../js/adminUi'
 import '../../styles/admin/adminShared.css'
 
 const today= new Date().toISOString().split('T')[0]

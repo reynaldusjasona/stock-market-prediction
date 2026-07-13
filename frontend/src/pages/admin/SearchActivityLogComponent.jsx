@@ -1,10 +1,10 @@
 import {useState} from 'react'
 import {debounce} from '../../js/adminUi'
 
-const debouncedSearch= debounce((fn, q)=>fn(q),280)
+const debouncedSearch= debounce((fn, q)=>fn(q), 280)
 
-function SearchAlertsComponent({onSearch}){
-  const [value, setValue]= useState('')
+function SearchActivityLogComponent({onSearch, defaultValue = ''}){
+  const[value, setValue]= useState(defaultValue)
 
   const handleChange=(e)=>{
     const q= e.target.value
@@ -21,19 +21,16 @@ function SearchAlertsComponent({onSearch}){
       <input
         className="admin-search-input"
         type="text"
-        placeholder="Search alerts…"
+        placeholder="Search by admin name or action…"
         value={value}
         onChange={handleChange}
-        onKeyDown={e => { if (e.key === 'Escape'){ 
-							setValue(''); 
-							onSearch('') } 
-						}}
+        onKeyDown={e => { if (e.key === 'Escape') { setValue(''); onSearch('') } }}
         autoComplete="off"
-        aria-label="Search alerts"
+        aria-label="Search activity log"
       />
       {value && (
         <button
-          onClick={()=>{ setValue(''); onSearch('') }}
+          onClick={() => { setValue(''); onSearch('') }}
           aria-label="Clear search"
           style={{
             position:'absolute', right:'0.6rem', top:'50%',
@@ -49,4 +46,4 @@ function SearchAlertsComponent({onSearch}){
   )
 }
 
-export default SearchAlertsComponent
+export default SearchActivityLogComponent
