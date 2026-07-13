@@ -117,10 +117,13 @@ async def createCheckoutSession(userID: str, email: str) -> dict:
             "checkout_url": f"{_FRONTEND_URL}/subscription?status=success&session_id=mock_session"
         }
 
+    success_url = (
+        f"{_FRONTEND_URL}/subscription?status=success&session_id={{CHECKOUT_SESSION_ID}}"
+    )
     session = stripe.checkout.Session.create(
         mode="subscription",
         line_items=[{"price": _STRIPE_PRICE_ID, "quantity": 1}],
-        success_url=f"{_FRONTEND_URL}/subscription?status=success&session_id={{CHECKOUT_SESSION_ID}}",
+        success_url=success_url,
         cancel_url=f"{_FRONTEND_URL}/subscription?status=cancelled",
         client_reference_id=userID,
         customer_email=email,
