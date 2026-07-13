@@ -6,6 +6,11 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Portfolio from './pages/Portfolio'
+import StockDetail from './pages/StockDetail'
+import AllStocks from './pages/AllStocks'
+import Recommendations from './pages/Recommendations'
+import Alerts from './pages/Alerts'
+import Notifications from './pages/Notifications'
 
 import Feedback from './pages/Feedback'
 
@@ -30,6 +35,16 @@ function App() {
           <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
 
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+
+          <Route path="/stock/:ticker" element={<ProtectedRoute><StockDetail /></ProtectedRoute>} />
+
+          <Route path="/allstocks" element={<ProtectedRoute><AllStocks /></ProtectedRoute>} />
+
+          <Route path="/recommendations" element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
+
+          <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
+
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
 
         </Routes>
       </BrowserRouter>

@@ -1,0 +1,38 @@
+.allstocks-page {
+    display: flex;
+    min-height: 100vh;
+}
+
+.allstocks-content {
+    margin-left: 220px;
+    padding: 40px;
+    flex: 1;
+}
+
+.allstocks-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.allstocks-header p {
+    color: #888;
+    font-size: 14px;
+    margin-top: 4px;
+    margin-bottom: 24px;
+}
+
+.stock-search-input {
+    max-width: 400px;
+    margin-bottom: 24px;
+}
+
+.allstocks-table-wrap {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.allstocks-table-wrap tr {
+    cursor: pointer;
+}
