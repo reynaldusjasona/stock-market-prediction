@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react'
 import adminApi from '../../js/adminApi'
-import {showToast} from '../../js/api'
+import {showToast} from '../../js/adminUi'
 import SearchFeedbackComponent from './SearchFeedbackComponent'
 import ViewFeedbackModal from './ViewFeedbackModal'
 import ApproveFeedbackModal from './ApproveFeedbackModal'
