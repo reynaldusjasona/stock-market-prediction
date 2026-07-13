@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react'
 import adminApi from '../../js/adminApi'
-import {showToast} from '../../js/api'
+import {showToast} from '../../js/adminUi'
 import SearchUsersComponent from './SearchUsersComponent'
 import ViewUserAccountModal from './ViewUserAccountModal'
 import UpdateUserAccountModal from './UpdateUserAccountModal'
