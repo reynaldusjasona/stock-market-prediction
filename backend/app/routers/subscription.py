@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.core.security import get_current_user
 from app.services import subscription_service
+from app.services.activity_service import logActivity
 
 router = APIRouter(prefix="/subscription", tags=["Subscription"])
 admin_router = APIRouter(prefix="/admin/subscriptions", tags=["Admin"])
@@ -33,12 +34,20 @@ async def createSubscription(
     current_user: dict = Depends(get_current_user),
 ):
     if body.plan != "premium":
-        raise HTTPException(status_code=400, detail="Invalid plan. Only 'premium' is available.")
+        raise HTTPException(
+            status_code=400, detail="Invalid plan. Only 'premium' is available."
+        )
     userID = current_user["sub"]
     try:
-        return await subscription_service.createSubscription(userID, body.plan)
+        result = await subscription_service.createSubscription(userID, body.plan)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    await logActivity(
+        userID=str(userID),
+        action="subscription_activated",
+        targetType="subscription",
+    )
+    return result
 
 
 @router.post("/cancel")
