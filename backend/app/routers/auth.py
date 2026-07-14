@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.core.database import supabase
 from app.core.email import sendOtpEmail
 from app.core.security import hashPassword
+from app.services.activity_service import logActivity
 from app.services.auth_service import (
     createAndSendVerificationEmail,
     deleteAccountAndData,
@@ -124,7 +125,11 @@ async def register(body: RegisterRequest):
 
 @router.post("/auth/login", tags=["Auth"])
 async def login(body: LoginRequest):
-    return await svcLogin(body.email, body.password)
+    result = await svcLogin(body.email, body.password)
+    await logActivity(
+        userID=result["user"]["id"], action="login", targetType="auth"
+    )
+    return result
 
 
 @router.post("/auth/send-2fa", tags=["Auth"])

@@ -7,6 +7,7 @@ import stripe
 from dotenv import load_dotenv
 
 from app.core.database import supabase
+from app.services.activity_service import logActivity
 
 load_dotenv()
 
@@ -114,11 +115,15 @@ async def getAllSubscriptions(status_filter: Optional[str] = None) -> list:
 async def createCheckoutSession(userID: str, email: str) -> dict:
     if not _STRIPE_SECRET_KEY:
         return {
-            "checkout_url": f"{_FRONTEND_URL}/subscription?status=success&session_id=mock_session"
+            "checkout_url": (
+                f"{_FRONTEND_URL}/subscription"
+                "?status=success&session_id=mock_session"
+            )
         }
 
     success_url = (
-        f"{_FRONTEND_URL}/subscription?status=success&session_id={{CHECKOUT_SESSION_ID}}"
+        f"{_FRONTEND_URL}/subscription"
+        "?status=success&session_id={CHECKOUT_SESSION_ID}"
     )
     session = stripe.checkout.Session.create(
         mode="subscription",
@@ -135,13 +140,20 @@ async def _activateSubscriptionFromWebhook(userID: str) -> None:
     try:
         await createSubscription(userID, "premium")
     except ValueError:
-        pass
+        return
+    await logActivity(
+        userID=str(userID),
+        action="subscription_activated_webhook",
+        targetType="subscription",
+    )
 
 
 async def handleWebhookEvent(payload: bytes, sig_header: Optional[str]) -> dict:
     if _STRIPE_WEBHOOK_SECRET:
         try:
-            event = stripe.Webhook.construct_event(payload, sig_header, _STRIPE_WEBHOOK_SECRET)
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, _STRIPE_WEBHOOK_SECRET
+            )
         except (ValueError, stripe.error.SignatureVerificationError) as exc:
             raise ValueError(str(exc))
     else:
