@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.core.security import get_current_user
 from app.services.admin_service import (
+    getActivityLogs,
     getAllUserAccount,
     getLatestMetrics,
     getPriceAlerts,
@@ -78,3 +79,13 @@ async def getPriceAlertsRoute(
     current_user: dict = Depends(_require_admin),
 ):
     return await getPriceAlerts()
+
+
+@router.get("/admin/activity-log", tags=["Admin"])
+async def getActivityLog(
+    page: int = 1,
+    limit: int = 20,
+    action: Optional[str] = None,
+    current_user: dict = Depends(_require_admin),
+):
+    return await getActivityLogs(page, limit, action)
