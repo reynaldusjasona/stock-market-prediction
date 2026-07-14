@@ -139,3 +139,55 @@ async def getPriceAlerts() -> dict:
         "data": data,
         "total": len(data)
     }
+
+
+async def getActivityLogs(
+    page: int = 1,
+    limit: int = 20,
+    actionFilter: str = None,
+) -> dict:
+    offset = (page - 1) * limit
+
+    countQuery = supabase.table("activity_logs").select("id", count="exact")
+    if actionFilter:
+        countQuery = countQuery.eq("action", actionFilter)
+    countResult = countQuery.execute()
+    total = countResult.count or 0
+
+    logsQuery = (
+        supabase.table("activity_logs")
+        .select("*")
+        .order("created_at", desc=True)
+    )
+    if actionFilter:
+        logsQuery = logsQuery.eq("action", actionFilter)
+    logsResult = logsQuery.range(offset, offset + limit - 1).execute()
+    logs = logsResult.data or []
+
+    userIDs = list({log["user_id"] for log in logs if log.get("user_id")})
+    userMap = {}
+    if userIDs:
+        usersResult = (
+            supabase.table("users")
+            .select("id, name, email")
+            .in_("id", userIDs)
+            .execute()
+        )
+        userMap = {u["id"]: u for u in (usersResult.data or [])}
+
+    items = []
+    for log in logs:
+        user = userMap.get(log.get("user_id"), {})
+        items.append({
+            "id": log["id"],
+            "user_id": log.get("user_id"),
+            "user_name": user.get("name"),
+            "user_email": user.get("email"),
+            "action": log.get("action"),
+            "target_type": log.get("target_type"),
+            "target_id": log.get("target_id"),
+            "metadata": log.get("metadata"),
+            "created_at": log.get("created_at"),
+        })
+
+    return {"logs": items, "total": total, "page": page, "limit": limit}
