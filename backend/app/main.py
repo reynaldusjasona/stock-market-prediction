@@ -13,6 +13,7 @@ from app.routers import (
     portfolio,
     subscription,
     feedback,
+    recommendations,
 )
 
 app = FastAPI(
@@ -41,6 +42,9 @@ app.include_router(portfolio.router, prefix="/api", tags=["Portfolio"])
 app.include_router(subscription.router, prefix="/api", tags=["Subscription"])
 app.include_router(subscription.admin_router, prefix="/api", tags=["Admin"])
 app.include_router(feedback.router, prefix="/api/feedback", tags=["Feedback"])
+app.include_router(
+    recommendations.router, prefix="/api", tags=["Recommendations"]
+)
 
 
 @app.get("/")
