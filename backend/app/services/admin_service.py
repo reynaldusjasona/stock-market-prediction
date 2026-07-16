@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import HTTPException
 
 from app.core.database import supabase
@@ -319,6 +321,38 @@ async def dismissAlert(alertId: str) -> dict:
         return result.data[0]
     except Exception:
         return None
+
+
+async def getLandingContent() -> list:
+    try:
+        result = (
+            supabase.table("landing_content")
+            .select("*")
+            .order("display_order")
+            .execute()
+        )
+        return result.data
+    except Exception:
+        return []
+
+
+async def updateLandingContent(sections: list, adminId: str) -> list:
+    for section in sections:
+        updateDict = {
+            k: v for k, v in section.items() if k != "section_key"
+        }
+        updateDict["updated_at"] = datetime.utcnow().isoformat()
+        updateDict["updated_by"] = adminId
+        supabase.table("landing_content").update(updateDict).eq(
+            "section_key", section["section_key"]
+        ).execute()
+    result = (
+        supabase.table("landing_content")
+        .select("*")
+        .order("display_order")
+        .execute()
+    )
+    return result.data
 
 
 async def getActivityLogs(
