@@ -141,6 +141,103 @@ async def getPriceAlerts() -> dict:
     }
 
 
+async def getDashboardStats() -> dict:
+    try:
+        usersResult = (
+            supabase.table("users").select("id", count="exact").execute()
+        )
+        subscriptionsResult = (
+            supabase.table("subscriptions")
+            .select("id", count="exact")
+            .execute()
+        )
+        predictionsResult = (
+            supabase.table("predictions")
+            .select("id", count="exact")
+            .execute()
+        )
+        alertsResult = (
+            supabase.table("price_alerts")
+            .select("id", count="exact")
+            .execute()
+        )
+        return {
+            "total_users": usersResult.count or 0,
+            "total_subscriptions": subscriptionsResult.count or 0,
+            "total_predictions": predictionsResult.count or 0,
+            "total_alerts": alertsResult.count or 0,
+        }
+    except Exception:
+        return {
+            "total_users": 0,
+            "total_subscriptions": 0,
+            "total_predictions": 0,
+            "total_alerts": 0,
+        }
+
+
+_FALLBACK_MODEL_METRICS = {
+    "accuracy": 0.76,
+    "buy_precision": 0.17,
+    "sell_precision": 0.17,
+    "hold_precision": 0.89,
+    "roc_auc": 0.65,
+    "training_samples": 50000,
+    "last_trained": "2026-06-18",
+    "note": "Fallback metrics from offline evaluation",
+}
+
+
+async def getModelPerformance() -> dict:
+    try:
+        result = (
+            supabase.table("prediction_metrics")
+            .select("*")
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            return result.data[0]
+        return _FALLBACK_MODEL_METRICS
+    except Exception:
+        return _FALLBACK_MODEL_METRICS
+
+
+_MODEL_CONFIG = {
+    "model_type": "XGBoost (XGBClassifier)",
+    "target_classes": ["Buy", "Hold", "Sell"],
+    "features": [
+        "SMA_5", "SMA_20", "SMA_50",
+        "EMA_12", "EMA_26",
+        "RSI_14",
+        "MACD", "MACD_Signal", "MACD_Hist",
+        "BB_Upper", "BB_Middle", "BB_Lower",
+        "Stoch_K", "Stoch_D",
+        "ATR_14",
+        "OBV",
+        "Daily_Return", "Volatility_20",
+        "Price_vs_SMA20", "Price_vs_SMA50",
+        "Volume_Ratio",
+    ],
+    "training_window": "5 years historical data per ticker",
+    "class_balance_method": "sample_weight='balanced'",
+    "threshold": (
+        "±1% daily return (Buy > +1%, Sell < -1%, else Hold)"
+    ),
+    "data_sources": [
+        "yfinance (training)",
+        "Alpha Vantage (historical)",
+        "Finnhub (real-time)",
+    ],
+    "deployment": "FastAPI on Render (512MB RAM, CPU-only inference)",
+}
+
+
+async def getModelConfig() -> dict:
+    return _MODEL_CONFIG
+
+
 async def getActivityLogs(
     page: int = 1,
     limit: int = 20,

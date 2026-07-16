@@ -7,7 +7,10 @@ from app.core.security import get_current_user
 from app.services.admin_service import (
     getActivityLogs,
     getAllUserAccount,
+    getDashboardStats,
     getLatestMetrics,
+    getModelConfig,
+    getModelPerformance,
     getPriceAlerts,
     searchUserByKeywords,
     suspendAccount as svcSuspendAccount,
@@ -89,3 +92,24 @@ async def getActivityLog(
     current_user: dict = Depends(_require_admin),
 ):
     return await getActivityLogs(page, limit, action)
+
+
+@router.get("/admin/stats", tags=["Admin"])
+async def getDashboardStatsRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    return await getDashboardStats()
+
+
+@router.get("/admin/model/performance", tags=["Admin"])
+async def getModelPerformanceRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    return await getModelPerformance()
+
+
+@router.get("/admin/model/config", tags=["Admin"])
+async def getModelConfigRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    return await getModelConfig()
