@@ -11,12 +11,14 @@ from app.services.admin_service import (
     getAllUserAccount,
     getDashboardStats,
     getFeedbackById,
+    getLandingContent,
     getLatestMetrics,
     getModelConfig,
     getModelPerformance,
     getPriceAlerts,
     searchUserByKeywords,
     suspendAccount as svcSuspendAccount,
+    updateLandingContent,
     updateUserDetails as svcUpdateUserDetails,
     validatePermission,
 )
@@ -28,6 +30,20 @@ router = APIRouter()
 class UpdateUserRequest(BaseModel):
     role: Optional[str] = None
     status: Optional[str] = None
+
+
+class LandingSectionUpdate(BaseModel):
+    section_key: str
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
+    content: Optional[str] = None
+    image_url: Optional[str] = None
+    display_order: Optional[int] = None
+    is_visible: Optional[bool] = None
+
+
+class UpdateLandingRequest(BaseModel):
+    sections: list[LandingSectionUpdate]
 
 
 def _require_admin(current_user: dict = Depends(get_current_user)) -> dict:
@@ -118,6 +134,32 @@ async def getModelConfigRoute(
     return await getModelConfig()
 
 
+@router.get("/admin/landing", tags=["Admin"])
+async def getLandingContentRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    result = await getLandingContent()
+    return {"sections": result}
+
+
+@router.put("/admin/landing", tags=["Admin"])
+async def updateLandingContentRoute(
+    body: UpdateLandingRequest,
+    current_user: dict = Depends(_require_admin),
+):
+    adminID = current_user.get("sub")
+    sections = [
+        s.model_dump(exclude_unset=True) for s in body.sections
+    ]
+    try:
+        result = await updateLandingContent(sections, adminID)
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Failed to update landing content"
+        )
+    return {"sections": result, "message": "Landing content updated"}
+
+
 @router.get("/admin/feedback/{feedback_id}", tags=["Admin"])
 async def getFeedbackByIdRoute(
     feedback_id: str,
@@ -145,3 +187,14 @@ async def dismissAlertRoute(
     if result is None:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {"message": "Alert dismissed", "alert": result}
+
+
+# ---- PUBLIC (no auth) ----
+# admin.py has no other public endpoint, and stocks.py is purely
+# stock-domain, so this lives here without _require_admin per the
+# fallback rule for routes that don't fit either existing router.
+@router.get("/landing", tags=["Public"])
+async def getPublicLandingContent():
+    result = await getLandingContent()
+    visible = [s for s in result if s.get("is_visible", True)]
+    return {"sections": visible}
