@@ -238,6 +238,89 @@ async def getModelConfig() -> dict:
     return _MODEL_CONFIG
 
 
+async def getFeedbackById(feedbackId: str) -> dict:
+    try:
+        result = (
+            supabase.table("feedback")
+            .select("*")
+            .eq("id", feedbackId)
+            .execute()
+        )
+        if not result.data:
+            return None
+        row = result.data[0]
+        userResult = (
+            supabase.table("users")
+            .select("id, name, email")
+            .eq("id", row["user_id"])
+            .execute()
+        )
+        user = userResult.data[0] if userResult.data else {}
+        row["user_name"] = user.get("name", "Unknown")
+        row["user_email"] = user.get("email", "Unknown")
+        return row
+    except Exception:
+        return None
+
+
+async def getAlertsSummary() -> dict:
+    try:
+        totalResult = (
+            supabase.table("price_alerts")
+            .select("id", count="exact")
+            .execute()
+        )
+        activeResult = (
+            supabase.table("price_alerts")
+            .select("id", count="exact")
+            .eq("is_active", True)
+            .eq("is_triggered", False)
+            .eq("is_dismissed", False)
+            .execute()
+        )
+        triggeredResult = (
+            supabase.table("price_alerts")
+            .select("id", count="exact")
+            .eq("is_triggered", True)
+            .execute()
+        )
+        dismissedResult = (
+            supabase.table("price_alerts")
+            .select("id", count="exact")
+            .eq("is_dismissed", True)
+            .execute()
+        )
+        return {
+            "total": totalResult.count or 0,
+            "active": activeResult.count or 0,
+            "triggered": triggeredResult.count or 0,
+            "dismissed": dismissedResult.count or 0,
+        }
+    except Exception:
+        return {"total": 0, "active": 0, "triggered": 0, "dismissed": 0}
+
+
+async def dismissAlert(alertId: str) -> dict:
+    try:
+        existing = (
+            supabase.table("price_alerts")
+            .select("*")
+            .eq("id", alertId)
+            .execute()
+        )
+        if not existing.data:
+            return None
+        result = (
+            supabase.table("price_alerts")
+            .update({"is_dismissed": True, "is_active": False})
+            .eq("id", alertId)
+            .execute()
+        )
+        return result.data[0]
+    except Exception:
+        return None
+
+
 async def getActivityLogs(
     page: int = 1,
     limit: int = 20,

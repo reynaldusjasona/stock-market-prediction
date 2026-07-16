@@ -5,9 +5,12 @@ from pydantic import BaseModel
 
 from app.core.security import get_current_user
 from app.services.admin_service import (
+    dismissAlert,
     getActivityLogs,
+    getAlertsSummary,
     getAllUserAccount,
     getDashboardStats,
+    getFeedbackById,
     getLatestMetrics,
     getModelConfig,
     getModelPerformance,
@@ -113,3 +116,32 @@ async def getModelConfigRoute(
     current_user: dict = Depends(_require_admin),
 ):
     return await getModelConfig()
+
+
+@router.get("/admin/feedback/{feedback_id}", tags=["Admin"])
+async def getFeedbackByIdRoute(
+    feedback_id: str,
+    current_user: dict = Depends(_require_admin),
+):
+    result = await getFeedbackById(feedback_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    return result
+
+
+@router.get("/admin/alerts/summary", tags=["Admin"])
+async def getAlertsSummaryRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    return await getAlertsSummary()
+
+
+@router.patch("/admin/alerts/{alert_id}/dismiss", tags=["Admin"])
+async def dismissAlertRoute(
+    alert_id: str,
+    current_user: dict = Depends(_require_admin),
+):
+    result = await dismissAlert(alert_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return {"message": "Alert dismissed", "alert": result}
