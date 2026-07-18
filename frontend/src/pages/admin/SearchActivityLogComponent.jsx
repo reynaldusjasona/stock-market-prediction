@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {debounce} from '../../js/api'
+import {debounce} from '../../js/adminUi'
 
 const debouncedSearch= debounce((fn, q)=>fn(q), 280)
 

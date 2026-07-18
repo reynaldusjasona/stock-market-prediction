@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import api from '../../js/api'
-import '../../styles/shared.css'
+import { api } from '../../api/api'
 
 function LoginPage(){
   const[step,setStep]= useState('credentials')
@@ -25,6 +24,7 @@ function LoginPage(){
 
   useEffect(()=>{
     document.title= 'Admin Login — StockWise AI'
+    // TODO: unify token storage with AuthContext (localStorage vs sessionStorage)
     const token= sessionStorage.getItem('sw_token')
     const role= sessionStorage.getItem('sw_role')
     if (token && role === 'admin') {
@@ -52,7 +52,7 @@ function LoginPage(){
 	}
     setCredLoad(true)
     try{
-      const data= await api.fetch('/auth/login',{method:'POST', body:JSON.stringify({email: email.trim(), password})})
+      const data= await api.post('/auth/login', {email: email.trim(), password})
 
       if (data?.user?.role !== 'admin'){
         setCredAlert({msg:'Access denied. Administrator accounts only.', type:'error'})
@@ -60,14 +60,15 @@ function LoginPage(){
         return
       }
 
-      sessionStorage.setItem('sw_token_pending',data.token)
-      sessionStorage.setItem('sw_user_pending',JSON.stringify(data.user))
+      // TODO: unify token storage with AuthContext (localStorage vs sessionStorage)
+      sessionStorage.setItem('sw_token_pending', data.token)
+      sessionStorage.setItem('sw_user_pending', JSON.stringify(data.user))
 
-      await api.fetch('/auth/send-2fa', {method:'POST', body:JSON.stringify({email: email.trim()})})
+      await api.post('/auth/send-2fa', {email: email.trim()})
 
       setCredLoad(false)
       setStep('2fa')
-    } 
+    }
 	catch (err){
       setCredAlert({msg: err.message || 'Login failed. Please check your credentials.', type:'error'})
       setCredLoad(false)
@@ -84,12 +85,13 @@ function LoginPage(){
 	}
     setTwoFaLoad(true)
     try{
-      await api.fetch('/auth/verify-2fa', {method:'POST', body:JSON.stringify({email: email.trim(), code})})
+      await api.post('/auth/verify-2fa', {email: email.trim(), otp_code: code})
 
       const token= sessionStorage.getItem('sw_token_pending')
       const user= JSON.parse(sessionStorage.getItem('sw_user_pending') || '{}')
       sessionStorage.removeItem('sw_token_pending')
       sessionStorage.removeItem('sw_user_pending')
+      // TODO: unify token storage with AuthContext (localStorage vs sessionStorage)
       sessionStorage.setItem('sw_token',token)
       sessionStorage.setItem('sw_role',user.role)
       sessionStorage.setItem('sw_user',JSON.stringify(user))
@@ -107,7 +109,7 @@ function LoginPage(){
   const handleResend= async()=>{
     setResendLoad(true)
     try{
-      await api.fetch('/auth/send-2fa', {method:'POST', body:JSON.stringify({email: email.trim()})})
+      await api.post('/auth/send-2fa', {email: email.trim()})
       setTwoFaAlert({msg:'A new PIN has been sent to your email.', type:'success'})
       setResendCool(30)
     } 
@@ -155,7 +157,7 @@ function LoginPage(){
 	}
     setFpLoad(true)
     try{
-      await api.fetch('/auth/reset-password', {method:'POST', body:JSON.stringify({email: fpEmail.trim()})})
+      await api.post('/auth/reset-password', {email: fpEmail.trim()})
       setFpAlert({msg:`Reset link sent to ${fpEmail}. Check your inbox.`, type:'success'})
       setFpEmail('')
     } 

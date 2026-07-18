@@ -64,6 +64,42 @@ async def sendEmailAlert(
         return False
 
 
+async def sendVerificationEmail(
+    to_email: str, name: str, verification_link: str
+) -> bool:
+    subject = "StockWise AI — Verify your email"
+    body = (
+        f"<h2>Hi {name},</h2>"
+        "<p>Thanks for registering on StockWise AI.</p>"
+        "<p>Please verify your email by clicking the link below:</p>"
+        f'<p><a href="{verification_link}">Verify Email</a></p>'
+        f"<p>Or copy this link: {verification_link}</p>"
+        "<p>This link will remain valid until used.</p>"
+        "<p>— StockWise AI Team</p>"
+    )
+    try:
+        await asyncio.to_thread(_send_sync, to_email, subject, body)
+        return True
+    except Exception:
+        return False
+
+
+async def sendOtpEmail(to_email: str, otp_code: str) -> bool:
+    subject = "StockWise AI — Your Admin Login Code"
+    body = (
+        "<h2>Admin Login Verification</h2>"
+        f"<p>Your verification code is: <b>{otp_code}</b></p>"
+        "<p>This code will expire in 5 minutes.</p>"
+        "<p>If you did not request this code, please ignore this email.</p>"
+        "<p>— StockWise AI Team</p>"
+    )
+    try:
+        await asyncio.to_thread(_send_sync, to_email, subject, body)
+        return True
+    except Exception:
+        return False
+
+
 async def sendPendingEmailNotification(to_email: str, message: str) -> bool:
     subject = "StockWise AI - Notification"
     body = f"<p>{message}</p>"
