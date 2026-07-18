@@ -179,11 +179,11 @@ async def getDashboardStats() -> dict:
 
 
 _FALLBACK_MODEL_METRICS = {
-    "accuracy": 0.76,
-    "buy_precision": 0.17,
-    "sell_precision": 0.17,
-    "hold_precision": 0.89,
-    "roc_auc": 0.65,
+    "accuracy": 0.50,
+    "buy_precision": 0.25,
+    "sell_precision": 0.25,
+    "hold_precision": 0.66,
+    "roc_auc": 0.58,
     "training_samples": 50000,
     "last_trained": "2026-06-18",
     "note": "Fallback metrics from offline evaluation",
@@ -405,3 +405,98 @@ async def getActivityLogs(
         })
 
     return {"logs": items, "total": total, "page": page, "limit": limit}
+
+
+_MODEL_QUALITY_FALLBACK = [
+    {
+        "class_name": "Buy",
+        "precision_score": 0.25,
+        "recall_score": 0.18,
+        "f1_score": 0.21,
+        "support": 1521,
+    },
+    {
+        "class_name": "Hold",
+        "precision_score": 0.66,
+        "recall_score": 0.67,
+        "f1_score": 0.67,
+        "support": 4755,
+    },
+    {
+        "class_name": "Sell",
+        "precision_score": 0.25,
+        "recall_score": 0.30,
+        "f1_score": 0.27,
+        "support": 1531,
+    },
+]
+
+
+async def getModelQuality() -> dict:
+    try:
+        result = (
+            supabase.table("model_class_metrics")
+            .select("*")
+            .order("class_name")
+            .execute()
+        )
+        data = result.data or _MODEL_QUALITY_FALLBACK
+    except Exception:
+        data = _MODEL_QUALITY_FALLBACK
+    return {
+        "classes": [
+            {
+                "class_name": row["class_name"],
+                "precision": row["precision_score"],
+                "recall": row["recall_score"],
+                "f1_score": row["f1_score"],
+                "support": row["support"],
+            }
+            for row in data
+        ],
+        "last_updated": data[0].get("updated_at") if data else None,
+    }
+
+
+async def requestModelRetrain(user_id: str) -> dict:
+    result = (
+        supabase.table("model_retrain_requests")
+        .insert({
+            "requested_by": user_id,
+            "status": "queued",
+            "notes": "Retrain requested via admin dashboard",
+        })
+        .execute()
+    )
+    return {
+        "message": "Model retrain request submitted",
+        "status": "queued",
+        "requested_at": result.data[0]["requested_at"],
+    }
+
+
+async def getRetrainStatus() -> dict:
+    result = (
+        supabase.table("model_retrain_requests")
+        .select("*")
+        .order("requested_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not result.data:
+        return {
+            "last_trained": "2026-06-18",
+            "status": "completed",
+            "last_request": None,
+        }
+    latest = result.data[0]
+    return {
+        "last_trained": "2026-06-18",
+        "status": latest["status"],
+        "last_request": {
+            "requested_at": latest["requested_at"],
+            "status": latest["status"],
+            "completed_at": latest.get("completed_at"),
+            "notes": latest.get("notes"),
+        },
+    }

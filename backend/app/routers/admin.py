@@ -15,7 +15,10 @@ from app.services.admin_service import (
     getLatestMetrics,
     getModelConfig,
     getModelPerformance,
+    getModelQuality,
     getPriceAlerts,
+    getRetrainStatus,
+    requestModelRetrain,
     searchUserByKeywords,
     suspendAccount as svcSuspendAccount,
     updateLandingContent,
@@ -132,6 +135,28 @@ async def getModelConfigRoute(
     current_user: dict = Depends(_require_admin),
 ):
     return await getModelConfig()
+
+
+@router.get("/admin/model/quality", tags=["Admin"])
+async def getModelQualityRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    return await getModelQuality()
+
+
+@router.get("/admin/model/retrain/status", tags=["Admin"])
+async def getRetrainStatusRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    return await getRetrainStatus()
+
+
+@router.post("/admin/model/retrain", tags=["Admin"])
+async def requestModelRetrainRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    adminID = current_user.get("sub")
+    return await requestModelRetrain(adminID)
 
 
 @router.get("/admin/landing", tags=["Admin"])
