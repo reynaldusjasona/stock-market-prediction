@@ -6,10 +6,14 @@ from pydantic import BaseModel
 from app.core.security import get_current_user
 from app.services.admin_service import (
     approveTrader,
+    createApiSource,
+    deleteApiSource,
     dismissAlert,
     getActivityLogs,
     getAlertsSummary,
     getAllUserAccount,
+    getApiSourceById,
+    getApiSources,
     getDashboardStats,
     getFeedbackById,
     getLandingContent,
@@ -23,6 +27,7 @@ from app.services.admin_service import (
     requestModelRetrain,
     searchUserByKeywords,
     suspendAccount as svcSuspendAccount,
+    updateApiSource,
     updateLandingContent,
     updateUserDetails as svcUpdateUserDetails,
     validatePermission,
@@ -49,6 +54,26 @@ class LandingSectionUpdate(BaseModel):
 
 class UpdateLandingRequest(BaseModel):
     sections: list[LandingSectionUpdate]
+
+
+class ApiSourceCreate(BaseModel):
+    name: str
+    base_url: Optional[str] = None
+    api_key_masked: Optional[str] = None
+    rate_limit: Optional[str] = None
+    is_enabled: bool = True
+    status: str = "active"
+
+
+class ApiSourceUpdate(BaseModel):
+    name: Optional[str] = None
+    base_url: Optional[str] = None
+    api_key_masked: Optional[str] = None
+    rate_limit: Optional[str] = None
+    is_enabled: Optional[bool] = None
+    status: Optional[str] = None
+
+    model_config = {"extra": "forbid"}
 
 
 def _require_admin(current_user: dict = Depends(get_current_user)) -> dict:
@@ -230,6 +255,48 @@ async def dismissAlertRoute(
     if result is None:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {"message": "Alert dismissed", "alert": result}
+
+
+@router.get("/admin/apis", tags=["Admin"])
+async def getApiSourcesRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    return await getApiSources()
+
+
+@router.post("/admin/apis", tags=["Admin"])
+async def createApiSourceRoute(
+    body: ApiSourceCreate,
+    current_user: dict = Depends(_require_admin),
+):
+    return await createApiSource(body.model_dump())
+
+
+@router.get("/admin/apis/{source_id}", tags=["Admin"])
+async def getApiSourceByIdRoute(
+    source_id: str,
+    current_user: dict = Depends(_require_admin),
+):
+    return await getApiSourceById(source_id)
+
+
+@router.patch("/admin/apis/{source_id}", tags=["Admin"])
+async def updateApiSourceRoute(
+    source_id: str,
+    body: ApiSourceUpdate,
+    current_user: dict = Depends(_require_admin),
+):
+    return await updateApiSource(
+        source_id, body.model_dump(exclude_unset=True)
+    )
+
+
+@router.delete("/admin/apis/{source_id}", tags=["Admin"])
+async def deleteApiSourceRoute(
+    source_id: str,
+    current_user: dict = Depends(_require_admin),
+):
+    return await deleteApiSource(source_id)
 
 
 # ---- PUBLIC (no auth) ----
