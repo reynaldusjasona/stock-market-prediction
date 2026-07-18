@@ -1,13 +1,14 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.core.database import supabase
 from app.core.email import sendOtpEmail
-from app.core.security import hashPassword
+from app.core.security import get_current_user, hashPassword
 from app.services.activity_service import logActivity
 from app.services.auth_service import (
+    changePassword,
     createAndSendVerificationEmail,
     deleteAccountAndData,
     generateOtp,
@@ -81,6 +82,11 @@ class LogoutRequest(BaseModel):
 
 class ResendVerificationRequest(BaseModel):
     email: str
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
 
 
 @router.post("/auth/register", tags=["Auth"])
@@ -186,6 +192,17 @@ async def resendVerification(body: ResendVerificationRequest):
         "message": "If the email exists and is not verified, "
         "a new link has been sent."
     }
+
+
+@router.post("/auth/reset-password", tags=["Auth"])
+async def resetPasswordRoute(
+    body: ChangePasswordRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    userID = current_user["sub"]
+    return await changePassword(
+        userID, body.old_password, body.new_password
+    )
 
 
 @router.get("/auth/user/{investorID}", tags=["Auth"])
