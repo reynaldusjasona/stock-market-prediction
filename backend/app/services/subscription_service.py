@@ -5,6 +5,7 @@ from typing import Optional
 
 import stripe
 from dotenv import load_dotenv
+from fastapi import HTTPException
 
 from app.core.database import supabase
 from app.services.activity_service import logActivity
@@ -14,6 +15,10 @@ load_dotenv()
 _STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 _STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 _STRIPE_PRICE_ID = os.getenv("STRIPE_PRICE_ID", "")
+_STRIPE_TRADER_PRICE_ID = os.getenv("STRIPE_TRADER_PRICE_ID", _STRIPE_PRICE_ID)
+_STRIPE_INVESTOR_PRICE_ID = os.getenv(
+    "STRIPE_INVESTOR_PRICE_ID", _STRIPE_PRICE_ID
+)
 _FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 if _STRIPE_SECRET_KEY:
@@ -21,18 +26,39 @@ if _STRIPE_SECRET_KEY:
 
 PLANS = [
     {
-        "plan": "premium",
-        "price": "9.99",
-        "currency": "USD",
+        "plan": "trader",
+        "name": "Trader Plan",
+        "role": "trader",
+        "price": "19.00",
+        "currency": "usd",
         "period": "monthly",
+        "interval": "month",
         "features": [
-            "AI Stock Predictions",
-            "Sentiment Analysis",
-            "Portfolio Tracking",
-            "Price Alerts",
-            "Personalized Recommendations",
+            "Full stock market data access",
+            "AI-powered predictions",
+            "Real-time alerts",
+            "Portfolio tracking",
+            "Admin-verified professional account",
         ],
-    }
+    },
+    {
+        "plan": "investor",
+        "name": "Investor Plan",
+        "role": "investor",
+        "price": "29.00",
+        "currency": "usd",
+        "period": "monthly",
+        "interval": "month",
+        "features": [
+            "Full stock market data access",
+            "AI-powered predictions",
+            "Personalized recommendations",
+            "Real-time alerts",
+            "Portfolio tracking",
+            "Sentiment analysis",
+            "Watchlist management",
+        ],
+    },
 ]
 
 
@@ -112,7 +138,7 @@ async def getAllSubscriptions(status_filter: Optional[str] = None) -> list:
     return result.data or []
 
 
-async def createCheckoutSession(userID: str, email: str) -> dict:
+async def createCheckoutSession(userID: str, email: str, role: str) -> dict:
     if not _STRIPE_SECRET_KEY:
         return {
             "checkout_url": (
@@ -121,24 +147,38 @@ async def createCheckoutSession(userID: str, email: str) -> dict:
             )
         }
 
+    if role == "trader":
+        price_id = _STRIPE_TRADER_PRICE_ID
+        plan_name = "trader"
+    else:
+        price_id = _STRIPE_INVESTOR_PRICE_ID
+        plan_name = "investor"
+
+    if not price_id:
+        raise HTTPException(
+            status_code=500,
+            detail="Stripe price not configured for this role",
+        )
+
     success_url = (
         f"{_FRONTEND_URL}/subscription"
         "?status=success&session_id={CHECKOUT_SESSION_ID}"
     )
     session = stripe.checkout.Session.create(
         mode="subscription",
-        line_items=[{"price": _STRIPE_PRICE_ID, "quantity": 1}],
+        line_items=[{"price": price_id, "quantity": 1}],
         success_url=success_url,
         cancel_url=f"{_FRONTEND_URL}/subscription?status=cancelled",
         client_reference_id=userID,
         customer_email=email,
+        metadata={"user_id": userID, "plan": plan_name},
     )
     return {"checkout_url": session.url}
 
 
-async def _activateSubscriptionFromWebhook(userID: str) -> None:
+async def _activateSubscriptionFromWebhook(userID: str, plan: str) -> None:
     try:
-        await createSubscription(userID, "premium")
+        await createSubscription(userID, plan)
     except ValueError:
         return
     await logActivity(
@@ -162,7 +202,8 @@ async def handleWebhookEvent(payload: bytes, sig_header: Optional[str]) -> dict:
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         userID = session.get("client_reference_id")
+        plan = session.get("metadata", {}).get("plan", "premium")
         if userID:
-            await _activateSubscriptionFromWebhook(userID)
+            await _activateSubscriptionFromWebhook(userID, plan)
 
     return {"status": "ok"}
