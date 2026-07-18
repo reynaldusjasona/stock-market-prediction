@@ -548,3 +548,67 @@ async def rejectTrader(userID: str) -> dict:
         "user_id": userID,
         "trader_status": "rejected",
     }
+
+
+_API_SOURCE_FIELDS = {
+    "name",
+    "base_url",
+    "api_key_masked",
+    "rate_limit",
+    "is_enabled",
+    "status",
+}
+
+
+async def getApiSources() -> dict:
+    result = (
+        supabase.table("api_sources")
+        .select("*")
+        .order("name")
+        .execute()
+    )
+    data = result.data or []
+    return {"sources": data, "count": len(data)}
+
+
+async def getApiSourceById(sourceId: str) -> dict:
+    result = (
+        supabase.table("api_sources")
+        .select("*")
+        .eq("id", sourceId)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="API source not found")
+    return result.data[0]
+
+
+async def createApiSource(data: dict) -> dict:
+    if not data.get("name"):
+        raise HTTPException(status_code=400, detail="Name is required")
+    insert_data = {k: v for k, v in data.items() if k in _API_SOURCE_FIELDS}
+    result = supabase.table("api_sources").insert(insert_data).execute()
+    return result.data[0]
+
+
+async def updateApiSource(sourceId: str, data: dict) -> dict:
+    await getApiSourceById(sourceId)
+    update_data = {k: v for k, v in data.items() if k in _API_SOURCE_FIELDS}
+    if not update_data:
+        raise HTTPException(
+            status_code=400, detail="No valid fields to update"
+        )
+    update_data["updated_at"] = datetime.utcnow().isoformat()
+    result = (
+        supabase.table("api_sources")
+        .update(update_data)
+        .eq("id", sourceId)
+        .execute()
+    )
+    return result.data[0]
+
+
+async def deleteApiSource(sourceId: str) -> dict:
+    await getApiSourceById(sourceId)
+    supabase.table("api_sources").delete().eq("id", sourceId).execute()
+    return {"message": "API source deleted", "id": sourceId}
