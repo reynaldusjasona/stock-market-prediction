@@ -6,7 +6,8 @@ from app.core.database import supabase
 
 _ADMIN_FIELDS = (
     "id, name, email, role, status, risk_tolerance, "
-    "sector_preferences, created_at, updated_at"
+    "sector_preferences, created_at, updated_at, "
+    "license_number, trader_status"
 )
 
 
@@ -499,4 +500,51 @@ async def getRetrainStatus() -> dict:
             "completed_at": latest.get("completed_at"),
             "notes": latest.get("notes"),
         },
+    }
+
+
+async def _getVerifiedTrader(userID: str) -> dict:
+    result = (
+        supabase.table("users")
+        .select("id, role, trader_status, email, name")
+        .eq("id", userID)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    user = result.data[0]
+    if user["role"] != "trader":
+        raise HTTPException(status_code=400, detail="User is not a trader")
+    return user
+
+
+async def approveTrader(userID: str) -> dict:
+    user = await _getVerifiedTrader(userID)
+    if user["trader_status"] == "approved":
+        raise HTTPException(
+            status_code=400, detail="Trader is already approved"
+        )
+    supabase.table("users").update({"trader_status": "approved"}).eq(
+        "id", userID
+    ).execute()
+    return {
+        "message": "Trader approved successfully",
+        "user_id": userID,
+        "trader_status": "approved",
+    }
+
+
+async def rejectTrader(userID: str) -> dict:
+    user = await _getVerifiedTrader(userID)
+    if user["trader_status"] == "rejected":
+        raise HTTPException(
+            status_code=400, detail="Trader is already rejected"
+        )
+    supabase.table("users").update({"trader_status": "rejected"}).eq(
+        "id", userID
+    ).execute()
+    return {
+        "message": "Trader rejected",
+        "user_id": userID,
+        "trader_status": "rejected",
     }
