@@ -119,6 +119,20 @@ async def login(identifier: str, password: str) -> dict:
             detail="Email not verified. Please check your inbox for the "
             "verification link.",
         )
+    if user.get("role") == "trader" and user.get("trader_status") != "approved":
+        traderStatus = user.get("trader_status", "pending")
+        if traderStatus == "pending":
+            raise HTTPException(
+                status_code=403,
+                detail="Your trader account is pending admin approval. "
+                "Please wait for verification.",
+            )
+        elif traderStatus == "rejected":
+            raise HTTPException(
+                status_code=403,
+                detail="Your trader registration has been rejected. "
+                "Please contact support.",
+            )
     token = createAccessToken(
         {"sub": user["id"], "email": user["email"], "role": user["role"]}
     )

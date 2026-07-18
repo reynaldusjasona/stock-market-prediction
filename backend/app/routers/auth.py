@@ -45,6 +45,7 @@ class RegisterRequest(BaseModel):
     sectors: Optional[List[str]] = []
     level: Optional[str] = "moderate"
     role: Optional[str] = "investor"
+    license_number: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -94,22 +95,31 @@ async def register(body: RegisterRequest):
     if existing.data:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    role = body.role if body.role in _VALID_SELF_REGISTER_ROLES else "investor"
+    if body.role not in _VALID_SELF_REGISTER_ROLES:
+        raise HTTPException(
+            status_code=400, detail="Role must be 'investor' or 'trader'"
+        )
+    role = body.role
 
     hashed = hashPassword(body.password)
-    insert_result = (
-        supabase.table("users")
-        .insert(
-            {
-                "name": body.name,
-                "email": body.email,
-                "password_hash": hashed,
-                "role": role,
-                "status": "active",
-            }
-        )
-        .execute()
-    )
+    insert_data = {
+        "name": body.name,
+        "email": body.email,
+        "password_hash": hashed,
+        "role": role,
+        "status": "active",
+    }
+
+    if role == "trader":
+        if not body.license_number or not body.license_number.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="License number is required for trader registration",
+            )
+        insert_data["trader_status"] = "pending"
+        insert_data["license_number"] = body.license_number
+
+    insert_result = supabase.table("users").insert(insert_data).execute()
     if not insert_result.data:
         raise HTTPException(status_code=500, detail="Registration failed")
 
