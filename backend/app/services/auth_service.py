@@ -1,12 +1,18 @@
+import os
+import random
 import re
+import secrets
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 
 from app.core.database import supabase
+from app.core.email import sendVerificationEmail
 from app.core.security import createAccessToken, hashPassword, verifyPassword
 
 _EMAIL_RE = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 _VALID_LEVELS = {"low", "moderate", "high"}
+_FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 _PUBLIC_FIELDS = (
     "id, name, email, role, status, risk_tolerance, "
@@ -41,6 +47,59 @@ async def savePreferences(userID: str, sectors: list, level: str) -> dict:
     return result.data[0] if result.data else {}
 
 
+async def saveVerificationToken(userID: str, token: str) -> dict:
+    result = (
+        supabase.table("users")
+        .update({"verification_token": token, "is_verified": False})
+        .eq("id", userID)
+        .execute()
+    )
+    return result.data[0] if result.data else {}
+
+
+async def createAndSendVerificationEmail(userID: str, name: str, email: str) -> None:
+    token = secrets.token_urlsafe(32)
+    await saveVerificationToken(userID, token)
+    verification_link = f"{_FRONTEND_URL}/verify?token={token}"
+    sent = await sendVerificationEmail(email, name, verification_link)
+    if not sent:
+        print(
+            f"[email-verification] Failed to send verification email to "
+            f"{email}. Fallback link: {verification_link}"
+        )
+
+
+async def verifyEmailToken(token: str) -> dict:
+    result = (
+        supabase.table("users")
+        .select("id")
+        .eq("verification_token", token)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(
+            status_code=400, detail="Invalid or expired verification token."
+        )
+    userID = result.data[0]["id"]
+    supabase.table("users").update(
+        {"is_verified": True, "verification_token": None}
+    ).eq("id", userID).execute()
+    return {"message": "Email verified successfully. You can now log in."}
+
+
+async def resendVerification(email: str) -> None:
+    result = (
+        supabase.table("users")
+        .select("id, name, email, is_verified")
+        .eq("email", email)
+        .execute()
+    )
+    if not result.data or result.data[0].get("is_verified"):
+        return
+    user = result.data[0]
+    await createAndSendVerificationEmail(user["id"], user["name"], user["email"])
+
+
 async def login(identifier: str, password: str) -> dict:
     result = (
         supabase.table("users")
@@ -54,6 +113,12 @@ async def login(identifier: str, password: str) -> dict:
     user = result.data[0]
     if not verifyPassword(password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not user.get("is_verified", True):
+        raise HTTPException(
+            status_code=403,
+            detail="Email not verified. Please check your inbox for the "
+            "verification link.",
+        )
     token = createAccessToken(
         {"sub": user["id"], "email": user["email"], "role": user["role"]}
     )
@@ -61,6 +126,40 @@ async def login(identifier: str, password: str) -> dict:
         {"session_token": token}
     ).eq("id", user["id"]).execute()
     return {"token": token, "user": _strip_hash(user)}
+
+
+async def generateOtp() -> str:
+    return f"{random.randint(0, 999999):06d}"
+
+
+async def saveOtp(email: str, otpCode: str) -> None:
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+    supabase.table("users").update(
+        {"otp_code": otpCode, "otp_expires_at": expires_at.isoformat()}
+    ).eq("email", email).execute()
+
+
+async def verifyOtp(email: str, otpCode: str) -> bool:
+    result = (
+        supabase.table("users")
+        .select("otp_code, otp_expires_at")
+        .eq("email", email)
+        .execute()
+    )
+    if not result.data:
+        return False
+    user = result.data[0]
+    if not user.get("otp_code") or user["otp_code"] != otpCode:
+        return False
+    expires_at = user.get("otp_expires_at")
+    if not expires_at or datetime.fromisoformat(expires_at) <= datetime.now(
+        timezone.utc
+    ):
+        return False
+    supabase.table("users").update(
+        {"otp_code": None, "otp_expires_at": None}
+    ).eq("email", email).execute()
+    return True
 
 
 async def getUserDetails(investorID: str) -> dict:
