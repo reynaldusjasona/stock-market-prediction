@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react'
 import {useSearchParams} from 'react-router-dom'
 import adminApi, {requireAdmin} from '../../js/adminApi'
-import api, {initAvatarDropdown, populateAvatar} from '../../js/api'
+import {initAvatarDropdown, populateAvatar, getAdminUser} from '../../js/adminUi'
 import ManageUserAccountsPage from './ManageUserAccountsPage'
 import LandingPageEditorPage from './LandingPageEditorPage'
 import ViewModelPerformancePage from './ViewModelPerformancePage'
@@ -12,7 +12,6 @@ import ViewActivityLogPage from './ViewActivityLogPage'
 import ViewAdminAccountModal from './ViewAdminAccountModal'
 import ResetPasswordModal from './ResetPasswordModal'
 import LogoutPage from './LogoutPage'
-import '../../styles/shared.css'
 import '../../styles/admin/adminShared.css'
 
 const NAV =[
@@ -82,6 +81,7 @@ function DashboardPage(){
 
   useEffect(()=>{
     document.title = 'Admin Dashboard — StockWise AI'
+    // TODO: unify token storage with AuthContext (localStorage vs sessionStorage)
     if (!sessionStorage.getItem('sw_token')||sessionStorage.getItem('sw_role') !== 'admin') {
       window.location.replace('/admin/login')
       return
@@ -99,7 +99,7 @@ function DashboardPage(){
   if (!sessionStorage.getItem('sw_token') || sessionStorage.getItem('sw_role') !== 'admin') return null
   if (!authed) return null
 
-  const user= api.getUser()
+  const user= getAdminUser()
   const initials= (user?.name || 'A').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
   return(
