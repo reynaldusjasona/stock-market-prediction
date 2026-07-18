@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.core.security import get_current_user
+from app.services.activity_service import logActivity
 from app.services.admin_service import (
     approveTrader,
     createApiSource,
@@ -101,7 +102,14 @@ async def suspendAccount(
     current_user: dict = Depends(_require_admin),
 ):
     adminID = current_user.get("sub")
-    return await svcSuspendAccount(adminID, userID)
+    result = await svcSuspendAccount(adminID, userID)
+    await logActivity(
+        userID=adminID,
+        action="user_suspended",
+        targetType="user",
+        targetId=userID,
+    )
+    return result
 
 
 @router.patch("/admin/users/{userID}/approve-trader", tags=["Admin"])
@@ -109,7 +117,15 @@ async def approveTraderRoute(
     userID: str,
     current_user: dict = Depends(_require_admin),
 ):
-    return await approveTrader(userID)
+    result = await approveTrader(userID)
+    adminID = current_user.get("sub")
+    await logActivity(
+        userID=adminID,
+        action="trader_approved",
+        targetType="user",
+        targetId=userID,
+    )
+    return result
 
 
 @router.patch("/admin/users/{userID}/reject-trader", tags=["Admin"])
@@ -117,7 +133,15 @@ async def rejectTraderRoute(
     userID: str,
     current_user: dict = Depends(_require_admin),
 ):
-    return await rejectTrader(userID)
+    result = await rejectTrader(userID)
+    adminID = current_user.get("sub")
+    await logActivity(
+        userID=adminID,
+        action="trader_rejected",
+        targetType="user",
+        targetId=userID,
+    )
+    return result
 
 
 @router.get("/admin/users/search", tags=["Admin"])
@@ -199,7 +223,13 @@ async def requestModelRetrainRoute(
     current_user: dict = Depends(_require_admin),
 ):
     adminID = current_user.get("sub")
-    return await requestModelRetrain(adminID)
+    result = await requestModelRetrain(adminID)
+    await logActivity(
+        userID=adminID,
+        action="model_retrain_requested",
+        targetType="model",
+    )
+    return result
 
 
 @router.get("/admin/landing", tags=["Admin"])
@@ -225,6 +255,11 @@ async def updateLandingContentRoute(
         raise HTTPException(
             status_code=500, detail="Failed to update landing content"
         )
+    await logActivity(
+        userID=adminID,
+        action="landing_updated",
+        targetType="landing_content",
+    )
     return {"sections": result, "message": "Landing content updated"}
 
 
@@ -254,6 +289,13 @@ async def dismissAlertRoute(
     result = await dismissAlert(alert_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Alert not found")
+    adminID = current_user.get("sub")
+    await logActivity(
+        userID=adminID,
+        action="alert_dismissed",
+        targetType="alert",
+        targetId=alert_id,
+    )
     return {"message": "Alert dismissed", "alert": result}
 
 
@@ -269,7 +311,15 @@ async def createApiSourceRoute(
     body: ApiSourceCreate,
     current_user: dict = Depends(_require_admin),
 ):
-    return await createApiSource(body.model_dump())
+    result = await createApiSource(body.model_dump())
+    adminID = current_user.get("sub")
+    await logActivity(
+        userID=adminID,
+        action="api_source_created",
+        targetType="api_source",
+        targetId=result.get("id"),
+    )
+    return result
 
 
 @router.get("/admin/apis/{source_id}", tags=["Admin"])
@@ -286,9 +336,17 @@ async def updateApiSourceRoute(
     body: ApiSourceUpdate,
     current_user: dict = Depends(_require_admin),
 ):
-    return await updateApiSource(
+    result = await updateApiSource(
         source_id, body.model_dump(exclude_unset=True)
     )
+    adminID = current_user.get("sub")
+    await logActivity(
+        userID=adminID,
+        action="api_source_updated",
+        targetType="api_source",
+        targetId=source_id,
+    )
+    return result
 
 
 @router.delete("/admin/apis/{source_id}", tags=["Admin"])
@@ -296,7 +354,15 @@ async def deleteApiSourceRoute(
     source_id: str,
     current_user: dict = Depends(_require_admin),
 ):
-    return await deleteApiSource(source_id)
+    result = await deleteApiSource(source_id)
+    adminID = current_user.get("sub")
+    await logActivity(
+        userID=adminID,
+        action="api_source_deleted",
+        targetType="api_source",
+        targetId=source_id,
+    )
+    return result
 
 
 # ---- PUBLIC (no auth) ----
