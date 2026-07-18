@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.core.security import get_current_user
 from app.services.admin_service import (
+    approveTrader,
     dismissAlert,
     getActivityLogs,
     getAlertsSummary,
@@ -18,6 +19,7 @@ from app.services.admin_service import (
     getModelQuality,
     getPriceAlerts,
     getRetrainStatus,
+    rejectTrader,
     requestModelRetrain,
     searchUserByKeywords,
     suspendAccount as svcSuspendAccount,
@@ -75,6 +77,22 @@ async def suspendAccount(
 ):
     adminID = current_user.get("sub")
     return await svcSuspendAccount(adminID, userID)
+
+
+@router.patch("/admin/users/{userID}/approve-trader", tags=["Admin"])
+async def approveTraderRoute(
+    userID: str,
+    current_user: dict = Depends(_require_admin),
+):
+    return await approveTrader(userID)
+
+
+@router.patch("/admin/users/{userID}/reject-trader", tags=["Admin"])
+async def rejectTraderRoute(
+    userID: str,
+    current_user: dict = Depends(_require_admin),
+):
+    return await rejectTrader(userID)
 
 
 @router.get("/admin/users/search", tags=["Admin"])
