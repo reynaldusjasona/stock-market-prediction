@@ -8,6 +8,7 @@ function Register() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState(null)
+    const [registered, setRegistered] = useState(false)
     const navigate = useNavigate()
 
     async function handleRegister() {
@@ -17,10 +18,29 @@ function Register() {
                 email,
                 password
             })
-            navigate('/login')
+            setRegistered(true)
         } catch (err) {
             setError(err.message)
         }
+    }
+
+    if (registered) {
+        return (
+            <div className="register-page">
+                <div className="register-left">
+                    <h2>Predict the Market with <span>AI Precision</span></h2>
+                    <p>Institutional-grade intelligence for the everyday investor. Harness the power of neural networks to navigate volatile markets.</p>
+                </div>
+                <div className="register-right">
+                    <h1>Check your email</h1>
+                    <p className="subtitle">
+                        We sent a verification link to <strong>{email}</strong>. Click the link to activate your
+                        account, then log in.
+                    </p>
+                    <button className="btn-full" onClick={() => navigate('/login')}>Go to login</button>
+                </div>
+            </div>
+        )
     }
 
     return (
