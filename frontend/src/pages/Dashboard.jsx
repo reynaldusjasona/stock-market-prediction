@@ -2,15 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
+import { formatPrice as fmt } from '../utils/format'
 import '../styles/Dashboard.css'
 import ViewTrendingTickers from '../components/dashboard/ViewTrendingTickers'
 import ViewTopGainersLosers from '../components/dashboard/ViewTopGainersLosers'
 import ViewStocksList from '../components/dashboard/ViewStocksList'
-
-function fmt(num) {
-    if (!num && num !== 0) return 'N/A'
-    return Number(num).toFixed(2)
-}
 
 function Dashboard() {
     const [trendList, setTrendList] = useState([])

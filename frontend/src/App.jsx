@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Watchlist from './pages/Watchlist'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Verify from './pages/Verify'
 import Dashboard from './pages/Dashboard'
 import Portfolio from './pages/Portfolio'
 import StockDetail from './pages/StockDetail'
@@ -27,6 +28,8 @@ function App() {
           <Route path="/login" element={<Login />} />
 
           <Route path="/register" element={<Register />} />
+
+          <Route path="/verify" element={<Verify />} />
 
           <Route path="/watchlist" element={<ProtectedRoute><Watchlist /></ProtectedRoute>} />
 
