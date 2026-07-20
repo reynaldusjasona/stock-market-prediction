@@ -3,6 +3,7 @@ import {useSearchParams} from 'react-router-dom'
 import adminApi, {requireAdmin} from '../../js/adminApi'
 import {initAvatarDropdown, populateAvatar, getAdminUser} from '../../js/adminUi'
 import ManageUserAccountsPage from './ManageUserAccountsPage'
+import ManageTradersPage from './ManageTradersPage'
 import LandingPageEditorPage from './LandingPageEditorPage'
 import ViewModelPerformancePage from './ViewModelPerformancePage'
 import ManageAPIPage from './ManageAPIPage'
@@ -17,6 +18,7 @@ import '../../styles/admin/adminShared.css'
 const NAV =[
   {key:'overview',label:'Dashboard',icon:'grid'},
   {key:'users',label:'User Accounts',icon:'users'},
+  {key:'traders',label:'Traders',icon:'users'},
   {key:'landing',label:'Landing Page',icon:'monitor'},
   {key:'model',label:'Model Performance', icon:'chart'},
   {key:'apis',label:'API',icon:'code'},
@@ -234,19 +236,20 @@ function DashboardPage(){
 
         {/* Content */}
         <div style={{ flex:1, padding:'1.75rem', maxWidth:'1200px', width:'100%' }}>
-          {activeTab==='overview'  && <OverviewPanel stats={stats} onNav={goTab}/>}
-          {activeTab==='users'     && <ManageUserAccountsPage/>}
-          {activeTab==='landing'   && <LandingPageEditorPage/>}
-          {activeTab==='model'     && <ViewModelPerformancePage/>}
-          {activeTab==='apis'      && <ManageAPIPage/>}
-          {activeTab==='feedback'  && <ManageFeedbacksPage/>}
-          {activeTab==='alerts'    && <ViewAlertsPage/>}
-          {activeTab==='activity'  && <ViewActivityLogPage/>}
+          {activeTab==='overview' && <OverviewPanel stats={stats} onNav={goTab}/>}
+          {activeTab==='users' && <ManageUserAccountsPage/>}
+          {activeTab==='traders' && <ManageTradersPage/>}
+          {activeTab==='landing' && <LandingPageEditorPage/>}
+          {activeTab==='model' && <ViewModelPerformancePage/>}
+          {activeTab==='apis' && <ManageAPIPage/>}
+          {activeTab==='feedback' && <ManageFeedbacksPage/>}
+          {activeTab==='alerts' && <ViewAlertsPage/>}
+          {activeTab==='activity' && <ViewActivityLogPage/>}
         </div>
       </div>
 
-      {showReset   && <ResetPasswordModal      onClose={()=>setShowReset(false)}/>}
-      {showAccount && <ViewAdminAccountModal   onClose={()=>setShowAccount(false)}/>}
+      {showReset && <ResetPasswordModal  onClose={()=>setShowReset(false)}/>}
+      {showAccount && <ViewAdminAccountModal onClose={()=>setShowAccount(false)}/>}
       <div id="toast-container"/>
     </div>
   )
@@ -256,10 +259,10 @@ function OverviewPanel({stats, onNav}){
   const s = stats || {}
 
   const cards=[
-    {label:'Total Users',      val: s.total_users      ?? '—', nav:'users',    color:''},
-    {label:'Model Accuracy',   val: s.model_accuracy   != null ? s.model_accuracy.toFixed(1)+'%' : '—', nav:'model', color:'var(--accent)'},
-    {label:'Pending Feedback', val: s.pending_feedback ?? '—', nav:'feedback', color:''},
-    {label:'Open Alerts',      val: s.open_alerts      ?? '—', nav:'alerts',   color: (s.open_alerts > 0) ? '#ff4444' : ''},
+    {label:'Total Users',val: s.total_users ?? '—', nav:'users',    color:''},
+    {label:'Model Accuracy',val: s.model_accuracy != null ? s.model_accuracy.toFixed(1)+'%' : '—', nav:'model', color:'var(--accent)'},
+    {label:'Pending Feedback',val: s.pending_feedback ?? '—', nav:'feedback', color:''},
+    {label:'Open Alerts',val: s.open_alerts ?? '—', nav:'alerts',   color: (s.open_alerts > 0) ? '#ff4444' : ''},
   ]
 
   const attention = []

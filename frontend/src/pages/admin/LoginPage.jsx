@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/api'
+import '../../styles/admin/adminShared.css'
 
 function LoginPage(){
   const[step,setStep]= useState('credentials')
   const[modal,setModal]= useState(null)
 
-  // Credentials
   const[email,setEmail]= useState('')
   const[password,setPassword]= useState('')
   const[showPass,setShowPass]= useState(false)
@@ -24,7 +24,6 @@ function LoginPage(){
 
   useEffect(()=>{
     document.title= 'Admin Login — StockWise AI'
-    // TODO: unify token storage with AuthContext (localStorage vs sessionStorage)
     const token= sessionStorage.getItem('sw_token')
     const role= sessionStorage.getItem('sw_role')
     if (token && role === 'admin') {
@@ -91,7 +90,6 @@ function LoginPage(){
       const user= JSON.parse(sessionStorage.getItem('sw_user_pending') || '{}')
       sessionStorage.removeItem('sw_token_pending')
       sessionStorage.removeItem('sw_user_pending')
-      // TODO: unify token storage with AuthContext (localStorage vs sessionStorage)
       sessionStorage.setItem('sw_token',token)
       sessionStorage.setItem('sw_role',user.role)
       sessionStorage.setItem('sw_user',JSON.stringify(user))
