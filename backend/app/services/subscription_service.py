@@ -188,7 +188,9 @@ async def _activateSubscriptionFromWebhook(userID: str, plan: str) -> None:
     )
 
 
-async def handleWebhookEvent(payload: bytes, sig_header: Optional[str]) -> dict:
+async def handleWebhookEvent(
+    payload: bytes, sig_header: Optional[str]
+) -> dict:
     if _STRIPE_WEBHOOK_SECRET:
         try:
             event = stripe.Webhook.construct_event(
@@ -208,5 +210,5 @@ async def handleWebhookEvent(payload: bytes, sig_header: Optional[str]) -> dict:
             plan = "premium"
         if userID:
             await _activateSubscriptionFromWebhook(userID, plan)
-            
+
     return {"status": "ok"}
