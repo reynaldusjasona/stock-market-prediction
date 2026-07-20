@@ -201,9 +201,12 @@ async def handleWebhookEvent(payload: bytes, sig_header: Optional[str]) -> dict:
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-        userID = session.get("client_reference_id")
-        plan = session.get("metadata", {}).get("plan", "premium")
+        userID = session["client_reference_id"]
+        try:
+            plan = session["metadata"]["plan"]
+        except (KeyError, TypeError):
+            plan = "premium"
         if userID:
             await _activateSubscriptionFromWebhook(userID, plan)
-
+            
     return {"status": "ok"}
