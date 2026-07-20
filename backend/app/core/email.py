@@ -21,7 +21,7 @@ def _send_sync(to: str, subject: str, html_body: str) -> None:
     msg["From"] = _FROM
     msg["To"] = to
     msg.attach(MIMEText(html_body, "html"))
-    with smtplib.SMTP(_HOST, _PORT) as server:
+    with smtplib.SMTP(_HOST, _PORT, timeout=10) as server:
         server.ehlo()
         server.starttls()
         server.login(_USER, _PASSWORD)
