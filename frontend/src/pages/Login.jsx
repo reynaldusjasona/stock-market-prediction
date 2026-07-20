@@ -8,14 +8,30 @@ function Login() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState(null)
+    const [resendMessage, setResendMessage] = useState(null)
     const { login } = useAuth()
     const navigate = useNavigate()
 
     async function handleLogin() {
         try {
+            setResendMessage(null)
             const data = await api.post('/auth/login', { email, password })
             login(data.user, data.token)
             navigate('/dashboard')
+        } catch (err) {
+            setError(err.message)
+        }
+    }
+
+    async function handleResendVerification() {
+        if (!email) {
+            setError('Enter your email above first, then resend the verification link.')
+            return
+        }
+        try {
+            const data = await api.post('/auth/resend-verification', { email })
+            setError(null)
+            setResendMessage(data.message)
         } catch (err) {
             setError(err.message)
         }
@@ -31,6 +47,7 @@ function Login() {
                 <h1>Welcome back</h1>
                 <p className="subtitle">Please enter your credentials to access your dashboard.</p>
                 {error && <p className="error-msg">{error}</p>}
+                {resendMessage && <p className="subtitle">{resendMessage}</p>}
                 <div className="form-group">
                     <label>Email Address</label>
                     <input type="email" placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -40,6 +57,7 @@ function Login() {
                     <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <button className="btn-full" onClick={handleLogin}>Log in →</button>
+                <p className="login-footer">Didn't get a verification email? <span onClick={handleResendVerification}>Resend it</span></p>
                 <p className="login-footer">Don't have an account? <span onClick={() => navigate('/register')}>Register</span></p>
             </div>
         </div>
