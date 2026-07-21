@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
+import { formatPrice } from '../utils/format'
 import '../styles/Watchlist.css'
 import AddStock from '../components/watchlist/AddStock'
 import RemoveStock from '../components/watchlist/RemoveStock'
@@ -148,14 +149,26 @@ function Watchlist() {
                         <thead>
                             <tr>
                                 <th>Ticker</th>
+                                <th>Company Name</th>
+                                <th>Price</th>
+                                <th>Change %</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {watchlist.map((item) => (
-                                <tr key={item.id}>
+                                <tr key={item.id} onClick={() => navigate(`/stock/${item.ticker}`)} style={{ cursor: 'pointer' }}>
                                     <td className="ticker-cell">{item.ticker}</td>
+                                    <td>{item.company_name || '-'}</td>
+                                    <td>{item.current_price !== null && item.current_price !== undefined ? `$${formatPrice(item.current_price)}` : '-'}</td>
                                     <td>
+                                        {item.change_percent !== null && item.change_percent !== undefined ? (
+                                            <span className={item.change_percent >= 0 ? 'change-positive' : 'change-negative'}>
+                                                {item.change_percent >= 0 ? '+' : ''}{formatPrice(item.change_percent)}%
+                                            </span>
+                                        ) : '-'}
+                                    </td>
+                                    <td onClick={(e) => e.stopPropagation()}>
                                         <RemoveStock ticker={item.ticker} onRemove={removeStock} />
                                     </td>
                                 </tr>
