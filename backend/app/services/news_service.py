@@ -119,3 +119,4 @@ async def analyzeSentiment(NewsArticles: list) -> dict:
         "sentiment_label": label,
         "article_count": len(NewsArticles),
     }
+
