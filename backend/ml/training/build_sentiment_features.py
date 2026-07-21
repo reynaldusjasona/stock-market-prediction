@@ -3,7 +3,7 @@ from datetime import datetime, time
 from zoneinfo import ZoneInfo
 from pathlib import Path
 
-from app.core.database import supabase 
+from app.core.database import supabase
 
 import pandas as pd
 import requests
@@ -25,7 +25,7 @@ def _get_finbert_pipeline():
     """
     Construct and cache the FinBERT sentiment pipeline.
 
-    Uses FinBERT model to classify text into positive, negative, or neutral sentiment. 
+    Uses FinBERT model to classify text into positive, negative, or neutral sentiment.
     The model is returning one of: positive, negative, neutral, each with a
     confidence score.
     """
@@ -182,11 +182,13 @@ def get_live_daily_sentiment(ticker: str, start: str, end: str) -> pd.DataFrame:
     """
     Build a daily sentiment feature table for one ticker from cache:
 
-    Queries news aritcle in Supabase for rows where ticker matches, session_date falls in [start, end]
-    and sentiment_score is not null. rows that exist but havent score yet are excluded. 
+    Queries news aritcle in Supabase for rows where ticker matches,
+    session_date falls in [start, end]
+    and sentiment_score is not null. rows that exist but havent score yet are excluded.
     The sentiment_score is calculated by FinBERT model and cached in Supabase.
 
-    Returns a data frame indexed by session_date with columns: sentiment_mean, sentiment_std, news_count.
+    Returns a data frame indexed by session_date with columns:
+    sentiment_mean, sentiment_std, news_count.
 
     Returns an empty data frame if no articles found
     """
@@ -203,10 +205,10 @@ def get_live_daily_sentiment(ticker: str, start: str, end: str) -> pd.DataFrame:
     )
     rows = response.data if response.data else []
 
-    if not rows: 
+    if not rows:
         return pd.DataFrame(
-            columns=["sentiment_mean", "sentiment_std", "news_count"]     
-    )
+            columns=["sentiment_mean", "sentiment_std", "news_count"]
+        )
 
     df = pd.DataFrame(rows)
     df["session_date"] = pd.to_datetime(df["session_date"]).dt.normalize()
@@ -220,6 +222,7 @@ def get_live_daily_sentiment(ticker: str, start: str, end: str) -> pd.DataFrame:
     daily.index.name = None
 
     return daily
+
 
 def get_historical_daily_sentiment(
     ticker: str,
@@ -337,6 +340,7 @@ def get_historical_daily_sentiment(
         ]
     ]
 
+
 def add_sentiment_features(
     out: pd.DataFrame,
     ticker: str,
@@ -452,6 +456,7 @@ def add_sentiment_features(
 
     return out
 
+
 if __name__ == "__main__":
     # test assign_to_trading_session() with edge case
     cases = [
@@ -464,5 +469,3 @@ if __name__ == "__main__":
     for ts_str, desc in cases:
         result = assign_to_trading_session(pd.Timestamp(ts_str))
         print(f"{desc:35s} {ts_str} is considered as {result.date()}")
-    
-

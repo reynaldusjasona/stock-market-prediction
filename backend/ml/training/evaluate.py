@@ -146,7 +146,6 @@ def run_evaluation() -> dict:
     print(f"Recall   : {metrics['recall']}")
     print(f"F1       : {metrics['f1']}")
 
-
     return metrics
 
 
