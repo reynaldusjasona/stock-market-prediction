@@ -313,7 +313,7 @@ def get_feature_matrix(
     start: str = "2020-01-01",
     end: str = "2025-12-31",
     api_key: str | None = None,
-    ) -> tuple[pd.DataFrame, pd.Series]:
+) -> tuple[pd.DataFrame, pd.Series]:
     """
     Fetch OHLCV data and compute indicators for a single ticker.
 
