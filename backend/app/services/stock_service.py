@@ -20,16 +20,16 @@ def _yf_quote_sync(ticker: str) -> dict:
         hist = yf.Ticker(ticker).history(period="5d")
         if hist.empty:
             return {"ticker": ticker, "error": "no data"}
-        current_price = float(hist["Close"].iloc[-1])
-        prev_close = float(hist["Close"].iloc[-2]) if len(hist) > 1 else current_price
+        current_price = round(float(hist["Close"].iloc[-1]), 2)
+        prev_close = round(float(hist["Close"].iloc[-2]), 2) if len(hist) > 1 else current_price
         change = round(current_price - prev_close, 4)
         change_pct = round((change / prev_close) * 100, 2) if prev_close else 0
         return {
             "ticker": ticker,
             "current_price": current_price,
-            "open": float(hist["Open"].iloc[-1]),
-            "high": float(hist["High"].iloc[-1]),
-            "low": float(hist["Low"].iloc[-1]),
+            "open": round(float(hist["Open"].iloc[-1]), 2),
+            "high": round(float(hist["High"].iloc[-1]), 2),
+            "low": round(float(hist["Low"].iloc[-1]), 2),
             "prev_close": prev_close,
             "volume": int(hist["Volume"].iloc[-1]),
             "timestamp": 0,
@@ -206,15 +206,15 @@ async def fetchPriceData(ticker: str) -> dict:
     data = await finnhubGet("quote", {"symbol": ticker})
     if "error" in data:
         return await _yf_quote(ticker)
-    current_price = data.get("c", 0)
-    prev_close = data.get("pc", 0)
+    current_price = round(data.get("c", 0), 2)
+    prev_close = round(data.get("pc", 0), 2)
     change_pct = data.get("dp", 0)
     return {
         "ticker": ticker,
         "current_price": current_price,
-        "open": data.get("o", 0),
-        "high": data.get("h", 0),
-        "low": data.get("l", 0),
+        "open": round(data.get("o", 0), 2),
+        "high": round(data.get("h", 0), 2),
+        "low": round(data.get("l", 0), 2),
         "prev_close": prev_close,
         "volume": data.get("v", 0),
         "timestamp": data.get("t", 0),
@@ -416,14 +416,18 @@ async def getLivePrice(stock: str) -> dict:
     data = await finnhubGet("quote", {"symbol": stock.upper()})
     if not data or "error" in data:
         return {}
+
+    def _round(v):
+        return round(v, 2) if isinstance(v, (int, float)) else v
+
     return {
-        "price": data.get("c"),
+        "price": _round(data.get("c")),
         "change": data.get("d"),
         "change_percent": data.get("dp"),
-        "high": data.get("h"),
-        "low": data.get("l"),
-        "open": data.get("o"),
-        "prev_close": data.get("pc"),
+        "high": _round(data.get("h")),
+        "low": _round(data.get("l")),
+        "open": _round(data.get("o")),
+        "prev_close": _round(data.get("pc")),
     }
 
 
