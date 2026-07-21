@@ -22,7 +22,8 @@ function formatLarge(num) {
 function StockDetail() {
     const { ticker } = useParams()
     const navigate = useNavigate()
-    const { logout } = useAuth()
+    const { user, logout } = useAuth()
+    const isTrader = user?.role === 'trader'
 
     // states in kind of a random order lol
     const [activeTab, setActiveTab] = useState('Chart')
@@ -107,17 +108,35 @@ function StockDetail() {
 
     return (
         <div className="dashboard">
-            <aside className="sidebar">
+                                                <aside className="sidebar">
                 <div className="sidebar-logo">StockWise <span>AI</span></div>
+
+                {/* Both roles */}
                 <span className="sidebar-link" onClick={() => navigate('/dashboard')}>Dashboard</span>
                 <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
-                <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
-                <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
                 <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
                 <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
+
+                {/* Investor only */}
+                {!isTrader && (
+                    <>
+                        <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
+                        <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
+                        <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
+                        <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
+                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
+                    </>
+                )}
+
+                {/* Trader — Back to Trader Portal + Logout pinned to bottom */}
+                {isTrader && (
+                    <div style={{ marginTop:'auto', borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:'0.5rem' }}>
+                        <span className="sidebar-link" onClick={() => navigate('/trader/dashboard')}>
+                            ← Back to Trader Portal
+                        </span>
+                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
+                    </div>
+                )}
             </aside>
 
             <div className="main-content">
