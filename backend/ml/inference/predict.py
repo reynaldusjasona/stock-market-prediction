@@ -53,7 +53,12 @@ def getPrediction(ticker: str) -> dict:
     Returns a dict with keys: ticker, signal, confidence,
     risk_level, reasoning.
     """
-    model, label_encoder = load_model()
+    try:
+        model, label_encoder = load_model()
+    except (FileNotFoundError, OSError) as exc:
+        print(f"Error loading model artifacts: {exc}")
+        return {"error": "Model not yet trained. Run training pipeline first."}
+
     features = get_latest_features(ticker)
 
     pred_enc = model.predict(features)[0]
