@@ -33,6 +33,12 @@ async def createSubscription(
     body: SubscribeRequest,
     current_user: dict = Depends(get_current_user),
 ):
+    role = current_user.get("role", "investor")
+    if role == "trader":
+        raise HTTPException(
+            status_code=400,
+            detail="Traders have free access and do not require a subscription.",
+        )
     if body.plan != "premium":
         raise HTTPException(
             status_code=400, detail="Invalid plan. Only 'premium' is available."
