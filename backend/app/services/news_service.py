@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from app.core.api_clients import finnhubGet
 from app.core.database import supabase
-from ml.sentiment import assign_to_trading_session
+from ml.training.build_sentiment_features import assign_to_trading_session
 
 
 async def getStockNews(
