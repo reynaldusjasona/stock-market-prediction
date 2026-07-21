@@ -14,8 +14,8 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import LabelEncoder
 
-from ml.features import get_multiple_tickers
-from ml.train import TRAIN_TICKERS, split_data
+from ml.training.features import get_multiple_tickers
+from ml.training.train import TRAIN_TICKERS, split_data
 
 _MODEL_FILE = "xgboost_model_latest.joblib"
 _ENCODER_FILE = "label_encoder.pkl"
@@ -145,6 +145,7 @@ def run_evaluation() -> dict:
     print(f"Precision: {metrics['precision']}")
     print(f"Recall   : {metrics['recall']}")
     print(f"F1       : {metrics['f1']}")
+
 
     return metrics
 
