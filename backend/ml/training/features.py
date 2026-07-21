@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
-from ml.score_historical_news import add_sentiment_features
+from ml.training.build_sentiment_features import add_sentiment_features
 
 
 def fetch_stock_data(
