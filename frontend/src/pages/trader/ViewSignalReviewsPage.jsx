@@ -1,50 +1,39 @@
 import {useEffect, useState} from 'react'
 import traderApi from '../../js/traderApi'
+import EndorseSignalModal from './EndorseSignalModal'
 import '../../styles/admin/adminShared.css'
 import '../../styles/trader/traderShared.css'
 
 const SIGNAL_COLOR = { Buy:'#00ff41', Hold:'#60a5fa', Sell:'#ff4444' }
 
 function ViewSignalReviewsPage() {
-  const[signals,   setSignals]= useState([])
-  const[noteDraft, setNoteDraft]= useState({})
-  const[loading,   setLoading]= useState(true)
-  const[error,     setError]= useState('')
-  const[busy,      setBusy]= useState('')
+  const[signals,setSignals]= useState([])
+  const[loading,setLoading]= useState(true)
+  const[error,setError]= useState('')
+  const[selected,setSelected]= useState(null)
 
-  const load = async () => {
+  const load = async()=> {
     setLoading(true); setError('')
     try{
-      const s = await traderApi.getSignalsForReview()
+      const s= await traderApi.getSignalsForReview()
       setSignals(Array.isArray(s) ? s : [])
     } 
 	catch (err){
       setError(err.message || 'Failed to load signals')
     } 
-	finally { 
+	finally{ 
 	  setLoading(false) 
 	}
   }
 
-  useEffect(()=>{load()}, [])
+  useEffect(()=> { load() }, [])
 
-  const handleEndorse= async (ticker, verdict) => {
-    setBusy(ticker)
-    try {
-      await traderApi.endorseSignal({ ticker, verdict, note: (noteDraft[ticker] || '').trim() })
-      setNoteDraft(d => ({ ...d, [ticker]: '' }))
-      await load()
-    } 
-	catch (err) {
-      setError(err.message || 'Failed to submit endorsement')
-    } 
-	finally { setBusy('') }
-  }
+  const handleEndorsed = ()=> {setSelected(null); load()}
 
   const pending= signals.filter(s => !s.endorsement)
   const reviewed= signals.filter(s => s.endorsement)
 
-  return (
+  return(
     <div>
       <div className="admin-page-header">
         <h1 className="admin-page-title">Signal Reviews</h1>
@@ -61,12 +50,12 @@ function ViewSignalReviewsPage() {
             <div className="admin-card-header"><h2 className="admin-card-title">Awaiting Review ({pending.length})</h2></div>
             <div className="admin-table-wrap">
               <table className="admin-table" aria-label="Signals awaiting review">
-                <thead><tr><th>Ticker</th><th>AI Signal</th><th>Confidence</th><th>Requested By</th><th>Your Verdict</th></tr></thead>
+                <thead><tr><th>Ticker</th><th>AI Signal</th><th>Confidence</th><th>Requested By</th><th>Actions</th></tr></thead>
                 <tbody>
                   {!pending.length ? (
                     <tr><td colSpan="5"><div className="admin-empty"><p>No signals awaiting review. All caught up.</p></div></td></tr>
                   ) : pending.map(s => (
-                    <tr key={s.ticker + (s.requested_by || '')}>
+                    <tr key={s.ticker + (s.requested_by || '')} style={{ cursor:'pointer' }} onClick={() => setSelected(s)}>
                       <td style={{ fontFamily:'var(--font-mono)', fontWeight:700 }}>{s.ticker}</td>
                       <td><span style={{ fontWeight:700, color: SIGNAL_COLOR[s.signal] || 'var(--text)' }}>{s.signal}</span></td>
                       <td style={{ fontFamily:'var(--font-mono)' }}>
@@ -74,16 +63,8 @@ function ViewSignalReviewsPage() {
                       </td>
                       <td style={{ fontSize:'0.82rem', color:'var(--text-muted)' }}>{s.requested_by_name || s.requested_by || '—'}</td>
                       <td>
-                        <div style={{ display:'flex', flexDirection:'column', gap:'0.4rem', minWidth:'220px' }}>
-                          <input className="admin-form-input" type="text" placeholder="Optional note for the investor…"
-                            value={noteDraft[s.ticker] || ''} maxLength={300}
-                            onChange={e => setNoteDraft(d => ({ ...d, [s.ticker]: e.target.value }))}/>
-                          <div style={{ display:'flex', gap:'0.5rem' }}>
-                            <button className="btn-admin btn-success" disabled={busy === s.ticker}
-                              onClick={() => handleEndorse(s.ticker, 'agree')}>Agree</button>
-                            <button className="btn-admin btn-danger" disabled={busy === s.ticker}
-                              onClick={() => handleEndorse(s.ticker, 'disagree')}>Disagree</button>
-                          </div>
+                        <div className="action-cell" onClick={e => e.stopPropagation()}>
+                          <button className="btn-admin btn-primary" onClick={() => setSelected(s)}>Review</button>
                         </div>
                       </td>
                     </tr>
@@ -123,6 +104,14 @@ function ViewSignalReviewsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {selected && (
+        <EndorseSignalModal
+          signal={selected}
+          onClose={() => setSelected(null)}
+          onEndorsed={handleEndorsed}
+        />
       )}
     </div>
   )

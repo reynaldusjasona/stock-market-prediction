@@ -3,16 +3,16 @@ import {api} from '../../api/api'
 import {showToast} from '../../js/adminUi'
 import '../../styles/admin/adminShared.css'
 
-function readUser() {
+function readUser(){
   try{ 
 	return JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('sw_user') || '{}') 
 	}
   catch{ 
-	return {} 
+    return {} 
 	}
 }
 
-function UpdateAccountModal({ onClose, onSaved }) {
+function ViewTraderAccountModal({ onClose }) {
   const stored = readUser()
   const[name,setName]= useState(stored.name || stored.full_name || '')
   const[email,setEmail]= useState(stored.email || '')
@@ -20,13 +20,13 @@ function UpdateAccountModal({ onClose, onSaved }) {
   const[newPw,setNewPw]= useState('')
   const[busy,setBusy]= useState(false)
 
-  const handleSave= async()=> {
+  const handleSave = async ()=> {
     if (!name.trim() || !email.trim()){ 
 		showToast('Name and email are required', 'error'); 
 		return 
 	}
     setBusy(true)
-    try{
+    try {
       if (stored.id) {
         await api.patch(`/auth/user/${stored.id}`, { name: name.trim(), email: email.trim() })
         const updated = { ...stored, name: name.trim(), email: email.trim() }
@@ -37,7 +37,7 @@ function UpdateAccountModal({ onClose, onSaved }) {
         await api.post('/auth/reset-password', { old_password: oldPw, new_password: newPw })
       }
       showToast('Account updated', 'success')
-      onSaved?.()
+      onClose?.()
     } 
 	catch (err){
       showToast(err.message || 'Failed to update account', 'error')
@@ -51,7 +51,7 @@ function UpdateAccountModal({ onClose, onSaved }) {
     <div className="admin-modal-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
       <div className="admin-modal" role="dialog" aria-modal="true">
         <div className="admin-modal-header">
-          <h2 className="admin-modal-title">Edit My Account</h2>
+          <h2 className="admin-modal-title">My Account</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Close">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
@@ -61,14 +61,33 @@ function UpdateAccountModal({ onClose, onSaved }) {
 
         <div className="admin-modal-body">
           <div className="admin-form-group">
-            <label className="admin-form-label" htmlFor="uaName">Name</label>
-            <input className="admin-form-input" id="uaName" type="text" maxLength={80}
+            <label className="admin-form-label" htmlFor="taName">Name</label>
+            <input className="admin-form-input" id="taName" type="text" maxLength={80}
               value={name} onChange={e => setName(e.target.value)}/>
           </div>
           <div className="admin-form-group">
-            <label className="admin-form-label" htmlFor="uaEmail">Email</label>
-            <input className="admin-form-input" id="uaEmail" type="email" maxLength={120}
+            <label className="admin-form-label" htmlFor="taEmail">Email</label>
+            <input className="admin-form-input" id="taEmail" type="email" maxLength={120}
               value={email} onChange={e => setEmail(e.target.value)}/>
+          </div>
+
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem', marginBottom:'1.1rem' }}>
+            <div>
+              <div className="admin-form-label">License Number</div>
+              <div style={{ fontFamily:'var(--font-mono)', fontSize:'0.85rem' }}>
+                {stored.license_number || '—'}
+              </div>
+              <div style={{ fontSize:'0.68rem', color:'var(--text-subtle)', marginTop:'0.2rem' }}>
+                Verified at approval — contact support to change.
+              </div>
+            </div>
+            <div>
+              <div className="admin-form-label">Status</div>
+              <span className={`status-badge ${stored.trader_status === 'approved' ? 'status-active' : 'status-pending'}`}
+                style={{ marginTop:'0.25rem', display:'inline-flex' }}>
+                {stored.trader_status || 'approved'}
+              </span>
+            </div>
           </div>
 
           <div style={{ borderTop:'1px solid var(--border)', paddingTop:'1rem' }}>
@@ -78,13 +97,13 @@ function UpdateAccountModal({ onClose, onSaved }) {
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
               <div className="admin-form-group" style={{ marginBottom:0 }}>
-                <label className="admin-form-label" htmlFor="uaOldPw">Current Password</label>
-                <input className="admin-form-input" id="uaOldPw" type="password"
+                <label className="admin-form-label" htmlFor="taOldPw">Current Password</label>
+                <input className="admin-form-input" id="taOldPw" type="password"
                   value={oldPw} onChange={e => setOldPw(e.target.value)}/>
               </div>
               <div className="admin-form-group" style={{ marginBottom:0 }}>
-                <label className="admin-form-label" htmlFor="uaNewPw">New Password</label>
-                <input className="admin-form-input" id="uaNewPw" type="password"
+                <label className="admin-form-label" htmlFor="taNewPw">New Password</label>
+                <input className="admin-form-input" id="taNewPw" type="password"
                   value={newPw} onChange={e => setNewPw(e.target.value)}/>
               </div>
             </div>
@@ -102,4 +121,4 @@ function UpdateAccountModal({ onClose, onSaved }) {
   )
 }
 
-export default UpdateAccountModal
+export default ViewTraderAccountModal
