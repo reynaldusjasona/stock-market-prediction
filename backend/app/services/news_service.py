@@ -1,6 +1,6 @@
 
 from datetime import datetime, timedelta, timezone
- 
+
 from app.core.api_clients import finnhubGet
 from app.core.database import supabase
 from ml.sentiment import assign_to_trading_session
@@ -14,22 +14,22 @@ async def getStockNews(
     """
     This functions fetch news articles for a ticker.
 
-    Each article's session_date is computed and stored 
-    with published_at, headline, summary, source, url, 
+    Each article's session_date is computed and stored
+    with published_at, headline, summary, source, url,
     and ticker in the news_articles table.
     """
     if from_date is None or to_date is None:
         today = datetime.now(timezone.utc).date()
         from_date = from_date or (today - timedelta(days=7)).strftime("%Y-%m-%d")
         to_date = to_date or today.strftime("%Y-%m-%d")
- 
+
     raw = await finnhubGet(
         "company-news",
         {"symbol": stock, "from": from_date, "to": to_date},
     )
     if not isinstance(raw, list):
         return []
- 
+
     articles = []
     rows = []
     for item in raw:
@@ -38,7 +38,7 @@ async def getStockNews(
         )
         published_at = published_at_dt.isoformat()
         session_date = assign_to_trading_session(published_at_dt).date().isoformat()
- 
+
         article = {
             "ticker": stock,
             "headline": item.get("headline", ""),
@@ -54,13 +54,14 @@ async def getStockNews(
             "sentiment_score": None,
             "sentiment_label": None,
         })
- 
+
     if rows:
         supabase.table("news_articles").upsert(
             rows, on_conflict="url"
         ).execute()
- 
+
     return articles
+
 
 async def getSentimentScore(
     stock: str,
@@ -69,14 +70,14 @@ async def getSentimentScore(
 ) -> dict:
     """
     Return cached sentiment for a ticker/date range. Fetches raw
-    articles, then reads back scores. 
- 
+    articles, then reads back scores.
+
     If none of the fetched articles have been scored yet, returns
-    sentiment_label="Pending" and sentiment_score=None 
+    sentiment_label="Pending" and sentiment_score=None
     """
     articles = await getStockNews(stock, from_date=from_date, to_date=to_date)
     urls = [a["url"] for a in articles if a.get("url")]
- 
+
     if not urls:
         return {
             "ticker": stock,
@@ -84,7 +85,7 @@ async def getSentimentScore(
             "sentiment_label": "Pending",
             "article_count": 0,
         }
- 
+
     response = (
         supabase.table("news_articles")
         .select("sentiment_score")
@@ -93,7 +94,7 @@ async def getSentimentScore(
         .execute()
     )
     scores = [row["sentiment_score"] for row in (response.data or [])]
- 
+
     if not scores:
         return {
             "ticker": stock,
@@ -101,7 +102,7 @@ async def getSentimentScore(
             "sentiment_label": "Pending",
             "article_count": len(articles),
         }
- 
+
     avg = sum(scores) / len(scores)
     if avg > 0.05:
         label = "Positive"
@@ -109,7 +110,7 @@ async def getSentimentScore(
         label = "Negative"
     else:
         label = "Neutral"
- 
+
     return {
         "ticker": stock,
         "sentiment_score": avg,
@@ -118,12 +119,13 @@ async def getSentimentScore(
         "scored_count": len(scores),
     }
 
+
 async def getDailySentiment(stock: str, from_date: str, to_date: str) -> list[dict]:
     """
-    This functions is for the ML training pipeline. 
+    This functions is for the ML training pipeline.
 
     It fetches raw articles, then reads back cached scores grouped
-    by session_date. 
+    by session_date.
 
     Returns a list of dicts with keys: date, sentiment_mean, sentiment_std, news_count.
     """
@@ -162,4 +164,3 @@ async def getDailySentiment(stock: str, from_date: str, to_date: str) -> list[di
         })
 
     return results
- 
