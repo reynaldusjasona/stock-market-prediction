@@ -15,7 +15,6 @@ load_dotenv()
 _STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 _STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 _STRIPE_PRICE_ID = os.getenv("STRIPE_PRICE_ID", "")
-_STRIPE_TRADER_PRICE_ID = os.getenv("STRIPE_TRADER_PRICE_ID", _STRIPE_PRICE_ID)
 _STRIPE_INVESTOR_PRICE_ID = os.getenv(
     "STRIPE_INVESTOR_PRICE_ID", _STRIPE_PRICE_ID
 )
@@ -26,39 +25,20 @@ if _STRIPE_SECRET_KEY:
 
 PLANS = [
     {
-        "plan": "trader",
-        "name": "Trader Plan",
-        "role": "trader",
-        "price": "19.00",
-        "currency": "usd",
-        "period": "monthly",
-        "interval": "month",
-        "features": [
-            "Full stock market data access",
-            "AI-powered predictions",
-            "Real-time alerts",
-            "Portfolio tracking",
-            "Admin-verified professional account",
-        ],
-    },
-    {
-        "plan": "investor",
+        "id": "investor",
         "name": "Investor Plan",
-        "role": "investor",
-        "price": "29.00",
+        "price": 29.99,
         "currency": "usd",
-        "period": "monthly",
         "interval": "month",
         "features": [
-            "Full stock market data access",
-            "AI-powered predictions",
+            "AI-powered stock predictions",
+            "Real-time market data",
+            "News & sentiment analysis",
+            "Price alerts & notifications",
+            "Watchlist & portfolio tracking",
             "Personalized recommendations",
-            "Real-time alerts",
-            "Portfolio tracking",
-            "Sentiment analysis",
-            "Watchlist management",
         ],
-    },
+    }
 ]
 
 
@@ -139,6 +119,17 @@ async def getAllSubscriptions(status_filter: Optional[str] = None) -> list:
 
 
 async def createCheckoutSession(userID: str, email: str, role: str) -> dict:
+    if role == "trader":
+        raise HTTPException(
+            status_code=400,
+            detail="Traders have free access and do not require a subscription.",
+        )
+    if role == "admin":
+        raise HTTPException(
+            status_code=400,
+            detail="Admin accounts do not require a subscription.",
+        )
+
     if not _STRIPE_SECRET_KEY:
         return {
             "checkout_url": (
@@ -147,12 +138,8 @@ async def createCheckoutSession(userID: str, email: str, role: str) -> dict:
             )
         }
 
-    if role == "trader":
-        price_id = _STRIPE_TRADER_PRICE_ID
-        plan_name = "trader"
-    else:
-        price_id = _STRIPE_INVESTOR_PRICE_ID
-        plan_name = "investor"
+    price_id = _STRIPE_INVESTOR_PRICE_ID
+    plan_name = "investor"
 
     if not price_id:
         raise HTTPException(
