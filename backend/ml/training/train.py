@@ -9,12 +9,30 @@ import xgboost as xgb
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_sample_weight
-
-from ml.features import get_multiple_tickers
+from xgboost import XGBClassifier
+from ml.training.features import get_multiple_tickers
 
 TRAIN_TICKERS = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
-    "META", "TSLA", "JPM", "JNJ", "XOM",
+    # Technology
+    "AAPL", "MSFT", "GOOGL", "NVDA", "META", "AMD", "ORCL", "CRM",
+
+    # Consumer
+    "AMZN", "TSLA", "WMT", "COST", "MCD", "NKE", "SBUX",
+
+    # Finance
+    "JPM", "BAC", "GS", "V", "MA",
+
+    # Healthcare
+    "JNJ", "PFE", "UNH", "MRK", "ABBV",
+
+    # Energy
+    "XOM", "CVX", "COP",
+
+    # Industrial
+    "BA", "CAT", "GE",
+
+    # Communication / Defensive
+    "DIS", "NFLX", "KO", "PEP"
 ]
 
 
@@ -47,6 +65,8 @@ def split_data(
     return X_train, X_val, X_test, y_train, y_val, y_test
 
 
+
+
 def train_model(
     X_train: pd.DataFrame,
     y_train: np.ndarray,
@@ -54,19 +74,15 @@ def train_model(
     y_val: np.ndarray,
 ) -> xgb.XGBClassifier:
     """
-    Train an XGBClassifier using GridSearchCV over a hyperparameter grid.
-
-    y_train must already be a label-encoded integer array (from the
-    LabelEncoder fitted in run_training). GridSearchCV uses TimeSeriesSplit
-    with 3 folds and accuracy scoring to find the best combination of
-    n_estimators, max_depth, and learning_rate.
-
-    Returns the best_estimator_ from the grid search.
+    Train XGBoost using fixed hyperparameters for fast experiments.
     """
+
     param_grid = {
-        "n_estimators": [100, 300, 500],
-        "max_depth": [3, 5, 8],
-        "learning_rate": [0.01, 0.1, 0.3],
+        "n_estimators": [200, 400],
+        "max_depth": [4, 6, 8],
+        "learning_rate": [0.01, 0.05, 0.1],
+        "subsample": [0.8, 1.0],
+        "colsample_bytree": [0.8, 1.0]
     }
     base_model = xgb.XGBClassifier(
         eval_metric="mlogloss",
@@ -135,7 +151,10 @@ def run_training() -> dict:
     """
     print("Fetching feature data for all tickers...")
     X, y = get_multiple_tickers(TRAIN_TICKERS)
-
+    print("Dataset built successfully")
+    print(y.value_counts())
+    print(y.value_counts(normalize=True))
+    
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(X, y)
 
     le = LabelEncoder()
