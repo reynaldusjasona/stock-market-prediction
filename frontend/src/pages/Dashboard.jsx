@@ -14,21 +14,21 @@ function fmt(num) {
 
 function Dashboard() {
     const [trendList, setTrendList] = useState([])
-    const [gainers, setGainers] = useState([])
-    const [losers, setLosers] = useState([])
+    const [gainers,   setGainers]   = useState([])
+    const [losers,    setLosers]    = useState([])
     const [stockList, setStockList] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
+    const [loading,   setLoading]   = useState(true)
+    const [error,     setError]     = useState(null)
     const { user, logout } = useAuth()
     const navigate = useNavigate()
 
-    // logout and go back to login
+    const isTrader = user?.role === 'trader'
+
     function handleLogout() {
         logout()
         navigate('/login')
     }
 
-    // get all data needed for dashboard
     async function getData() {
         try {
             const trendData = await api.get('/stocks/trending')
@@ -36,64 +36,76 @@ function Dashboard() {
         } catch (err) {
             console.log('trending failed:', err.message)
         }
-
         try {
             const moverData = await api.get('/stocks/movers')
             setGainers(moverData.gainers || [])
-            setLosers(moverData.losers || [])
+            setLosers(moverData.losers   || [])
         } catch (err) {
             console.log('movers failed:', err.message)
         }
-
         try {
             const allStocks = await api.get('/stocks')
             setStockList(allStocks)
         } catch (err) {
             console.log('stocks failed:', err.message)
         }
-
         setLoading(false)
     }
 
-    useEffect(() => {
-        getData()
-    }, [])
+    useEffect(() => { getData() }, [])
 
     if (loading) return <p>Loading...</p>
-    if (error) return <p>{error}</p>
-
+    if (error)   return <p>{error}</p>
 
     return (
         <div className="dashboard">
-            <aside className="sidebar">
+                        <aside className="sidebar">
                 <div className="sidebar-logo">StockWise <span>AI</span></div>
+
+                {/* Both roles */}
                 <span className="sidebar-link active">Dashboard</span>
                 <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
-                <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
-                <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
                 <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
                 <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
+
+                {/* Investor only */}
+                {!isTrader && (
+                    <>
+                        <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
+                        <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
+                        <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
+                        <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
+                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
+                    </>
+                )}
+
+                {/* Trader — Back to Trader Portal + Logout pinned to bottom */}
+                {isTrader && (
+                    <div style={{ marginTop:'auto', borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:'0.5rem' }}>
+                        <span className="sidebar-link" onClick={() => navigate('/trader/dashboard')}>
+                            ← Back to Trader Portal
+                        </span>
+                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
+                    </div>
+                )}
             </aside>
-    
+
             <div className="main-content">
                 <div className="page-header">
-                    <h1>Welcome back, Investor</h1>
+                    <h1>Welcome back, {isTrader ? 'Trader' : 'Investor'}</h1>
                     <p>Market analysis is updated and ready for your next move.</p>
                 </div>
-    
+
                 <h2 className="section-heading">Market Overview</h2>
-    
+
                 <div className="market-grid">
                     <ViewTrendingTickers trendList={trendList} fmt={fmt} />
                     <ViewTopGainersLosers gainers={gainers} losers={losers} fmt={fmt} />
                 </div>
-
                 <ViewStocksList stockList={stockList} navigate={navigate} fmt={fmt} />
             </div>
         </div>
     )
 }
+
 export default Dashboard
