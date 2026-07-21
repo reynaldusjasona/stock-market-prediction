@@ -1,31 +1,27 @@
+
 from datetime import datetime, timedelta, timezone
 
 from app.core.api_clients import finnhubGet
 from app.core.database import supabase
-
-_POSITIVE_WORDS = {
-    "up", "gain", "rise", "beat", "growth", "profit",
-    "surge", "high", "strong", "positive",
-}
-_NEGATIVE_WORDS = {
-    "down", "loss", "fall", "miss", "decline", "weak",
-    "drop", "low", "risk", "negative",
-}
+from ml.sentiment import assign_to_trading_session
 
 
-def _score_text(text: str) -> float:
-    words = text.lower().split()
-    total = max(len(words), 1)
-    pos = sum(1 for w in words if w in _POSITIVE_WORDS)
-    neg = sum(1 for w in words if w in _NEGATIVE_WORDS)
-    raw = (pos - neg) / total
-    return max(-1.0, min(1.0, raw))
+async def getStockNews(
+    stock: str,
+    from_date: str | None = None,
+    to_date: str | None = None,
+) -> list:
+    """
+    This functions fetch news articles for a ticker.
 
-
-async def getStockNews(stock: str) -> list:
-    today = datetime.now(timezone.utc).date()
-    from_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
-    to_date = today.strftime("%Y-%m-%d")
+    Each article's session_date is computed and stored
+    with published_at, headline, summary, source, url,
+    and ticker in the news_articles table.
+    """
+    if from_date is None or to_date is None:
+        today = datetime.now(timezone.utc).date()
+        from_date = from_date or (today - timedelta(days=7)).strftime("%Y-%m-%d")
+        to_date = to_date or today.strftime("%Y-%m-%d")
 
     raw = await finnhubGet(
         "company-news",
@@ -37,9 +33,12 @@ async def getStockNews(stock: str) -> list:
     articles = []
     rows = []
     for item in raw:
-        published_at = datetime.fromtimestamp(
+        published_at_dt = datetime.fromtimestamp(
             item.get("datetime", 0), tz=timezone.utc
-        ).isoformat()
+        )
+        published_at = published_at_dt.isoformat()
+        session_date = assign_to_trading_session(published_at_dt).date().isoformat()
+
         article = {
             "ticker": stock,
             "headline": item.get("headline", ""),
@@ -47,6 +46,7 @@ async def getStockNews(stock: str) -> list:
             "source": item.get("source", ""),
             "url": item.get("url", ""),
             "published_at": published_at,
+            "session_date": session_date,
         }
         articles.append(article)
         rows.append({
@@ -63,60 +63,104 @@ async def getStockNews(stock: str) -> list:
     return articles
 
 
-async def getSentimentScore(stock: str) -> dict:
-    articles = await getStockNews(stock)
+async def getSentimentScore(
+    stock: str,
+    from_date: str | None = None,
+    to_date: str | None = None,
+) -> dict:
+    """
+    Return cached sentiment for a ticker/date range. Fetches raw
+    articles, then reads back scores.
 
-    scores = []
-    for article in articles:
-        summary = article.get("summary", "")
-        if summary:
-            scores.append(_score_text(summary))
+    If none of the fetched articles have been scored yet, returns
+    sentiment_label="Pending" and sentiment_score=None
+    """
+    articles = await getStockNews(stock, from_date=from_date, to_date=to_date)
+    urls = [a["url"] for a in articles if a.get("url")]
 
-    n = len(scores)
-    avg = sum(scores) / n if n else 0.0
+    if not urls:
+        return {
+            "ticker": stock,
+            "sentiment_score": None,
+            "sentiment_label": "Pending",
+            "article_count": 0,
+        }
 
+    response = (
+        supabase.table("news_articles")
+        .select("sentiment_score")
+        .in_("url", urls)
+        .not_.is_("sentiment_score", "null")
+        .execute()
+    )
+    scores = [row["sentiment_score"] for row in (response.data or [])]
+
+    if not scores:
+        return {
+            "ticker": stock,
+            "sentiment_score": None,
+            "sentiment_label": "Pending",
+            "article_count": len(articles),
+        }
+
+    avg = sum(scores) / len(scores)
     if avg > 0.05:
         label = "Positive"
     elif avg < -0.05:
         label = "Negative"
     else:
         label = "Neutral"
-
-    for article in articles:
-        url = article.get("url")
-        if url:
-            supabase.table("news_articles").update(
-                {"sentiment_score": avg, "sentiment_label": label}
-            ).eq("url", url).execute()
 
     return {
         "ticker": stock,
         "sentiment_score": avg,
         "sentiment_label": label,
         "article_count": len(articles),
+        "scored_count": len(scores),
     }
 
 
-async def analyzeSentiment(NewsArticles: list) -> dict:
-    scores = []
-    for article in NewsArticles:
-        summary = article.get("summary", "")
-        if summary:
-            scores.append(_score_text(summary))
+async def getDailySentiment(stock: str, from_date: str, to_date: str) -> list[dict]:
+    """
+    This functions is for the ML training pipeline.
 
-    n = len(scores)
-    avg = sum(scores) / n if n else 0.0
+    It fetches raw articles, then reads back cached scores grouped
+    by session_date.
 
-    if avg > 0.05:
-        label = "Positive"
-    elif avg < -0.05:
-        label = "Negative"
-    else:
-        label = "Neutral"
+    Returns a list of dicts with keys: date, sentiment_mean, sentiment_std, news_count.
+    """
+    articles = await getStockNews(stock, from_date=from_date, to_date=to_date)
+    urls = [a["url"] for a in articles if a.get("url")]
+    session_by_url = {a["url"]: a["session_date"] for a in articles if a.get("url")}
 
-    return {
-        "sentiment_score": avg,
-        "sentiment_label": label,
-        "article_count": len(NewsArticles),
-    }
+    if not urls:
+        return []
 
+    response = (
+        supabase.table("news_articles")
+        .select("url, sentiment_score")
+        .in_("url", urls)
+        .not_.is_("sentiment_score", "null")
+        .execute()
+    )
+
+    by_date: dict[str, list[float]] = {}
+    for row in (response.data or []):
+        session_date = session_by_url.get(row["url"])
+        if session_date is None:
+            continue
+        by_date.setdefault(session_date, []).append(row["sentiment_score"])
+
+    results = []
+    for session_date, day_scores in sorted(by_date.items()):
+        n = len(day_scores)
+        mean = sum(day_scores) / n
+        variance = sum((s - mean) ** 2 for s in day_scores) / n if n > 1 else 0.0
+        results.append({
+            "date": session_date,
+            "sentiment_mean": mean,
+            "sentiment_std": variance ** 0.5,
+            "news_count": n,
+        })
+
+    return results
