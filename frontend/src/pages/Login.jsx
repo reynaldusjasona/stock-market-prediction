@@ -5,17 +5,25 @@ import { api } from '../api/api'
 import '../styles/Login.css'
 
 function Login() {
-    const [email, setEmail] = useState('')
+    const [email,    setEmail]    = useState('')
     const [password, setPassword] = useState('')
-    const [error, setError] = useState(null)
+    const [error,    setError]    = useState(null)
     const { login } = useAuth()
-    const navigate = useNavigate()
+    const navigate  = useNavigate()
 
     async function handleLogin() {
         try {
             const data = await api.post('/auth/login', { email, password })
             login(data.user, data.token)
-            navigate('/dashboard')
+
+            const role         = data.user?.role
+            const traderStatus = data.user?.trader_status
+
+            if (role === 'trader') {
+                navigate('/trader/dashboard')
+            } else {
+                navigate('/dashboard')
+            }
         } catch (err) {
             setError(err.message)
         }
@@ -33,14 +41,18 @@ function Login() {
                 {error && <p className="error-msg">{error}</p>}
                 <div className="form-group">
                     <label>Email Address</label>
-                    <input type="email" placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <input type="email" placeholder="name@company.com"
+                        value={email} onChange={e => setEmail(e.target.value)}/>
                 </div>
                 <div className="form-group">
                     <label>Password</label>
-                    <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <input type="password" placeholder="••••••••"
+                        value={password} onChange={e => setPassword(e.target.value)}/>
                 </div>
                 <button className="btn-full" onClick={handleLogin}>Log in →</button>
-                <p className="login-footer">Don't have an account? <span onClick={() => navigate('/register')}>Register</span></p>
+                <p className="login-footer">
+                    Don't have an account? <span onClick={() => navigate('/register')}>Register</span>
+                </p>
             </div>
         </div>
     )
