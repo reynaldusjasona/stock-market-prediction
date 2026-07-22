@@ -163,6 +163,60 @@ async def createCheckoutSession(userID: str, email: str, role: str) -> dict:
     return {"checkout_url": session.url}
 
 
+async def createSignalAccessCheckout(userID: str, email: str) -> dict:
+    existing = (
+        supabase.table("subscriptions")
+        .select("*")
+        .eq("user_id", userID)
+        .eq("status", "active")
+        .execute()
+    )
+    if not existing.data:
+        raise HTTPException(
+            status_code=400,
+            detail="You need an active subscription before adding signal access.",
+        )
+    if existing.data[0].get("has_signal_access"):
+        raise HTTPException(
+            status_code=400,
+            detail="You already have signal access.",
+        )
+
+    price_id = os.getenv("STRIPE_SIGNAL_ACCESS_PRICE_ID")
+    if not price_id or not _STRIPE_SECRET_KEY:
+        supabase.table("subscriptions").update(
+            {"has_signal_access": True}
+        ).eq("user_id", userID).eq("status", "active").execute()
+        return {"message": "Signal access activated (mock mode)."}
+
+    session = stripe.checkout.Session.create(
+        customer_email=email,
+        payment_method_types=["card"],
+        line_items=[{"price": price_id, "quantity": 1}],
+        mode="subscription",
+        success_url=f"{_FRONTEND_URL}/subscription?status=success&addon=signal",
+        cancel_url=f"{_FRONTEND_URL}/subscription?status=cancelled",
+        metadata={"user_id": userID, "plan_name": "signal_access"},
+    )
+    return {"checkout_url": session.url}
+
+
+async def getSignalAccessStatus(userID: str) -> dict:
+    result = (
+        supabase.table("subscriptions")
+        .select("has_signal_access")
+        .eq("user_id", userID)
+        .eq("status", "active")
+        .execute()
+    )
+    if not result.data:
+        return {"has_signal_access": False, "has_subscription": False}
+    return {
+        "has_signal_access": result.data[0].get("has_signal_access", False),
+        "has_subscription": True,
+    }
+
+
 async def _activateSubscriptionFromWebhook(userID: str, plan: str) -> None:
     try:
         await createSubscription(userID, plan)
@@ -190,6 +244,15 @@ async def handleWebhookEvent(
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
+
+        plan_name = session.get("metadata", {}).get("plan_name", "")
+        if plan_name == "signal_access":
+            user_id = session["metadata"]["user_id"]
+            supabase.table("subscriptions").update(
+                {"has_signal_access": True}
+            ).eq("user_id", user_id).eq("status", "active").execute()
+            return {"status": "signal_access_activated"}
+
         userID = session["client_reference_id"]
         try:
             plan = session["metadata"]["plan"]
