@@ -79,6 +79,28 @@ async def createCheckoutSession(
     )
 
 
+@router.post("/signal-access/checkout")
+async def createSignalAccessCheckoutSession(
+    current_user: dict = Depends(get_current_user),
+):
+    if current_user.get("role") != "investor":
+        raise HTTPException(
+            status_code=400,
+            detail="Only investors can purchase signal access.",
+        )
+    userID = current_user["sub"]
+    email = current_user.get("email", "")
+    return await subscription_service.createSignalAccessCheckout(userID, email)
+
+
+@router.get("/signal-access/status")
+async def getSignalAccessStatus(
+    current_user: dict = Depends(get_current_user),
+):
+    userID = current_user["sub"]
+    return await subscription_service.getSignalAccessStatus(userID)
+
+
 @router.post("/webhook")
 async def stripeWebhook(request: Request):
     payload = await request.body()
