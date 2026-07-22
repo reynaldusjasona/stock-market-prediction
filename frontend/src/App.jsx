@@ -12,6 +12,8 @@ import AllStocks from './pages/AllStocks'
 import Recommendations from './pages/Recommendations'
 import Alerts from './pages/Alerts'
 import Notifications from './pages/Notifications'
+import Account from './pages/Account'
+import Subscription from './pages/Subscription'
 
 import Feedback from './pages/Feedback'
 
@@ -51,6 +53,10 @@ function App() {
           <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
 
           <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+
+          <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+
+          <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
 
           <Route path="/admin/login" element={<AdminLoginPage />} />
 
