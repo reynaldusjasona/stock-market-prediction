@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
-from ml.score_historical_news import add_sentiment_features
+from ml.training.buil_sentiment_features import add_sentiment_features
 
 
 
@@ -37,7 +37,7 @@ def fetch_stock_data(
     return df
 
 
-def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01", end: str = "2025-12-31", sentiment_source: str = "historical") -> pd.DataFrame:
+def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01", end: str = "2025-12-31") -> pd.DataFrame:
     """
     Generate engineered features and prediction labels from raw OHLCV data.
 
@@ -53,7 +53,7 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
         - Candlestick body size
         - Upper and lower shadow
 
-    - News sentiment features (Added add_sentiment_features()):
+    - News sentiment features (Added via add_sentiment_features()):
           - has_news
           - sentiment_mean
           - sentiment_std
@@ -253,7 +253,6 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
         ticker=ticker,
         start=start,
         end=end,
-        sentiment_source=sentiment_source,
     )
 
     out.dropna(inplace=True)

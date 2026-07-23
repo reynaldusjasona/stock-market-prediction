@@ -1,109 +1,18 @@
-
-from datetime import datetime, time
 from zoneinfo import ZoneInfo
 from pathlib import Path
-
-from app.core.database import supabase 
+from datetime import time
 
 import pandas as pd
-import requests
 
 _MARKET_TZ = ZoneInfo("America/New_York")
 _MARKET_OPEN = time(9, 30)
 _MARKET_CLOSE = time(16, 0)
 
-_FINBERT_PIPELINE = None
-
 _HISTORICAL_SENTIMENT_FILE = (
-    Path(__file__).resolve().parent
+    Path(__file__).resolve().parent.parent
     / "historical_sentiment_data"
     / "historical_daily_sentiment.csv"
 )
-
-
-def _get_finbert_pipeline():
-    """
-    Construct and cache the FinBERT sentiment pipeline.
-
-    Uses FinBERT model to classify text into positive, negative, or neutral sentiment. 
-    The model is returning one of: positive, negative, neutral, each with a
-    confidence score.
-    """
-    global _FINBERT_PIPELINE
-    if _FINBERT_PIPELINE is None:
-        from transformers import (
-            AutoModelForSequenceClassification,
-            AutoTokenizer,
-            pipeline,
-        )
-
-        tokenizer = AutoTokenizer.from_pretrained("ProsusAI/finbert")
-        model = AutoModelForSequenceClassification.from_pretrained(
-            "ProsusAI/finbert"
-        )
-        _FINBERT_PIPELINE = pipeline(
-            "sentiment-analysis",
-            model=model,
-            tokenizer=tokenizer,
-            truncation=True,
-            max_length=128,
-        )
-    return _FINBERT_PIPELINE
-
-
-def score_headlines(
-    texts: list[str],
-    batch_size: int = 128,
-) -> list[float]:
-    """
-    Score multiple headlines with FinBERT in batches.
-
-    Args:
-        texts:
-            English financial headlines.
-
-        batch_size:
-            Number of headlines passed through FinBERT at once.
-
-    Returns:
-        Signed sentiment scores in the range [-1, 1].
-    """
-    if not texts:
-        return []
-
-    cleaned = [
-        text.strip() if text and text.strip() else ""
-        for text in texts
-    ]
-
-    classifier = _get_finbert_pipeline()
-
-    results = classifier(
-        cleaned,
-        batch_size=batch_size,
-        truncation=True,
-        max_length=128,
-    )
-
-    scores: list[float] = []
-
-    for text, result in zip(cleaned, results):
-        if not text:
-            scores.append(0.0)
-            continue
-
-        label = str(result["label"]).lower()
-        confidence = float(result["score"])
-
-        if label == "positive":
-            scores.append(confidence)
-        elif label == "negative":
-            scores.append(-confidence)
-        else:
-            scores.append(0.0)
-
-    return scores
-
 
 def assign_to_trading_session(published_at: pd.Timestamp) -> pd.Timestamp:
     """
@@ -178,48 +87,6 @@ def fetch_news(
     return pd.DataFrame(rows)
 
 
-def get_live_daily_sentiment(ticker: str, start: str, end: str) -> pd.DataFrame:
-    """
-    Build a daily sentiment feature table for one ticker from cache:
-
-    Queries news aritcle in Supabase for rows where ticker matches, session_date falls in [start, end]
-    and sentiment_score is not null. rows that exist but havent score yet are excluded. 
-    The sentiment_score is calculated by FinBERT model and cached in Supabase.
-
-    Returns a data frame indexed by session_date with columns: sentiment_mean, sentiment_std, news_count.
-
-    Returns an empty data frame if no articles found
-    """
-    response = (
-        supabase.table("news_articles")
-        .select("session_date, sentiment_score")
-        .eq("ticker", ticker)
-        .eq("data_provider", "finnhub")
-        .gte("session_date", start)
-        .lte("session_date", end)
-        .not_.is_("sentiment_score", "null")
-        .execute()
-
-    )
-    rows = response.data if response.data else []
-
-    if not rows: 
-        return pd.DataFrame(
-            columns=["sentiment_mean", "sentiment_std", "news_count"]     
-    )
-
-    df = pd.DataFrame(rows)
-    df["session_date"] = pd.to_datetime(df["session_date"]).dt.normalize()
-
-    daily = df.groupby("session_date").agg(
-        sentiment_mean=("sentiment_score", "mean"),
-        sentiment_std=("sentiment_score", "std"),
-        news_count=("sentiment_score", "count")
-    )
-    daily["sentiment_std"] = daily["sentiment_std"].fillna(0.0)
-    daily.index.name = None
-
-    return daily
 
 def get_historical_daily_sentiment(
     ticker: str,
@@ -342,7 +209,6 @@ def add_sentiment_features(
     ticker: str,
     start: str,
     end: str,
-    sentiment_source: str = "historical",
 ) -> pd.DataFrame:
     """
     Join daily sentiment features onto the stock feature DataFrame.
@@ -360,29 +226,14 @@ def add_sentiment_features(
         end:
             End date in YYYY-MM-DD format.
 
-        sentiment_source:
-            "historical" for GDELT training data or
-            "live" for cached Finnhub sentiment.
-
     Returns:
         Input DataFrame with daily sentiment features added.
     """
-    if sentiment_source == "historical":
-        sentiment = get_historical_daily_sentiment(
-            ticker=ticker,
-            start=start,
-            end=end,
-        )
-    elif sentiment_source == "live":
-        sentiment = get_live_daily_sentiment(
-            ticker=ticker,
-            start=start,
-            end=end,
-        )
-    else:
-        raise ValueError(
-            "sentiment_source must be 'historical' or 'live'"
-        )
+    sentiment = get_historical_daily_sentiment(
+        ticker=ticker,
+        start=start,
+        end=end,
+    )
 
     out = out.join(sentiment, how="left")
 

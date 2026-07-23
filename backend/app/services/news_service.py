@@ -3,7 +3,8 @@ from datetime import datetime, timedelta, timezone
  
 from app.core.api_clients import finnhubGet
 from app.core.database import supabase
-from ml.sentiment import assign_to_trading_session
+from ml.training.build_sentiment_features import assign_to_trading_session
+from ml.sentiment_data.build_finbert_pipeline import get_sentiment_label
 
 
 async def getStockNews(
@@ -103,12 +104,7 @@ async def getSentimentScore(
         }
  
     avg = sum(scores) / len(scores)
-    if avg > 0.05:
-        label = "Positive"
-    elif avg < -0.05:
-        label = "Negative"
-    else:
-        label = "Neutral"
+    label = get_sentiment_label(avg)
  
     return {
         "ticker": stock,
@@ -118,48 +114,3 @@ async def getSentimentScore(
         "scored_count": len(scores),
     }
 
-async def getDailySentiment(stock: str, from_date: str, to_date: str) -> list[dict]:
-    """
-    This functions is for the ML training pipeline. 
-
-    It fetches raw articles, then reads back cached scores grouped
-    by session_date. 
-
-    Returns a list of dicts with keys: date, sentiment_mean, sentiment_std, news_count.
-    """
-    articles = await getStockNews(stock, from_date=from_date, to_date=to_date)
-    urls = [a["url"] for a in articles if a.get("url")]
-    session_by_url = {a["url"]: a["session_date"] for a in articles if a.get("url")}
-
-    if not urls:
-        return []
-
-    response = (
-        supabase.table("news_articles")
-        .select("url, sentiment_score")
-        .in_("url", urls)
-        .not_.is_("sentiment_score", "null")
-        .execute()
-    )
-
-    by_date: dict[str, list[float]] = {}
-    for row in (response.data or []):
-        session_date = session_by_url.get(row["url"])
-        if session_date is None:
-            continue
-        by_date.setdefault(session_date, []).append(row["sentiment_score"])
-
-    results = []
-    for session_date, day_scores in sorted(by_date.items()):
-        n = len(day_scores)
-        mean = sum(day_scores) / n
-        variance = sum((s - mean) ** 2 for s in day_scores) / n if n > 1 else 0.0
-        results.append({
-            "date": session_date,
-            "sentiment_mean": mean,
-            "sentiment_std": variance ** 0.5,
-            "news_count": n,
-        })
-
-    return results
- 
