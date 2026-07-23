@@ -455,10 +455,6 @@ def fetch_gdelt_chunk(
     return [dict(row.items()) for row in query_job.result()]
 
 
-
-    return len(rows)
-
-
 def _prepare_raw_rows(rows: list[dict]) -> list[dict]:
     """
     Validate GDELT articles and assign each article to a trading session.
