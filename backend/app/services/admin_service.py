@@ -6,7 +6,8 @@ from app.core.database import supabase
 
 _ADMIN_FIELDS = (
     "id, name, email, role, status, risk_tolerance, "
-    "sector_preferences, created_at, updated_at"
+    "sector_preferences, created_at, updated_at, "
+    "license_number, trader_status"
 )
 
 
@@ -179,11 +180,11 @@ async def getDashboardStats() -> dict:
 
 
 _FALLBACK_MODEL_METRICS = {
-    "accuracy": 0.76,
-    "buy_precision": 0.17,
-    "sell_precision": 0.17,
-    "hold_precision": 0.89,
-    "roc_auc": 0.65,
+    "accuracy": 0.50,
+    "buy_precision": 0.25,
+    "sell_precision": 0.25,
+    "hold_precision": 0.66,
+    "roc_auc": 0.58,
     "training_samples": 50000,
     "last_trained": "2026-06-18",
     "note": "Fallback metrics from offline evaluation",
@@ -405,3 +406,209 @@ async def getActivityLogs(
         })
 
     return {"logs": items, "total": total, "page": page, "limit": limit}
+
+
+_MODEL_QUALITY_FALLBACK = [
+    {
+        "class_name": "Buy",
+        "precision_score": 0.25,
+        "recall_score": 0.18,
+        "f1_score": 0.21,
+        "support": 1521,
+    },
+    {
+        "class_name": "Hold",
+        "precision_score": 0.66,
+        "recall_score": 0.67,
+        "f1_score": 0.67,
+        "support": 4755,
+    },
+    {
+        "class_name": "Sell",
+        "precision_score": 0.25,
+        "recall_score": 0.30,
+        "f1_score": 0.27,
+        "support": 1531,
+    },
+]
+
+
+async def getModelQuality() -> dict:
+    try:
+        result = (
+            supabase.table("model_class_metrics")
+            .select("*")
+            .order("class_name")
+            .execute()
+        )
+        data = result.data or _MODEL_QUALITY_FALLBACK
+    except Exception:
+        data = _MODEL_QUALITY_FALLBACK
+    return {
+        "classes": [
+            {
+                "class_name": row["class_name"],
+                "precision": row["precision_score"],
+                "recall": row["recall_score"],
+                "f1_score": row["f1_score"],
+                "support": row["support"],
+            }
+            for row in data
+        ],
+        "last_updated": data[0].get("updated_at") if data else None,
+    }
+
+
+async def requestModelRetrain(user_id: str) -> dict:
+    result = (
+        supabase.table("model_retrain_requests")
+        .insert({
+            "requested_by": user_id,
+            "status": "queued",
+            "notes": "Retrain requested via admin dashboard",
+        })
+        .execute()
+    )
+    return {
+        "message": "Model retrain request submitted",
+        "status": "queued",
+        "requested_at": result.data[0]["requested_at"],
+    }
+
+
+async def getRetrainStatus() -> dict:
+    result = (
+        supabase.table("model_retrain_requests")
+        .select("*")
+        .order("requested_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if not result.data:
+        return {
+            "last_trained": "2026-06-18",
+            "status": "completed",
+            "last_request": None,
+        }
+    latest = result.data[0]
+    return {
+        "last_trained": "2026-06-18",
+        "status": latest["status"],
+        "last_request": {
+            "requested_at": latest["requested_at"],
+            "status": latest["status"],
+            "completed_at": latest.get("completed_at"),
+            "notes": latest.get("notes"),
+        },
+    }
+
+
+async def _getVerifiedTrader(userID: str) -> dict:
+    result = (
+        supabase.table("users")
+        .select("id, role, trader_status, email, name")
+        .eq("id", userID)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    user = result.data[0]
+    if user["role"] != "trader":
+        raise HTTPException(status_code=400, detail="User is not a trader")
+    return user
+
+
+async def approveTrader(userID: str) -> dict:
+    user = await _getVerifiedTrader(userID)
+    if user["trader_status"] == "approved":
+        raise HTTPException(
+            status_code=400, detail="Trader is already approved"
+        )
+    supabase.table("users").update({"trader_status": "approved"}).eq(
+        "id", userID
+    ).execute()
+    return {
+        "message": "Trader approved successfully",
+        "user_id": userID,
+        "trader_status": "approved",
+    }
+
+
+async def rejectTrader(userID: str) -> dict:
+    user = await _getVerifiedTrader(userID)
+    if user["trader_status"] == "rejected":
+        raise HTTPException(
+            status_code=400, detail="Trader is already rejected"
+        )
+    supabase.table("users").update({"trader_status": "rejected"}).eq(
+        "id", userID
+    ).execute()
+    return {
+        "message": "Trader rejected",
+        "user_id": userID,
+        "trader_status": "rejected",
+    }
+
+
+_API_SOURCE_FIELDS = {
+    "name",
+    "base_url",
+    "api_key_masked",
+    "rate_limit",
+    "is_enabled",
+    "status",
+}
+
+
+async def getApiSources() -> dict:
+    result = (
+        supabase.table("api_sources")
+        .select("*")
+        .order("name")
+        .execute()
+    )
+    data = result.data or []
+    return {"sources": data, "count": len(data)}
+
+
+async def getApiSourceById(sourceId: str) -> dict:
+    result = (
+        supabase.table("api_sources")
+        .select("*")
+        .eq("id", sourceId)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="API source not found")
+    return result.data[0]
+
+
+async def createApiSource(data: dict) -> dict:
+    if not data.get("name"):
+        raise HTTPException(status_code=400, detail="Name is required")
+    insert_data = {k: v for k, v in data.items() if k in _API_SOURCE_FIELDS}
+    result = supabase.table("api_sources").insert(insert_data).execute()
+    return result.data[0]
+
+
+async def updateApiSource(sourceId: str, data: dict) -> dict:
+    await getApiSourceById(sourceId)
+    update_data = {k: v for k, v in data.items() if k in _API_SOURCE_FIELDS}
+    if not update_data:
+        raise HTTPException(
+            status_code=400, detail="No valid fields to update"
+        )
+    update_data["updated_at"] = datetime.utcnow().isoformat()
+    result = (
+        supabase.table("api_sources")
+        .update(update_data)
+        .eq("id", sourceId)
+        .execute()
+    )
+    return result.data[0]
+
+
+async def deleteApiSource(sourceId: str) -> dict:
+    await getApiSourceById(sourceId)
+    supabase.table("api_sources").delete().eq("id", sourceId).execute()
+    return {"message": "API source deleted", "id": sourceId}

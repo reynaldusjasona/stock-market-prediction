@@ -1,13 +1,14 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.core.database import supabase
 from app.core.email import sendOtpEmail
-from app.core.security import hashPassword
+from app.core.security import get_current_user, hashPassword
 from app.services.activity_service import logActivity
 from app.services.auth_service import (
+    changePassword,
     createAndSendVerificationEmail,
     deleteAccountAndData,
     generateOtp,
@@ -45,6 +46,7 @@ class RegisterRequest(BaseModel):
     sectors: Optional[List[str]] = []
     level: Optional[str] = "moderate"
     role: Optional[str] = "investor"
+    license_number: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -82,6 +84,11 @@ class ResendVerificationRequest(BaseModel):
     email: str
 
 
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+
 @router.post("/auth/register", tags=["Auth"])
 async def register(body: RegisterRequest):
     validation = await validateInputs(body.name, body.email, body.password)
@@ -94,22 +101,31 @@ async def register(body: RegisterRequest):
     if existing.data:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    role = body.role if body.role in _VALID_SELF_REGISTER_ROLES else "investor"
+    if body.role not in _VALID_SELF_REGISTER_ROLES:
+        raise HTTPException(
+            status_code=400, detail="Role must be 'investor' or 'trader'"
+        )
+    role = body.role
 
     hashed = hashPassword(body.password)
-    insert_result = (
-        supabase.table("users")
-        .insert(
-            {
-                "name": body.name,
-                "email": body.email,
-                "password_hash": hashed,
-                "role": role,
-                "status": "active",
-            }
-        )
-        .execute()
-    )
+    insert_data = {
+        "name": body.name,
+        "email": body.email,
+        "password_hash": hashed,
+        "role": role,
+        "status": "active",
+    }
+
+    if role == "trader":
+        if not body.license_number or not body.license_number.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="License number is required for trader registration",
+            )
+        insert_data["trader_status"] = "pending"
+        insert_data["license_number"] = body.license_number
+
+    insert_result = supabase.table("users").insert(insert_data).execute()
     if not insert_result.data:
         raise HTTPException(status_code=500, detail="Registration failed")
 
@@ -176,6 +192,17 @@ async def resendVerification(body: ResendVerificationRequest):
         "message": "If the email exists and is not verified, "
         "a new link has been sent."
     }
+
+
+@router.post("/auth/reset-password", tags=["Auth"])
+async def resetPasswordRoute(
+    body: ChangePasswordRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    userID = current_user["sub"]
+    return await changePassword(
+        userID, body.old_password, body.new_password
+    )
 
 
 @router.get("/auth/user/{investorID}", tags=["Auth"])

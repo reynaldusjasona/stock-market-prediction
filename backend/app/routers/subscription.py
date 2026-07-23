@@ -67,7 +67,10 @@ async def createCheckoutSession(
 ):
     userID = current_user["sub"]
     email = current_user.get("email", "")
-    return await subscription_service.createCheckoutSession(userID, email)
+    role = current_user.get("role", "investor")
+    return await subscription_service.createCheckoutSession(
+        userID, email, role
+    )
 
 
 @router.post("/webhook")

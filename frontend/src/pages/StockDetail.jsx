@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
+import { formatPrice as formatNum } from '../utils/format'
 import '../styles/Dashboard.css'
 import '../styles/StockDetail.css'
 import ViewStockChart from '../components/stock/ViewStockChart'
@@ -9,11 +10,6 @@ import ViewNews from '../components/stock/ViewNews'
 import ViewPrediction from '../components/stock/ViewPrediction'
 import ViewFundamentalAnalysis from '../components/stock/ViewFundamentalAnalysis'
 import ViewOrderBook from '../components/stock/ViewOrderBook'
-
-function formatNum(num) {
-    if (num === null || num === undefined) return 'N/A'
-    return Number(num).toFixed(2)
-}
 
 function formatLarge(num) {
     if (!num) return 'N/A'

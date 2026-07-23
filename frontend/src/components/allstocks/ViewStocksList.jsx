@@ -1,3 +1,5 @@
+import { formatPrice } from '../../utils/format'
+
 function ViewStocksList({ stocks, navigate }) {
     return (
         <div className="allstocks-table-wrap">
@@ -15,11 +17,11 @@ function ViewStocksList({ stocks, navigate }) {
                         <tr key={stock.ticker} onClick={() => navigate(`/stock/${stock.ticker}`)}>
                             <td>{stock.ticker}</td>
                             <td>{stock.company_name}</td>
-                            <td>{stock.current_price !== undefined ? `$${stock.current_price}` : '-'}</td>
+                            <td>{stock.current_price !== undefined ? `$${formatPrice(stock.current_price)}` : '-'}</td>
                             <td>
                                 {stock.change_percent !== undefined ? (
                                     <span className={stock.change_percent >= 0 ? 'change-positive' : 'change-negative'}>
-                                        {stock.change_percent >= 0 ? '+' : ''}{stock.change_percent}%
+                                        {stock.change_percent >= 0 ? '+' : ''}{formatPrice(stock.change_percent)}%
                                     </span>
                                 ) : '-'}
                             </td>
