@@ -119,6 +119,20 @@ async def login(identifier: str, password: str) -> dict:
             detail="Email not verified. Please check your inbox for the "
             "verification link.",
         )
+    if user.get("role") == "trader" and user.get("trader_status") != "approved":
+        traderStatus = user.get("trader_status", "pending")
+        if traderStatus == "pending":
+            raise HTTPException(
+                status_code=403,
+                detail="Your trader account is pending admin approval. "
+                "Please wait for verification.",
+            )
+        elif traderStatus == "rejected":
+            raise HTTPException(
+                status_code=403,
+                detail="Your trader registration has been rejected. "
+                "Please contact support.",
+            )
     token = createAccessToken(
         {"sub": user["id"], "email": user["email"], "role": user["role"]}
     )
@@ -342,3 +356,31 @@ async def updatePreferences(userID: str, preferences: list) -> dict:
 
 async def logout(sessionToken: str) -> bool:
     return await invalidateSession(sessionToken)
+
+
+async def changePassword(
+    userID: str, oldPassword: str, newPassword: str
+) -> dict:
+    result = (
+        supabase.table("users")
+        .select("id, password_hash")
+        .eq("id", userID)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="User not found")
+    user = result.data[0]
+    if not verifyPassword(oldPassword, user["password_hash"]):
+        raise HTTPException(
+            status_code=400, detail="Current password is incorrect"
+        )
+    if len(newPassword) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="New password must be at least 8 characters",
+        )
+    hashed = hashPassword(newPassword)
+    supabase.table("users").update({"password_hash": hashed}).eq(
+        "id", userID
+    ).execute()
+    return {"message": "Password changed successfully"}
