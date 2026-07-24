@@ -88,7 +88,7 @@ def scoreArticleBatch(
             continue
 
         try:
-            update_article_sentiment(
+            updateArticleSentiment(
                 url=url,
                 score=score,
             )
@@ -133,7 +133,7 @@ def run(
                 max_articles - total_processed,
             )
 
-        articles = get_unscored_articles(
+        articles = fetchUnscoredArticles(
             limit=current_limit,
         )
 
@@ -141,7 +141,7 @@ def run(
             print("No unscored articles found.")
             break
 
-        updated_count, failed_count = score_article_batch(
+        updated_count, failed_count = scoreArticleBatch(
             articles=articles,
             model_batch_size=model_batch_size,
         )
