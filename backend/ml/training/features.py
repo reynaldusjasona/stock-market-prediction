@@ -61,7 +61,7 @@ def calculate_indicators(
         - Candlestick body size
         - Upper and lower shadow
 
-    - News sentiment features (Added add_sentiment_features()):
+    - News sentiment features (Added via add_sentiment_features()):
           - has_news
           - sentiment_mean
           - sentiment_std
@@ -261,7 +261,6 @@ def calculate_indicators(
         ticker=ticker,
         start=start,
         end=end,
-        sentiment_source=sentiment_source,
     )
 
     out.dropna(inplace=True)
