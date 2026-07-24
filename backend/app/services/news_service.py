@@ -75,7 +75,11 @@ async def getSentimentScore(
     If none of the fetched articles have been scored yet, returns
     sentiment_label="Pending" and sentiment_score=None
     """
-    articles = await getStockNews(stock, from_date=from_date, to_date=to_date)
+    try:
+        articles = await getStockNews(stock, from_date=from_date, to_date=to_date)
+    except Exception:
+        articles = []
+
     urls = [a["url"] for a in articles if a.get("url")]
 
     if not urls:
@@ -86,14 +90,19 @@ async def getSentimentScore(
             "article_count": 0,
         }
 
-    response = (
-        supabase.table("news_articles")
-        .select("sentiment_score")
-        .in_("url", urls)
-        .not_.is_("sentiment_score", "null")
-        .execute()
-    )
-    scores = [row["sentiment_score"] for row in (response.data or [])]
+    query_urls = urls[:50]
+
+    try:
+        response = (
+            supabase.table("news_articles")
+            .select("sentiment_score")
+            .in_("url", query_urls)
+            .not_.is_("sentiment_score", "null")
+            .execute()
+        )
+        scores = [row["sentiment_score"] for row in (response.data or [])]
+    except Exception:
+        scores = []
 
     if not scores:
         return {
