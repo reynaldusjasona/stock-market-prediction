@@ -557,12 +557,50 @@ async def rejectTrader(userID: str) -> dict:
     }
 
 
+_LICENSE_AUTHORITIES = {
+    "CFA-": "CFA Institute",
+    "MAS-": "MAS Singapore",
+    "FINRA-": "FINRA USA",
+}
+
+
+async def verifyLicense(number: str) -> dict:
+    """
+    Mock license verification (CFA / MAS / FINRA prefixes only).
+
+    Not connected to any real registry -- for the trader-approval
+    simulation only. Every response is flagged "mocked": True.
+    """
+    number_upper = number.strip().upper()
+
+    for prefix, authority in _LICENSE_AUTHORITIES.items():
+        if number_upper.startswith(prefix):
+            holder = number_upper.replace(prefix, "").replace("-", " ").title()
+            return {
+                "valid": True,
+                "authority": authority,
+                "status": "Active",
+                "holder": holder,
+                "license_number": number,
+                "mocked": True,
+            }
+
+    return {
+        "valid": False,
+        "reason": "License format not recognised",
+        "license_number": number,
+        "mocked": True,
+    }
+
+
 _API_SOURCE_FIELDS = {
     "name",
     "base_url",
     "api_key_masked",
     "rate_limit",
-    "is_enabled",
+    "api_type",
+    "description",
+    "is_enable",
     "status",
 }
 
