@@ -12,10 +12,8 @@ _MARKET_TZ = ZoneInfo("America/New_York")
 _MARKET_OPEN = time(9, 30)
 _MARKET_CLOSE = time(16, 0)
 
-_FINBERT_PIPELINE = None
-
 _HISTORICAL_SENTIMENT_FILE = (
-    Path(__file__).resolve().parent
+    Path(__file__).resolve().parent.parent
     / "historical_sentiment_data"
     / "historical_daily_sentiment.csv"
 )
@@ -346,7 +344,6 @@ def add_sentiment_features(
     ticker: str,
     start: str,
     end: str,
-    sentiment_source: str = "historical",
 ) -> pd.DataFrame:
     """
     Join daily sentiment features onto the stock feature DataFrame.
@@ -364,29 +361,14 @@ def add_sentiment_features(
         end:
             End date in YYYY-MM-DD format.
 
-        sentiment_source:
-            "historical" for GDELT training data or
-            "live" for cached Finnhub sentiment.
-
     Returns:
         Input DataFrame with daily sentiment features added.
     """
-    if sentiment_source == "historical":
-        sentiment = get_historical_daily_sentiment(
-            ticker=ticker,
-            start=start,
-            end=end,
-        )
-    elif sentiment_source == "live":
-        sentiment = get_live_daily_sentiment(
-            ticker=ticker,
-            start=start,
-            end=end,
-        )
-    else:
-        raise ValueError(
-            "sentiment_source must be 'historical' or 'live'"
-        )
+    sentiment = get_historical_daily_sentiment(
+        ticker=ticker,
+        start=start,
+        end=end,
+    )
 
     out = out.join(sentiment, how="left")
 
