@@ -1,10 +1,11 @@
 _FINBERT_PIPELINE = None
 
+
 def _get_finbert_pipeline():
     """
     Construct and cache the FinBERT sentiment pipeline.
 
-    Uses FinBERT model to classify text into positive, negative, or neutral sentiment. 
+    Uses FinBERT model to classify text into positive, negative, or neutral sentiment.
     The model is returning one of: positive, negative, neutral, each with a
     confidence score.
     """
