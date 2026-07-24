@@ -47,6 +47,10 @@ class RegisterRequest(BaseModel):
     level: Optional[str] = "moderate"
     role: Optional[str] = "investor"
     license_number: Optional[str] = None
+    phone: Optional[str] = None
+    specialization: Optional[str] = None
+    years_experience: Optional[int] = None
+    bio: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -115,6 +119,15 @@ async def register(body: RegisterRequest):
         "role": role,
         "status": "active",
     }
+
+    if body.phone is not None:
+        insert_data["phone"] = body.phone
+    if body.specialization is not None:
+        insert_data["specialization"] = body.specialization
+    if body.years_experience is not None:
+        insert_data["years_experience"] = body.years_experience
+    if body.bio is not None:
+        insert_data["bio"] = body.bio
 
     if role == "trader":
         if not body.license_number or not body.license_number.strip():
