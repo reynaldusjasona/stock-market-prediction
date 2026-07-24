@@ -9,7 +9,6 @@ import xgboost as xgb
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_sample_weight
-from xgboost import XGBClassifier
 from ml.training.features import get_multiple_tickers
 
 TRAIN_TICKERS = [
@@ -63,8 +62,6 @@ def split_data(
     y_test = y.iloc[val_end:]
 
     return X_train, X_val, X_test, y_train, y_val, y_test
-
-
 
 
 def train_model(
@@ -154,7 +151,7 @@ def run_training() -> dict:
     print("Dataset built successfully")
     print(y.value_counts())
     print(y.value_counts(normalize=True))
-    
+
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(X, y)
 
     le = LabelEncoder()
