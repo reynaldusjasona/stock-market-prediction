@@ -4,8 +4,7 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
-from ml.training.buil_sentiment_features import add_sentiment_features
-
+from ml.training.build_sentiment_features import add_sentiment_features
 
 
 def fetch_stock_data(
@@ -37,14 +36,23 @@ def fetch_stock_data(
     return df
 
 
-def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01", end: str = "2025-12-31") -> pd.DataFrame:
+def calculate_indicators(
+    df: pd.DataFrame,
+    ticker: str,
+    start: str = "2020-01-01",
+    end: str = "2025-12-31",
+    sentiment_source: str = "historical",
+) -> pd.DataFrame:
     """
     Generate engineered features and prediction labels from raw OHLCV data.
 
     Feature calculated:
-    - Technical indicators: SMA20, EMA20, RSI14, MACD, MACD Signal, Bollinger Bands (Upper, Lower, Width)
-    - Price and momentum features: 1-day, 5-day, and 10-day returns, 10-day volatility, Distance from SMA20 and EMA20
-    - Market-relative features: SPY 1-day, 5-day, and 10-day returns, SPY 10-day volatility, SPY distance from SMA20, Relative returns versus SPY
+    - Technical indicators: SMA20, EMA20, RSI14, MACD, MACD Signal,
+      Bollinger Bands (Upper, Lower, Width)
+    - Price and momentum features: 1-day, 5-day, and 10-day returns,
+      10-day volatility, Distance from SMA20 and EMA20
+    - Market-relative features: SPY 1-day, 5-day, and 10-day returns,
+      SPY 10-day volatility, SPY distance from SMA20, Relative returns versus SPY
     - Market features:
         - Rolling volatility (5-day, 20-day)
         - Intraday trading range
@@ -73,7 +81,7 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
     """
     out = df.copy()
 
-    #SPY returns for relative performance features
+    # SPY returns for relative performance features
     spy = fetch_stock_data("SPY")
     spy["SPY_Return_1D"] = spy["Close"].pct_change(1)
     spy["SPY_Return_5D"] = spy["Close"].pct_change(5)
@@ -151,13 +159,13 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
     out["Dist_SMA20"] = (out["Close"] - out["SMA20"]) / out["SMA20"]
     out["Dist_EMA20"] = (out["Close"] - out["EMA20"]) / out["EMA20"]
 
-    # Label: compare next day close to current close and use quantile labeling 
+    # Label: compare next day close to current close and use quantile labeling
 
     future_return = (
         out["Close"].shift(-1) - out["Close"]
     ) / out["Close"]
 
-    lower = future_return.quantile(0.20) 
+    lower = future_return.quantile(0.20)
     upper = future_return.quantile(0.80)
 
     out["Label"] = "Hold"
@@ -167,7 +175,7 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
     out = out.join(spy, how="left")
 
     out["Relative_Return_1D"] = (
-    out["Return_1D"] - out["SPY_Return_1D"]
+        out["Return_1D"] - out["SPY_Return_1D"]
     )
     out["Relative_Return_5D"] = (
         out["Return_5D"] - out["SPY_Return_5D"]
@@ -263,13 +271,15 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
         "BB_Upper", "BB_Lower", "BB_Width",
         "Return_1D", "Return_5D", "Return_10D",
         "Volatility_10D", "Volume_Ratio",
-        "SPY_Return_1D", "SPY_Return_5D", "SPY_Return_10D", "SPY_Volatility_10D", "SPY_Distance_SMA20",
+        "SPY_Return_1D", "SPY_Return_5D", "SPY_Return_10D",
+        "SPY_Volatility_10D", "SPY_Distance_SMA20",
         "Relative_Return_1D", "Relative_Return_5D", "Relative_Return_10D",
         "Volatility_5", "Volatility_20",
         "Intraday_Range", "Gap_Return",
         "Distance_SMA20", "Distance_EMA20",
         "Body_Size", "Upper_Shadow", "Lower_Shadow",
-        "has_news", "sentiment_mean", "sentiment_std", "news_count", "sentiment_3d_avg", "sentiment_momentum",
+        "has_news", "sentiment_mean", "sentiment_std", "news_count",
+        "sentiment_3d_avg", "sentiment_momentum",
         "Label",
     ]
 
@@ -278,19 +288,22 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
 
     return out
 
+
 _FEATURE_COLS = [
     "Open", "High", "Low", "Close", "Volume",
     "SMA20", "EMA20", "RSI14", "MACD", "MACD_Signal",
     "BB_Upper", "BB_Lower", "BB_Width",
     "Return_1D", "Return_5D", "Return_10D",
     "Volatility_10D", "Volume_Ratio",
-    "SPY_Return_1D", "SPY_Return_5D", "SPY_Return_10D", "SPY_Volatility_10D", "SPY_Distance_SMA20",
+    "SPY_Return_1D", "SPY_Return_5D", "SPY_Return_10D",
+    "SPY_Volatility_10D", "SPY_Distance_SMA20",
     "Relative_Return_1D", "Relative_Return_5D", "Relative_Return_10D",
     "Volatility_5", "Volatility_20",
     "Intraday_Range", "Gap_Return",
     "Distance_SMA20", "Distance_EMA20",
     "Body_Size", "Upper_Shadow", "Lower_Shadow",
-    "has_news", "sentiment_mean", "sentiment_std", "news_count", "sentiment_3d_avg", "sentiment_momentum",
+    "has_news", "sentiment_mean", "sentiment_std", "news_count",
+    "sentiment_3d_avg", "sentiment_momentum",
 ]
 
 
@@ -299,7 +312,7 @@ def get_feature_matrix(
     start: str = "2020-01-01",
     end: str = "2025-12-31",
     api_key: str | None = None,
-    ) -> tuple[pd.DataFrame, pd.Series]:
+) -> tuple[pd.DataFrame, pd.Series]:
     """
     Fetch OHLCV data and compute indicators for a single ticker.
 
@@ -316,7 +329,11 @@ def get_feature_matrix(
     return X, y
 
 
-def get_multiple_tickers(tickers: list[str], start: str = "2020-01-01", end: str = "2025-12-31",) -> tuple[pd.DataFrame, pd.Series]:
+def get_multiple_tickers(
+    tickers: list[str],
+    start: str = "2020-01-01",
+    end: str = "2025-12-31",
+) -> tuple[pd.DataFrame, pd.Series]:
 
     all_data = []
 
@@ -334,7 +351,6 @@ def get_multiple_tickers(tickers: list[str], start: str = "2020-01-01", end: str
             ticker=ticker,
             start=start,
             end=end,
-            
         )
 
         processed = processed.reset_index()
@@ -391,6 +407,7 @@ def get_multiple_tickers(tickers: list[str], start: str = "2020-01-01", end: str
     y = combined["Label"].astype(str)
 
     return X, y
+
 
 if __name__ == "__main__":
     print("Fetching AAPL feature matrix...")
