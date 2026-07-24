@@ -35,4 +35,4 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           cd backend
-          python -m app.services.score_live_news_service --max-articles 500
+          python -m app.services.score_live_news_service --query-batch-size 50 --max-articles 200
