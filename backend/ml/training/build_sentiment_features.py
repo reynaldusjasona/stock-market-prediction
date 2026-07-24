@@ -6,6 +6,7 @@ from pathlib import Path
 from app.core.database import supabase
 
 import pandas as pd
+import requests
 
 _MARKET_TZ = ZoneInfo("America/New_York")
 _MARKET_OPEN = time(9, 30)
