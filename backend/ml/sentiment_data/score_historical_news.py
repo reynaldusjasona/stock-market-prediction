@@ -140,7 +140,7 @@ def score_data(df: pd.DataFrame) -> None:
         CHUNK_SIZE,
     ):
         chunk = pending.iloc[
-            start : start + CHUNK_SIZE
+            start: start + CHUNK_SIZE
         ].copy()
 
         scores = score_headlines(

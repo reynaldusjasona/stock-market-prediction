@@ -5,7 +5,7 @@ from ml.training.features import _FEATURE_COLS, calculate_indicators, fetch_stoc
 
 
 def get_latest_features(
-    ticker: str, 
+    ticker: str,
     start: str = "2020-01-01",
     end: str = "2025-12-31",
 ) -> pd.DataFrame:
@@ -21,7 +21,9 @@ def get_latest_features(
     historical data to compute rolling windows).
     """
     raw = fetch_stock_data(ticker)
-    processed = calculate_indicators(raw, ticker=ticker, start=start, end=end, sentiment_source="live")
+    processed = calculate_indicators(
+        raw, ticker=ticker, start=start, end=end, sentiment_source="live"
+    )
 
     processed = processed.drop(columns=["Label"])
 
@@ -51,7 +53,12 @@ def getPrediction(ticker: str) -> dict:
     Returns a dict with keys: ticker, signal, confidence,
     risk_level, reasoning.
     """
-    model, label_encoder = load_model()
+    try:
+        model, label_encoder = load_model()
+    except (FileNotFoundError, OSError) as exc:
+        print(f"Error loading model artifacts: {exc}")
+        return {"error": "Model not yet trained. Run training pipeline first."}
+
     features = get_latest_features(ticker)
 
     pred_enc = model.predict(features)[0]
