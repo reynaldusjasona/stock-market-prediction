@@ -32,6 +32,7 @@ from app.services.admin_service import (
     updateLandingContent,
     updateUserDetails as svcUpdateUserDetails,
     validatePermission,
+    verifyLicense,
 )
 
 
@@ -62,7 +63,9 @@ class ApiSourceCreate(BaseModel):
     base_url: Optional[str] = None
     api_key_masked: Optional[str] = None
     rate_limit: Optional[str] = None
-    is_enabled: bool = True
+    api_type: Optional[str] = "REST"
+    description: Optional[str] = None
+    is_enable: bool = True
     status: str = "active"
 
 
@@ -71,7 +74,9 @@ class ApiSourceUpdate(BaseModel):
     base_url: Optional[str] = None
     api_key_masked: Optional[str] = None
     rate_limit: Optional[str] = None
-    is_enabled: Optional[bool] = None
+    api_type: Optional[str] = None
+    description: Optional[str] = None
+    is_enable: Optional[bool] = None
     status: Optional[str] = None
 
     model_config = {"extra": "forbid"}
@@ -142,6 +147,14 @@ async def rejectTraderRoute(
         targetId=userID,
     )
     return result
+
+
+@router.get("/admin/verify-license", tags=["Admin"])
+async def verifyLicenseRoute(
+    number: str,
+    current_user: dict = Depends(_require_admin),
+):
+    return await verifyLicense(number)
 
 
 @router.get("/admin/users/search", tags=["Admin"])
