@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
 import '../styles/Register.css'
 
+const selectStyle = {
+  width:'100%', padding:'0.6rem 0.85rem', borderRadius:'8px',
+  background:'#12171a', border:'1px solid rgba(255,255,255,0.1)',
+  color:'#e8eaed', fontSize:'0.875rem', fontFamily:'inherit'
+}
+
 function Register() {
     const [name,          setName]          = useState('')
     const [email,         setEmail]         = useState('')
@@ -10,6 +16,7 @@ function Register() {
     const [role,          setRole]          = useState('investor')
     const [licenseNumber, setLicenseNumber] = useState('')
     const [error,         setError]         = useState(null)
+    const [registered,    setRegistered]    = useState(false)
     const navigate = useNavigate()
 
     async function handleRegister() {
@@ -21,7 +28,7 @@ function Register() {
             const payload = { name, email, password, role }
             if (role === 'trader') payload.license_number = licenseNumber.trim()
             await api.post('/auth/register', payload)
-            navigate('/login')
+            setRegistered(true)
         } catch (err) {
             setError(err.message)
         }
@@ -76,10 +83,7 @@ function Register() {
 
                 <div className="form-group">
                     <label>Account Type</label>
-                    <select value={role} onChange={e => setRole(e.target.value)}
-                        style={{ width:'100%', padding:'0.6rem 0.85rem', borderRadius:'8px',
-                            background:'#12171a', border:'1px solid rgba(255,255,255,0.1)',
-                            color:'#e8eaed', fontSize:'0.875rem', fontFamily:'inherit' }}>
+                    <select value={role} onChange={e => setRole(e.target.value)} style={selectStyle}>
                         <option value="investor">Investor</option>
                         <option value="trader">Trader (Licensed Professional)</option>
                     </select>
@@ -87,12 +91,13 @@ function Register() {
 
                 {role === 'trader' && (
                     <div className="form-group">
-                        <label>License Number</label>
+                        <label>License Number *</label>
                         <input type="text" placeholder="e.g. CFA-12345"
                             value={licenseNumber}
                             onChange={e => setLicenseNumber(e.target.value)}/>
                         <p style={{ fontSize:'0.75rem', color:'#9aa0a6', marginTop:'0.35rem' }}>
                             Your account will be pending until an administrator verifies your license.
+                            You can complete your profile (phone, specialization, bio) after approval.
                         </p>
                     </div>
                 )}
