@@ -47,8 +47,8 @@ function LandingPageEditorPage() {
     setSaving(true)
     try {
       // Send back as an array of section rows — same shape as GET
-      const payload = SECTIONS.map(s => sections[s.key]).filter(Boolean)
-      await adminApi.updateLandingPage(payload)
+	  const payload = SECTIONS.map(s => sections[s.key]).filter(Boolean)
+      await adminApi.updateLandingPage({ sections: payload })
       setDirty(false)
       showToast('Landing page saved and published', 'success')
     } catch (err) {
