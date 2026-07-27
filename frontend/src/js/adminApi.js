@@ -9,21 +9,19 @@ const adminApi= {
 	return api.fetch(`/admin/users/${userId}`) 
   },
   searchUsers(query){ 
-    return api.fetch(`/admin/users?q=${encodeURIComponent(query)}`) 
+	return api.fetch(`/admin/users/search?keywords=${encodeURIComponent(query)}`) },
+  updateUser(userId, payload){
+	return api.fetch(`/admin/users/${userId}`, {method:'PUT', body:JSON.stringify(payload)})
   },
-  updateUser(userId, payload) {
-    return api.fetch(`/admin/users/${userId}`, {method:'PATCH', body:JSON.stringify(payload)})
+  suspendUser(userId, reason = ''){
+    return api.fetch(`/admin/users/${userId}/suspend`, { method:'PATCH', body:JSON.stringify({ reason }) })
   },
-  suspendUser(userId, reason = '') {
-    return api.fetch(`/admin/users/${userId}/suspend`, {method:'PATCH', body:JSON.stringify({reason})})
+  unsuspendUser(userId){
+    return api.fetch(`/admin/users/${userId}/unsuspend`, { method:'PATCH' })
   },
-  unsuspendUser(userId) {
-    return api.fetch(`/admin/users/${userId}/unsuspend`, {method:'PATCH'})
+  deleteUser(userId){ 
+	return api.fetch(`/admin/users/${userId}`, { method:'DELETE' }) 
   },
-  deleteUser(userId) { 
-	return api.fetch(`/admin/users/${userId}`, {method:'DELETE'}) 
-  },
-
   approveTrader(userId) {
     return api.fetch(`/admin/users/${userId}/approve-trader`, {method:'PATCH'})
   },
@@ -76,16 +74,14 @@ const adminApi= {
 
   getAllFeedback(params = {}) {
     const q = new URLSearchParams(params).toString()
-    return api.fetch(`/admin/feedback${q ? '?' + q : ''}`)
+    return api.fetch(`/feedback${q ? '?' + q : ''}`)
   },
-  getFeedbackById(id) { 
-    return api.fetch(`/admin/feedback/${id}`) 
-  },
+  getFeedbackById(id) { return api.fetch(`/feedback/${id}`) },
   approveFeedback(id) {
-    return api.fetch(`/admin/feedback/${id}/approve`, {method:'PATCH'})
+    return api.fetch(`/feedback/${id}/approve`, {method:'PATCH'})
   },
   rejectFeedback(id, reason = '') {
-    return api.fetch(`/admin/feedback/${id}/reject`, {method:'PATCH', body:JSON.stringify({reason})})
+    return api.fetch(`/feedback/${id}/reject`, {method:'PATCH', body:JSON.stringify({reason})})
   },
 
   getAllAlerts(params = {}) {
