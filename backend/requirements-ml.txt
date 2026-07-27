@@ -1,0 +1,11 @@
+# Offline-only dependencies for the sentiment/ML pipeline
+# (FinBERT scoring + GDELT historical fetch, ml/sentiment_data/ and
+# ml/training/build_sentiment_features.py).
+#
+# NOT installed on Render — these run locally / in a separate job.
+# Do not add these to requirements.txt: torch + transformers are too
+# heavy for the 512MB Render free tier and nothing on the deployed
+# backend imports them.
+transformers
+torch
+google-cloud-bigquery
