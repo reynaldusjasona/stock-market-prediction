@@ -17,7 +17,7 @@ function ManageAPIPage(){
     setLoading(true)
     try{
       const d= await adminApi.getAllApis()
-      setApis(Array.isArray(d) ? d : (d?.apis || []))
+      setApis(Array.isArray(d) ? d : (d?.sources || []))
     } 
 	catch (err){
 		showToast(err.message || 'Failed to load APIs', 'error') 

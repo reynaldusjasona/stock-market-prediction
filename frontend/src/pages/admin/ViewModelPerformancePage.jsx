@@ -48,11 +48,12 @@ function ViewModelPerformancePage(){
 
   const metrics=[
     {label:'Accuracy',val: pct(perf?.accuracy),color: accColor(perf?.accuracy, config)},
-    {label:'Precision',val: pct(perf?.precision),color: ''},
+    {label:'Precision',val: perf?.precision != null ? pct(perf.precision) :
+      (perf?.buy_precision != null ? pct((perf.buy_precision+perf.sell_precision+perf.hold_precision)/3) : '—'),color: ''},
     {label:'Recall',val: pct(perf?.recall),color: ''},
     {label:'F1 Score',val: pct(perf?.f1_score),color: ''},
-    {label:'MAE',val: perf?.mae  != null ? perf.mae.toFixed(4): '—', color: ''},
-    {label:'RMSE',val: perf?.rmse != null ? perf.rmse.toFixed(4): '—', color: ''},
+    {label:'ROC AUC',val: perf?.roc_auc != null ? pct(perf.roc_auc) : (perf?.mae != null ? perf.mae.toFixed(4) : '—'), color: ''},
+    {label:'Trained',val: perf?.last_trained ? new Date(perf.last_trained).toLocaleDateString('en-SG') : '—', color: ''},
   ]
 
   return(
