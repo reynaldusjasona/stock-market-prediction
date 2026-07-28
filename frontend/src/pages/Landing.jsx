@@ -78,10 +78,10 @@ function Landing() {
 
             {/* pricing - sourced from /subscription/plans, not landing_content */}
             <section className="section" id="subscription">
-                <h2 className="section-title" style={{ textAlign: 'center' }}>Choose Your Plan</h2>
+                <h2 className="section-title" style={{ textAlign: 'center' }}>Get Started</h2>
                 <p className="section-sub" style={{ textAlign: 'center' }}>Everything StockWise AI offers, built for how you invest.</p>
                 <div className="landing-plans-grid">
-                    {plans.map((p) => (
+                    {plans.filter((p) => p.plan === 'investor').map((p) => (
                         <div className="plan-card" key={p.plan}>
                             <p className="plan-name">{(p.name || p.plan).toUpperCase()}</p>
                             <p className="plan-price">${p.price}<span>/{p.period}</span></p>
