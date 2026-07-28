@@ -4,7 +4,6 @@ import ViewSignalReviewsPage from './ViewSignalReviewsPage'
 import ViewClientsPage from './ViewClientsPage'
 import ViewAccountModal from './ViewAccountModal'
 import UpdateAccountModal from './UpdateAccountModal'
-import {useAuth} from '../../context/AuthContext'
 import '../../styles/admin/adminShared.css'
 import '../../styles/trader/traderShared.css'
 
@@ -15,8 +14,8 @@ const NAV = [
 ]
 
 function Icon({ name, size = 15 }) {
-  const p = { stroke:'currentColor', strokeWidth:'1.3', strokeLinecap:'round', strokeLinejoin:'round' }
-  const icons = {
+  const p= { stroke:'currentColor', strokeWidth:'1.3', strokeLinecap:'round', strokeLinejoin:'round' }
+  const icons= {
     grid:  <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
              <rect x="2" y="2" width="5" height="5" rx="1" {...p}/>
              <rect x="9" y="2" width="5" height="5" rx="1" {...p}/>
@@ -35,7 +34,7 @@ function Icon({ name, size = 15 }) {
   return icons[name] || null
 }
 
-function Logo({ size = 22 }) {
+function Logo({size = 22}){
   return (
     <svg width={size} height={size} viewBox="0 0 28 28" fill="none">
       <rect width="28" height="28" rx="6" fill="#00ff41" fillOpacity="0.12"/>
@@ -45,36 +44,39 @@ function Logo({ size = 22 }) {
   )
 }
 
-function readUser() {
-  try { return JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('sw_user') || '{}') }
-  catch { return {} }
+function readUser(){
+  try{ 
+    return JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('sw_user') || '{}') 
+	}
+  catch{ 
+    return {} 
+    }
 }
 
-// ── Overview content (Dashboard tab) ──────────────────
-function TraderOverview({ onNav }) {
-  const [signals, setSignals] = useState([])
-  const [clients, setClients] = useState([])
-  const [loading, setLoading] = useState(true)
+function TraderOverview({onNav}) {
+  const[signals, setSignals]= useState([])
+  const[clients, setClients]= useState([])
+  const[loading, setLoading]= useState(true)
 
   useEffect(() => {
     Promise.allSettled([traderApi.getSignalsForReview(), traderApi.getClients()])
       .then(([s, c]) => {
-        if (s.status === 'fulfilled') setSignals(Array.isArray(s.value) ? s.value : [])
-        if (c.status === 'fulfilled') setClients(Array.isArray(c.value) ? c.value : [])
+        if (s.status === 'fulfilled') setSignals(Array.isArray(s.value) ? s.value : (s.value?.signals || s.value?.data || []))
+        if (c.status === 'fulfilled') setClients(Array.isArray(c.value) ? c.value : (c.value?.clients || []))
       })
-      .finally(() => setLoading(false))
+      .finally(()=> setLoading(false))
   }, [])
 
   const pending  = signals.filter(s => !s.endorsement)
   const reviewed = signals.filter(s => s.endorsement)
 
   const cards = [
-    { label:'Pending Reviews', val: pending.length,  nav:'signals', cls: pending.length ? ' pending' : '' },
-    { label:'Reviewed',        val: reviewed.length, nav:'signals', cls: ' accent' },
-    { label:'Active Clients',  val: clients.length,  nav:'clients', cls: '' },
+    {label:'Pending Reviews',val: pending.length,  nav:'signals', cls: pending.length ? ' pending' : ''},
+    {label:'Reviewed',val: reviewed.length, nav:'signals', cls: ' accent'},
+    {label:'Active Clients',val: clients.length,  nav:'clients', cls: ''},
   ]
 
-  return (
+  return(
     <div>
       <div className="admin-page-header">
         <h1 className="admin-page-title">Dashboard</h1>
@@ -112,23 +114,20 @@ function TraderOverview({ onNav }) {
   )
 }
 
-// ── Shell ──────────────────────────────────────────────
 function TraderDashboardPage() {
-  const [tab,         setTab]         = useState('overview')
-  const [showAccount, setShowAccount] = useState(false)
-  const [editAccount, setEditAccount] = useState(false)
+  const[tab,setTab]= useState('overview')
+  const[showAccount,setShowAccount] = useState(false)
+  const[editAccount,setEditAccount] = useState(false)
 
-  const { logout }   = useAuth()
-  const user         = readUser()
-  const traderStatus = user.trader_status || 'pending'
-  const locked       = user.role === 'trader' ? traderStatus !== 'approved' : !user.role
+  const user= readUser()
+  const traderStatus= user.trader_status || 'pending'
+  const locked= user.role === 'trader' ? traderStatus !== 'approved' : !user.role
 
   useEffect(() => { document.title = 'Trader Dashboard — StockWise AI' }, [])
 
-  // ── Approval lock screen ──
-  if (locked) {
+  if (locked){
     const rejected = traderStatus === 'rejected'
-    return (
+    return(
       <div className="trader-lock-wrap">
         <div className="trader-lock-card">
           <div className={`trader-lock-icon${rejected ? ' rejected' : ''}`}>
@@ -155,9 +154,9 @@ function TraderDashboardPage() {
     )
   }
 
-  const initials = (user.name || 'T').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const initials= (user.name || 'T').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 
-  return (
+  return(
     <div className="trader-shell">
 
       {/* ── Sidebar ── */}
@@ -183,12 +182,6 @@ function TraderDashboardPage() {
 
         <div className="trader-sidenav-footer">
           <a href="/dashboard" className="trader-back-link">← Back to investor view</a>
-          <button className="trader-back-link"
-            onClick={() => { logout(); window.location.href = '/login' }}
-            style={{ background:'none', border:'none', cursor:'pointer', width:'100%',
-              textAlign:'left', fontFamily:'var(--font-sans)', fontSize:'0.81rem' }}>
-            Logout
-          </button>
         </div>
       </aside>
 
@@ -217,8 +210,8 @@ function TraderDashboardPage() {
 
         <div className="trader-content">
           {tab === 'overview' && <TraderOverview onNav={setTab}/>}
-          {tab === 'signals'  && <ViewSignalReviewsPage/>}
-          {tab === 'clients'  && <ViewClientsPage/>}
+          {tab === 'signals' && <ViewSignalReviewsPage/>}
+          {tab === 'clients' && <ViewClientsPage/>}
         </div>
       </div>
 
@@ -230,8 +223,8 @@ function TraderDashboardPage() {
       )}
       {editAccount && (
         <UpdateAccountModal
-          onClose={() => setEditAccount(false)}
-          onSaved={() => { setEditAccount(false); setShowAccount(false) }}
+          onClose={()=> setEditAccount(false)}
+          onSaved={()=> { setEditAccount(false); setShowAccount(false) }}
         />
       )}
     </div>

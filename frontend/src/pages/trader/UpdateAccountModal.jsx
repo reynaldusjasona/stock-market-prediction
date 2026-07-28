@@ -4,18 +4,18 @@ import {showToast} from '../../js/adminUi'
 import '../../styles/admin/adminShared.css'
 import '../../styles/trader/traderShared.css'
 
-const SPECIALIZATIONS = [
+const SPECIALIZATIONS =[
   'Equities', 'Fixed Income', 'Derivatives', 'Commodities',
   'Forex', 'Cryptocurrency', 'ETFs', 'Portfolio Management', 'Technical Analysis'
 ]
 
-function readUser(){
+function readUser() {
   try{ 
 	return JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('sw_user') || '{}') 
 	}
   catch{ 
     return {} 
-    }
+	}
 }
 
 function UpdateAccountModal({ onClose, onSaved }) {
@@ -23,42 +23,42 @@ function UpdateAccountModal({ onClose, onSaved }) {
   const[name,setName]= useState(stored.name || stored.full_name || '')
   const[email,setEmail]= useState(stored.email || '')
   const[phone,setPhone]= useState(stored.phone || '')
-  const[specialization,setSpecialization]  = useState(stored.specialization || '')
-  const[yearsExperience,setYearsExperience] = useState(stored.years_experience || '')
+  const[specialization,setSpecialization]= useState(stored.specialization || '')
+  const[yearsExperience,setYearsExperience]= useState(stored.years_experience || '')
   const[bio,setBio]= useState(stored.bio || '')
   const[oldPw,setOldPw]= useState('')
   const[newPw,setNewPw]= useState('')
   const[busy,setBusy]= useState(false)
 
-  const handleSave = async ()=> {
+  const handleSave =async()=> {
     if (!name.trim() || !email.trim()){ 
-		showToast('Name and email are required', 'error'); 
-		return 
-	}
+	  showToast('Name and email are required', 'error'); 
+	  return 
+	  }
     setBusy(true)
     try{
-      if (stored.id) {
-        const payload = {
+      if (stored.id){
+        const payload= {
           name: name.trim(), email: email.trim(),
           phone: phone.trim(), specialization,
           years_experience: yearsExperience ? Number(yearsExperience) : null,
           bio: bio.trim(),
         }
-        await api.patch(`/auth/user/${stored.id}`, payload)
+        await api.put(`/auth/user/${stored.id}`, payload)
         const updated = { ...stored, ...payload }
         if (localStorage.getItem('user')) localStorage.setItem('user', JSON.stringify(updated))
         if (sessionStorage.getItem('sw_user')) sessionStorage.setItem('sw_user', JSON.stringify(updated))
       }
-      if (oldPw && newPw) {
+      if (oldPw && newPw){
         await api.post('/auth/reset-password', { old_password: oldPw, new_password: newPw })
       }
       showToast('Account updated', 'success')
       onSaved?.()
     } 
-	catch (err) {
+	catch (err){
       showToast(err.message || 'Failed to update account', 'error')
     } 
-	finally { 
+	finally{ 
 	  setBusy(false) 
 	}
   }
@@ -76,7 +76,6 @@ function UpdateAccountModal({ onClose, onSaved }) {
         </div>
 
         <div className="admin-modal-body">
-          {/* Basic info */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
             <div className="admin-form-group" style={{ marginBottom:0 }}>
               <label className="admin-form-label" htmlFor="uaName">Name *</label>
@@ -120,7 +119,6 @@ function UpdateAccountModal({ onClose, onSaved }) {
             </div>
           </div>
 
-          {/* Read-only license number */}
           <div style={{ margin:'1rem 0', padding:'0.7rem 1rem', background:'var(--bg)',
             border:'1px solid var(--border)', borderRadius:'8px', fontSize:'0.82rem' }}>
             <span style={{ color:'var(--text-muted)' }}>License Number: </span>
@@ -130,7 +128,6 @@ function UpdateAccountModal({ onClose, onSaved }) {
             </span>
           </div>
 
-          {/* Change password */}
           <div style={{ borderTop:'1px solid var(--border)', paddingTop:'1rem' }}>
             <div style={{ fontSize:'0.72rem', fontWeight:600, letterSpacing:'0.06em',
               textTransform:'uppercase', color:'var(--text-muted)', marginBottom:'0.7rem' }}>
