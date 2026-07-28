@@ -26,7 +26,10 @@ async def listApprovedTraders(user_id: str) -> dict:
     await _check_signal_access(user_id)
     result = (
         supabase.table("users")
-        .select("id, name, email, license_number, created_at")
+        .select(
+            "id, name, email, license_number, created_at, "
+            "phone, specialization, years_experience, bio"
+        )
         .eq("role", "trader")
         .eq("trader_status", "approved")
         .execute()
