@@ -92,13 +92,13 @@ function ViewActivityLogPage(){
         <div className="admin-table-wrap">
           <table className="admin-table" aria-label="Admin activity log">
             <thead>
-              <tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr>
+              <tr><th>Time</th><th>Admin</th><th>Action</th><th>Target</th></tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="5" style={{ textAlign:'center', padding:'2.5rem' }}><span className="admin-spinner"/></td></tr>
+                <tr><td colSpan="4" style={{ textAlign:'center', padding:'2.5rem' }}><span className="admin-spinner"/></td></tr>
               ) : !paged.length ? (
-                <tr><td colSpan="5"><div className="admin-empty"><p>No activity log entries found.</p></div></td></tr>
+                <tr><td colSpan="4"><div className="admin-empty"><p>No activity log entries found.</p></div></td></tr>
               ) : paged.map((l, i) => (
                 <tr key={l.id || i}>
                   <td style={{ fontSize:'0.78rem', color:'var(--text-muted)', whiteSpace:'nowrap' }}>
@@ -122,11 +122,6 @@ function ViewActivityLogPage(){
                   <td style={{ fontSize:'0.8rem', color:'var(--text-muted)' }}>
                     <div>{l.target_type || '—'}</div>
                     {l.target_id && <div style={{ fontSize:'0.72rem', fontFamily:'var(--font-mono)' }}>{l.target_id}</div>}
-                  </td>
-                  <td style={{ fontSize:'0.78rem', color:'var(--text-muted)', maxWidth:'200px' }}>
-                    <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                      {l.details || '—'}
-                    </div>
                   </td>
                 </tr>
               ))}
