@@ -183,7 +183,7 @@ async def _getModelAccuracy() -> float:
         result = (
             supabase.table("prediction_metrics")
             .select("accuracy")
-            .order("created_at", desc=True)
+            .order("evaluated_at", desc=True)
             .limit(1)
             .execute()
         )
@@ -266,13 +266,13 @@ async def getModelPerformance() -> dict:
         result = (
             supabase.table("prediction_metrics")
             .select("*")
-            .order("created_at", desc=True)
+            .order("evaluated_at", desc=True)
             .limit(1)
             .execute()
         )
         if result.data:
             row = result.data[0]
-            row["recall"] = row.get("recall") or 0.0
+            row["recall"] = row.get("recall_score") or 0.0
             row["f1_score"] = row.get("f1_score") or 0.0
             row["last_trained"] = row.get("evaluated_at") or "N/A"
             row["model_version"] = row.get("model_version") or "N/A"
