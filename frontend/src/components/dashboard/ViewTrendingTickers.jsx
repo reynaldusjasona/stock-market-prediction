@@ -1,9 +1,14 @@
-function ViewTrendingTickers({ trendList, fmt }) {
+function ViewTrendingTickers({ trendList, fmt, navigate }) {
     return (
         <div className="market-box">
             <h3>Trending Tickers</h3>
             {trendList.map((stock) => (
-                <div className="ticker-row" key={stock.ticker}>
+                <div
+                    className="ticker-row"
+                    key={stock.ticker}
+                    onClick={() => navigate(`/stock/${stock.ticker}`)}
+                    style={{ cursor: 'pointer' }}
+                >
                     <span className="ticker-symbol">{stock.ticker}</span>
                     <span className="ticker-price">${fmt(stock.current_price)}</span>
                     <span className={stock.change_percent >= 0 ? 'change-positive' : 'change-negative'}>

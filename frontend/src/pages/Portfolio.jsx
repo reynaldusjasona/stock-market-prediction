@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
+import AppLayout from '../components/layout/AppLayout'
 import '../styles/Portfolio.css'
 import ViewHoldingsDetails from '../components/portfolio/ViewHoldingsDetails'
 import AddStockToHolding from '../components/portfolio/AddStockToHolding'
@@ -17,13 +17,6 @@ function Portfolio() {
     const [totalValue, setTotalValue] = useState(0)
     const [totalGainLoss, setTotalGainLoss] = useState(0)
     const navigate = useNavigate()
-    const { user, logout } = useAuth()
-    const isTrader = user?.role === 'trader'
-
-    function handleLogout() {
-        logout()
-        navigate('/login')
-    }
 
     useEffect(() => {
         loadPortfolio()
@@ -100,38 +93,7 @@ function Portfolio() {
     if (loading) return <p>Loading...</p>
 
     return (
-        <div className="portfolio-page">
-                                                <aside className="sidebar">
-                <div className="sidebar-logo">StockWise <span>AI</span></div>
-
-                {/* Both roles */}
-                <span className="sidebar-link" onClick={() => navigate('/dashboard')}>Dashboard</span>
-                <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
-                <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
-                <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-
-                {/* Investor only */}
-                {!isTrader && (
-                    <>
-                        <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                        <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                        <span className="sidebar-link active" onClick={() => navigate('/portfolio')}>Portfolio</span>
-                        <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
-                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-                    </>
-                )}
-
-                {/* Trader — Back to Trader Portal + Logout pinned to bottom */}
-                {isTrader && (
-                    <div style={{ marginTop:'auto', borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:'0.5rem' }}>
-                        <span className="sidebar-link" onClick={() => navigate('/trader/dashboard')}>
-                            ← Back to Trader Portal
-                        </span>
-                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-                    </div>
-                )}
-            </aside>
-
+        <AppLayout>
             <div className="portfolio-content">
                 <div className="portfolio-header">
                     <h1>Portfolio</h1>
@@ -167,9 +129,9 @@ function Portfolio() {
                     onAdd={addHolding}
                 />
 
-                <ViewHoldingsDetails holdings={holdings} livePrices={liveprices} onRemove={removeHolding} />
+                <ViewHoldingsDetails holdings={holdings} livePrices={liveprices} onRemove={removeHolding} navigate={navigate} />
             </div>
-        </div>
+        </AppLayout>
     )
 }
 
