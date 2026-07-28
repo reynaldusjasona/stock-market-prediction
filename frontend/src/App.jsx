@@ -14,6 +14,7 @@ import Alerts from './pages/Alerts'
 import Notifications from './pages/Notifications'
 import Account from './pages/Account'
 import Subscription from './pages/Subscription'
+import BrowseTraders from './pages/BrowseTraders'
 
 import Feedback from './pages/Feedback'
 
@@ -57,6 +58,8 @@ function App() {
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
 
           <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+
+          <Route path="/browse-traders" element={<ProtectedRoute><BrowseTraders /></ProtectedRoute>} />
 
           <Route path="/admin/login" element={<AdminLoginPage />} />
 
