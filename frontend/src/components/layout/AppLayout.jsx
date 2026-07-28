@@ -8,6 +8,7 @@ const NAV_LINKS = [
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'All Stocks', path: '/allstocks' },
     { label: 'Recommendations', path: '/recommendations' },
+    { label: 'Browse Traders', path: '/browse-traders' },
     { label: 'Watchlist', path: '/watchlist' },
     { label: 'Portfolio', path: '/portfolio' },
     { label: 'Alerts', path: '/alerts' },
