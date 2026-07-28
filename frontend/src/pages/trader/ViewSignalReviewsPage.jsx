@@ -16,7 +16,7 @@ function ViewSignalReviewsPage() {
     setLoading(true); setError('')
     try{
       const s= await traderApi.getSignalsForReview()
-      setSignals(Array.isArray(s) ? s : [])
+      setSignals(Array.isArray(s) ? s : (s?.signals || s?.data || []))
     } 
 	catch (err){
       setError(err.message || 'Failed to load signals')
@@ -30,8 +30,9 @@ function ViewSignalReviewsPage() {
 
   const handleEndorsed = ()=> {setSelected(null); load()}
 
-  const pending= signals.filter(s => !s.endorsement)
-  const reviewed= signals.filter(s => s.endorsement)
+  // A signal is "reviewed" if it has a verdict/endorsement already set
+  const pending  = signals.filter(s => !s.verdict && !s.endorsement)
+  const reviewed = signals.filter(s => s.verdict || s.endorsement)
 
   return(
     <div>
@@ -55,13 +56,13 @@ function ViewSignalReviewsPage() {
                   {!pending.length ? (
                     <tr><td colSpan="5"><div className="admin-empty"><p>No signals awaiting review. All caught up.</p></div></td></tr>
                   ) : pending.map(s => (
-                    <tr key={s.ticker + (s.requested_by || '')} style={{ cursor:'pointer' }} onClick={() => setSelected(s)}>
+                    <tr key={s.id || s.ticker + (s.requested_by || '')} style={{ cursor:'pointer' }} onClick={() => setSelected(s)}>
                       <td style={{ fontFamily:'var(--font-mono)', fontWeight:700 }}>{s.ticker}</td>
                       <td><span style={{ fontWeight:700, color: SIGNAL_COLOR[s.signal] || 'var(--text)' }}>{s.signal}</span></td>
                       <td style={{ fontFamily:'var(--font-mono)' }}>
                         {s.confidence_score != null ? `${Number(s.confidence_score).toFixed(1)}%` : '—'}
                       </td>
-                      <td style={{ fontSize:'0.82rem', color:'var(--text-muted)' }}>{s.requested_by_name || s.requested_by || '—'}</td>
+                      <td style={{ fontSize:'0.82rem', color:'var(--text-muted)' }}>{s.requested_by_name || s.investor_id || '—'}</td>
                       <td>
                         <div className="action-cell" onClick={e => e.stopPropagation()}>
                           <button className="btn-admin btn-primary" onClick={() => setSelected(s)}>Review</button>
@@ -82,23 +83,28 @@ function ViewSignalReviewsPage() {
                 <tbody>
                   {!reviewed.length ? (
                     <tr><td colSpan="5"><div className="admin-empty"><p>No reviews submitted yet.</p></div></td></tr>
-                  ) : reviewed.map(s => (
-                    <tr key={s.ticker + (s.endorsement?.created_at || '')}>
-                      <td style={{ fontFamily:'var(--font-mono)', fontWeight:700 }}>{s.ticker}</td>
-                      <td><span style={{ fontWeight:700, color: SIGNAL_COLOR[s.signal] || 'var(--text)' }}>{s.signal}</span></td>
-                      <td>
-                        <span className={`status-badge ${s.endorsement.verdict === 'agree' ? 'status-active' : 'status-suspended'}`}>
-                          {s.endorsement.verdict}
-                        </span>
-                      </td>
-                      <td style={{ fontSize:'0.8rem', color:'var(--text-muted)', maxWidth:'260px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                        {s.endorsement.note || '—'}
-                      </td>
-                      <td style={{ fontSize:'0.78rem', color:'var(--text-muted)', whiteSpace:'nowrap' }}>
-                        {s.endorsement.created_at ? new Date(s.endorsement.created_at).toLocaleString('en-SG', { dateStyle:'short', timeStyle:'short' }) : '—'}
-                      </td>
-                    </tr>
-                  ))}
+                  ) : reviewed.map(s => {
+                    const verdict = s.verdict || s.endorsement?.verdict
+                    const note    = s.note || s.endorsement?.note
+                    const at      = s.endorsed_at || s.endorsement?.created_at
+                    return (
+                      <tr key={s.id || s.ticker + (at || '')}>
+                        <td style={{ fontFamily:'var(--font-mono)', fontWeight:700 }}>{s.ticker}</td>
+                        <td><span style={{ fontWeight:700, color: SIGNAL_COLOR[s.signal] || 'var(--text)' }}>{s.signal}</span></td>
+                        <td>
+                          <span className={`status-badge ${verdict === 'agree' ? 'status-active' : 'status-suspended'}`}>
+                            {verdict}
+                          </span>
+                        </td>
+                        <td style={{ fontSize:'0.8rem', color:'var(--text-muted)', maxWidth:'260px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                          {note || '—'}
+                        </td>
+                        <td style={{ fontSize:'0.78rem', color:'var(--text-muted)', whiteSpace:'nowrap' }}>
+                          {at ? new Date(at).toLocaleString('en-SG', { dateStyle:'short', timeStyle:'short' }) : '—'}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
