@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
-import '../styles/Login.css'
+import '../styles/AuthLayout.css'
 
 function Login() {
     const [email,    setEmail]    = useState('')
@@ -66,9 +66,6 @@ function Login() {
                     <input type="password" placeholder="••••••••"
                         value={password} onChange={e => setPassword(e.target.value)}/>
                 </div>
-                <button className="btn-full" onClick={handleLogin}>Log in →</button>
-                <p className="login-footer">Didn't get a verification email? <span onClick={handleResendVerification}>Resend it</span></p>
-                <p className="login-footer">Don't have an account? <span onClick={() => navigate('/register')}>Register</span></p>
             </div>
         </div>
     )
