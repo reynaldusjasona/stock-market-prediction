@@ -728,6 +728,8 @@ async def createApiSource(data: dict) -> dict:
     if not data.get("name"):
         raise HTTPException(status_code=400, detail="Name is required")
     insert_data = {k: v for k, v in data.items() if k in _API_SOURCE_FIELDS}
+    if "is_enable" in insert_data:
+        insert_data["is_enabled"] = insert_data.pop("is_enable")
     result = supabase.table("api_sources").insert(insert_data).execute()
     return result.data[0]
 
@@ -739,6 +741,8 @@ async def updateApiSource(sourceId: str, data: dict) -> dict:
         raise HTTPException(
             status_code=400, detail="No valid fields to update"
         )
+    if "is_enable" in update_data:
+        update_data["is_enabled"] = update_data.pop("is_enable")
     update_data["updated_at"] = datetime.utcnow().isoformat()
     result = (
         supabase.table("api_sources")
