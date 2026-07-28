@@ -1,7 +1,7 @@
-import {api} from '../api/api'
+import { api } from '../api/api'
 
-const adminApi= {
-  getAllUsers(params = {}){
+const adminApi = {
+  getAllUsers(params = {}) {
     const q = new URLSearchParams(params).toString()
     return api.fetch(`/admin/users${q ? '?' + q : ''}`)
   },
@@ -9,39 +9,41 @@ const adminApi= {
 	return api.fetch(`/admin/users/${userId}`) 
   },
   searchUsers(query){ 
-	return api.fetch(`/admin/users/search?keywords=${encodeURIComponent(query)}`) },
-  updateUser(userId, payload){
-	return api.fetch(`/admin/users/${userId}`, {method:'PUT', body:JSON.stringify(payload)})
+	return api.fetch(`/admin/users/search?keywords=${encodeURIComponent(query)}`) 
   },
-  suspendUser(userId, reason = ''){
+  updateUser(userId, payload) {
+    return api.fetch(`/admin/users/${userId}`, { method:'PUT', body:JSON.stringify(payload) })
+  },
+  suspendUser(userId, reason = '') {
     return api.fetch(`/admin/users/${userId}/suspend`, { method:'PATCH', body:JSON.stringify({ reason }) })
   },
   unsuspendUser(userId){
     return api.fetch(`/admin/users/${userId}/unsuspend`, { method:'PATCH' })
   },
   deleteUser(userId){ 
-	return api.fetch(`/admin/users/${userId}`, { method:'DELETE' }) 
+    return api.fetch(`/auth/user/${userId}`, { method:'DELETE' }) 
   },
+
   approveTrader(userId) {
-    return api.fetch(`/admin/users/${userId}/approve-trader`, {method:'PATCH'})
+    return api.fetch(`/admin/users/${userId}/approve-trader`, { method:'PATCH' })
   },
   rejectTrader(userId, reason = '') {
-    return api.fetch(`/admin/users/${userId}/reject-trader`, {method:'PATCH', body:JSON.stringify({reason})})
+    return api.fetch(`/admin/users/${userId}/reject-trader`, { method:'PATCH', body:JSON.stringify({ reason }) })
   },
 
   adminResetPassword(email) {
-    return api.fetch('/auth/reset-password', {method:'POST', body:JSON.stringify({email})})
+    return api.fetch('/auth/reset-password', { method:'POST', body:JSON.stringify({ email }) })
   },
 
-  getLandingPage(){ 
-    return api.fetch('/admin/landing') 
-  },
+  // ── Landing Page ───────────────────────────────────
+  getLandingPage()           { return api.fetch('/admin/landing') },
   updateLandingPage(payload) {
-    return api.fetch('/admin/landing', {method:'PUT', body:JSON.stringify(payload)})
+    return api.fetch('/admin/landing', { method:'PUT', body:JSON.stringify(payload) })
   },
+
 
   getModelPerformance(){ 
-    return api.fetch('/admin/model/performance') 
+	return api.fetch('/admin/model/performance') 
   },
   getModelQuality(){ 
     return api.fetch('/admin/model/quality') 
@@ -50,7 +52,7 @@ const adminApi= {
     return api.fetch('/admin/model/config') 
   },
   retrainModel(payload = {}){
-    return api.fetch('/admin/model/retrain', {method:'POST', body:JSON.stringify(payload)})
+    return api.fetch('/admin/model/retrain', { method:'POST', body:JSON.stringify(payload) })
   },
   getRetrainStatus(){ 
     return api.fetch('/admin/model/retrain/status') 
@@ -65,39 +67,40 @@ const adminApi= {
   addApi(payload){
     return api.fetch('/admin/apis', { method:'POST', body:JSON.stringify(payload) })
   },
-  editApi(apiId, payload) {
-    return api.fetch(`/admin/apis/${apiId}`, {method:'PATCH', body:JSON.stringify(payload)})
+  editApi(apiId, payload){
+    return api.fetch(`/admin/apis/${apiId}`, { method:'PATCH', body:JSON.stringify(payload) })
   },
-  deleteApi(apiId) { 
-    return api.fetch(`/admin/apis/${apiId}`, {method:'DELETE'}) 
+  deleteApi(apiId){ 
+    return api.fetch(`/admin/apis/${apiId}`, { method:'DELETE' }) 
   },
 
   getAllFeedback(params = {}) {
     const q = new URLSearchParams(params).toString()
     return api.fetch(`/feedback${q ? '?' + q : ''}`)
   },
-  getFeedbackById(id) { return api.fetch(`/feedback/${id}`) },
+  getFeedbackById(id) { return api.fetch(`/admin/feedback/${id}`) },
   approveFeedback(id) {
-    return api.fetch(`/feedback/${id}/approve`, {method:'PATCH'})
+    return api.fetch(`/feedback/${id}/approve`, { method:'PATCH' })
   },
   rejectFeedback(id, reason = '') {
-    return api.fetch(`/feedback/${id}/reject`, {method:'PATCH', body:JSON.stringify({reason})})
+    return api.fetch(`/feedback/${id}/reject`, { method:'PATCH', body:JSON.stringify({ reason }) })
   },
 
   getAllAlerts(params = {}) {
     const q = new URLSearchParams(params).toString()
-    return api.fetch(`/admin/alerts${q ? '?' + q : ''}`)
+    return api.fetch(`/admin/platform-alerts${q ? '?' + q : ''}`)
   },
   getAlertSummary(){ 
-    return api.fetch('/admin/alerts/summary') 
+    return api.fetch('/admin/platform-alerts/summary') 
   },
   dismissAlert(id){
-    return api.fetch(`/admin/alerts/${id}/dismiss`, {method:'PATCH'})
+    return api.fetch(`/admin/platform-alerts/${id}/resolve`, { method:'PATCH' })
   },
 
   getDashboardStats(){ 
     return api.fetch('/admin/stats') 
   },
+
   verifyLicense(licenseNumber) {
     return api.fetch(`/admin/verify-license?number=${encodeURIComponent(licenseNumber)}`)
   },
@@ -109,9 +112,9 @@ const adminApi= {
 
 export function requireAdmin() {
   if (!sessionStorage.getItem('sw_token')){ 
-	window.location.href = '/admin/login'; 
+    window.location.href = '/admin/login'; 
 	return false 
-   }
+  }
   if (sessionStorage.getItem('sw_role') !== 'admin'){ 
     window.location.href = '/dashboard';   
 	return false 
