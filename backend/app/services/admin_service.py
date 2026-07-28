@@ -406,36 +406,55 @@ async def dismissAlert(alertId: str) -> dict:
         return None
 
 
-async def getLandingContent() -> list:
+async def getLandingContent() -> dict:
     try:
         result = (
-            supabase.table("landing_content")
+            supabase.table("landing_page_config")
             .select("*")
-            .order("display_order")
+            .limit(1)
             .execute()
         )
-        return result.data
+        if result.data:
+            return result.data[0].get("content", {})
+        return {}
     except Exception:
-        return []
+        return {}
 
 
-async def updateLandingContent(sections: list, adminId: str) -> list:
-    for section in sections:
-        updateDict = {
-            k: v for k, v in section.items() if k != "section_key"
-        }
-        updateDict["updated_at"] = datetime.utcnow().isoformat()
-        updateDict["updated_by"] = adminId
-        supabase.table("landing_content").update(updateDict).eq(
-            "section_key", section["section_key"]
-        ).execute()
-    result = (
-        supabase.table("landing_content")
-        .select("*")
-        .order("display_order")
-        .execute()
-    )
-    return result.data
+async def updateLandingContent(content: dict, adminID: str) -> dict:
+    try:
+        existing = (
+            supabase.table("landing_page_config")
+            .select("id")
+            .limit(1)
+            .execute()
+        )
+        if existing.data:
+            rowID = existing.data[0]["id"]
+            result = (
+                supabase.table("landing_page_config")
+                .update({
+                    "content": content,
+                    "updated_at": "now()",
+                    "updated_by": adminID,
+                })
+                .eq("id", rowID)
+                .execute()
+            )
+        else:
+            result = (
+                supabase.table("landing_page_config")
+                .insert({
+                    "content": content,
+                    "updated_by": adminID,
+                })
+                .execute()
+            )
+        if result.data:
+            return result.data[0].get("content", {})
+        return content
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def getActivityLogs(
