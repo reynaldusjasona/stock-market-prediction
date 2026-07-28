@@ -11,6 +11,8 @@ from app.services.admin_service import (
     deleteApiSource,
     dismissAlert,
     getActivityLogs,
+    getAdminAlerts,
+    getAdminAlertsSummary,
     getAlertsSummary,
     getAllUserAccount,
     getApiSourceById,
@@ -26,8 +28,10 @@ from app.services.admin_service import (
     getRetrainStatus,
     rejectTrader,
     requestModelRetrain,
+    resolveAdminAlert,
     searchUserByKeywords,
     suspendAccount as svcSuspendAccount,
+    unsuspendAccount as svcUnsuspendAccount,
     updateApiSource,
     updateLandingContent,
     updateUserDetails as svcUpdateUserDetails,
@@ -42,6 +46,8 @@ router = APIRouter()
 class UpdateUserRequest(BaseModel):
     role: Optional[str] = None
     status: Optional[str] = None
+    name: Optional[str] = None
+    email: Optional[str] = None
 
 
 class LandingSectionUpdate(BaseModel):
@@ -97,7 +103,11 @@ async def updateUserDetails(
     adminID = current_user.get("sub")
     await validatePermission(adminID)
     return await svcUpdateUserDetails(
-        userID, body.role or "", body.status or ""
+        userID,
+        body.role or "",
+        body.status or "",
+        body.name or "",
+        body.email or "",
     )
 
 
@@ -111,6 +121,22 @@ async def suspendAccount(
     await logActivity(
         userID=adminID,
         action="user_suspended",
+        targetType="user",
+        targetId=userID,
+    )
+    return result
+
+
+@router.patch("/admin/users/{userID}/unsuspend", tags=["Admin"])
+async def unsuspendAccount(
+    userID: str,
+    current_user: dict = Depends(_require_admin),
+):
+    adminID = current_user.get("sub")
+    result = await svcUnsuspendAccount(userID)
+    await logActivity(
+        userID=adminID,
+        action="user_unsuspended",
         targetType="user",
         targetId=userID,
     )
@@ -310,6 +336,37 @@ async def dismissAlertRoute(
         targetId=alert_id,
     )
     return {"message": "Alert dismissed", "alert": result}
+
+
+@router.get("/admin/platform-alerts", tags=["Admin"])
+async def getPlatformAlertsRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    result = await getAdminAlerts()
+    return {"alerts": result}
+
+
+@router.get("/admin/platform-alerts/summary", tags=["Admin"])
+async def getPlatformAlertsSummaryRoute(
+    current_user: dict = Depends(_require_admin),
+):
+    return await getAdminAlertsSummary()
+
+
+@router.patch("/admin/platform-alerts/{alertID}/resolve", tags=["Admin"])
+async def resolvePlatformAlertRoute(
+    alertID: str,
+    current_user: dict = Depends(_require_admin),
+):
+    result = await resolveAdminAlert(alertID)
+    adminID = current_user.get("sub")
+    await logActivity(
+        userID=adminID,
+        action="platform_alert_resolved",
+        targetType="admin_alert",
+        targetId=alertID,
+    )
+    return {"message": "Alert resolved", "alert": result}
 
 
 @router.get("/admin/apis", tags=["Admin"])
