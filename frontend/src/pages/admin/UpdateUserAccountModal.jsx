@@ -34,9 +34,18 @@ function UpdateUserAccountModal({target, onClose, onDone}){
   const handleSubmit=async(e)=>{
     e.preventDefault()
     setAlert({msg:'', type:''})
+    if (!form.name.trim()||!form.email.trim()){
+      setAlert({msg:'Name and email are required.', type:'error'})
+      return
+    }
     setLoading(true)
     try{
-      await adminApi.updateUser(target.id, { role: form.role, status: form.status })
+      await adminApi.updateUser(target.id, {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        role: form.role,
+        status: form.status,
+      })
       showToast('User account updated successfully', 'success')
       onDone?.()
       onClose?.()
@@ -68,20 +77,18 @@ function UpdateUserAccountModal({target, onClose, onDone}){
             {fetching
               ? <div style={{ textAlign:'center', padding:'1.5rem' }}><span className="admin-spinner"/></div>
               : <>
-                  {/* Read-only info */}
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem', marginBottom:'1.1rem',
-                    padding:'0.8rem 1rem', background:'var(--bg)', border:'1px solid var(--border)', borderRadius:'8px' }}>
-                    <div>
-                      <div className="admin-form-label">Name</div>
-                      <div style={{ fontSize:'0.85rem', fontWeight:600 }}>{form.name || '—'}</div>
-                    </div>
-                    <div>
-                      <div className="admin-form-label">Email</div>
-                      <div style={{ fontSize:'0.85rem' }}>{form.email || '—'}</div>
-                    </div>
+                  <div className="admin-form-group">
+                    <label className="admin-form-label" htmlFor="uuName">Full Name</label>
+                    <input className="admin-form-input" id="uuName" type="text"
+                      value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required/>
                   </div>
 
-                  {/* Editable fields */}
+                  <div className="admin-form-group">
+                    <label className="admin-form-label" htmlFor="uuEmail">Email Address</label>
+                    <input className="admin-form-input" id="uuEmail" type="email"
+                      value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required/>
+                  </div>
+
                   <div className="admin-form-group">
                     <label className="admin-form-label" htmlFor="uuRole">Role</label>
                     <select className="admin-form-input" id="uuRole" style={selectStyle}

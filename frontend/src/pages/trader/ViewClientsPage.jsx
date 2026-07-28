@@ -12,7 +12,7 @@ function ViewClientsPage() {
 
   useEffect(()=> {
     traderApi.getClients()
-      .then(c=> setClients(Array.isArray(c) ? c : []))
+      .then(c=> setClients(Array.isArray(c) ? c : (c?.clients || [])))
       .catch(err=> setError(err.message || 'Failed to load clients'))
       .finally(()=> setLoading(false))
   }, [])
@@ -43,7 +43,7 @@ function ViewClientsPage() {
                   <td style={{ fontWeight:600 }}>{c.name || c.full_name || '—'}</td>
                   <td style={{ fontSize:'0.82rem', color:'var(--text-muted)' }}>{c.email || '—'}</td>
                   <td style={{ fontSize:'0.78rem', color:'var(--text-muted)' }}>
-                    {c.engaged_at || c.created_at ? new Date(c.engaged_at || c.created_at).toLocaleDateString('en-SG') : '—'}
+                    {c.linked_since || c.engaged_at || c.created_at ? new Date(c.linked_since || c.engaged_at || c.created_at).toLocaleDateString('en-SG') : '—'}
                   </td>
                   <td>
                     <div className="action-cell" onClick={e => e.stopPropagation()}>
