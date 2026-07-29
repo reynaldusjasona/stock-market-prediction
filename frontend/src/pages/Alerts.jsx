@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
+import AppLayout from '../components/layout/AppLayout'
 import '../styles/Alerts.css'
 
 function Alerts() {
@@ -18,13 +17,6 @@ function Alerts() {
     const [editPrice, setEditPrice] = useState('')
     const [editCondition, setEditCondition] = useState('above')
     const [error, setError] = useState(null)
-    const { logout } = useAuth()
-    const navigate = useNavigate()
-
-    function handleLogout() {
-        logout()
-        navigate('/login')
-    }
 
     // fetch trending to get tickers, then fetch alerts for each
     async function loadAlerts() {
@@ -118,19 +110,7 @@ function Alerts() {
     }
 
     return (
-        <div className="alerts-page">
-            <aside className="sidebar">
-                <div className="sidebar-logo">StockWise <span>AI</span></div>
-                <span className="sidebar-link" onClick={() => navigate('/dashboard')}>Dashboard</span>
-                <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
-                <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
-                <span className="sidebar-link active">Alerts</span>
-                <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
-                <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-            </aside>
+        <AppLayout>
             <div className="alerts-content">
                 <div className="alerts-header">
                     <div>
@@ -218,7 +198,7 @@ function Alerts() {
                     </table>
                 </div>
             </div>
-        </div>
+        </AppLayout>
     )
 }
 

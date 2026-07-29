@@ -86,6 +86,12 @@
     line-height: 1.6;
 }
 
+.hero p.hero-subtitle {
+    color: #ccc;
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
 .hero-buttons {
     display: flex;
     gap: 16px;
@@ -152,6 +158,19 @@
     line-height: 1.6;
 }
 
+.section-content {
+    color: #ccc;
+    font-size: 16px;
+    line-height: 1.7;
+    max-width: 720px;
+}
+
+.section-image {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
 /* testimonials */
 .testimonial-card {
     background: #13141a;
@@ -179,6 +198,14 @@
 }
 
 /* subscription */
+.landing-plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    max-width: 820px;
+    margin: 0 auto;
+}
+
 .plan-card {
     background: #13141a;
     border: 1px solid #00ff41;
@@ -186,6 +213,11 @@
     padding: 40px;
     max-width: 400px;
     margin: 0 auto;
+}
+
+.landing-plans-grid .plan-card {
+    max-width: none;
+    margin: 0;
 }
 
 .plan-card .plan-name {

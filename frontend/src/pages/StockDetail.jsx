@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
 import { formatPrice as formatNum } from '../utils/format'
+import AppLayout from '../components/layout/AppLayout'
 import '../styles/Dashboard.css'
 import '../styles/StockDetail.css'
 import ViewStockChart from '../components/stock/ViewStockChart'
@@ -22,7 +22,6 @@ function formatLarge(num) {
 function StockDetail() {
     const { ticker } = useParams()
     const navigate = useNavigate()
-    const { logout } = useAuth()
 
     // states in kind of a random order lol
     const [activeTab, setActiveTab] = useState('Chart')
@@ -30,15 +29,12 @@ function StockDetail() {
     const [stockInfo, setStockInfo] = useState(null)
     const [loading, setLoading] = useState(true)
     const [newsItems, setNewsItems] = useState([])
+    const [newsLoading, setNewsLoading] = useState(true)
+    const [newsError, setNewsError] = useState(null)
     const [fundData, setFundData] = useState(null)
     const [historyData, setHistoryData] = useState([])
     const [orderBookData, setOrderBookData] = useState(null)
     const [activeInterval, setActiveInterval] = useState('1D')
-
-    function handleLogout() {
-        logout()
-        navigate('/login')
-    }
 
     // switch between tabs
     function switchTab(tabName) {
@@ -55,10 +51,15 @@ function StockDetail() {
         }
 
         try {
+            setNewsLoading(true)
+            setNewsError(null)
             const news = await api.get(`/news/${ticker}`)
             setNewsItems(news)
         } catch (err) {
             console.log('news failed:', err.message)
+            setNewsError(err.message || 'Failed to load news.')
+        } finally {
+            setNewsLoading(false)
         }
 
         try {
@@ -106,21 +107,8 @@ function StockDetail() {
     const isUp = stockInfo && stockInfo.change_percent >= 0
 
     return (
-        <div className="dashboard">
-            <aside className="sidebar">
-                <div className="sidebar-logo">StockWise <span>AI</span></div>
-                <span className="sidebar-link" onClick={() => navigate('/dashboard')}>Dashboard</span>
-                <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
-                <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
-                <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
-                <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
-                <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-            </aside>
-
-            <div className="main-content">
+        <AppLayout>
+            <>
                 <div className="page-header">
                     <span className="back-link" onClick={() => navigate('/dashboard')}>&larr; Back</span>
                     <h1>{ticker}</h1>
@@ -157,7 +145,17 @@ function StockDetail() {
                 )}
 
                 {/* news tab */}
-                {activeTab === 'News' && <ViewNews newsItems={newsItems} />}
+                {activeTab === 'News' && (
+                    newsLoading ? (
+                        <p>Loading news...</p>
+                    ) : newsError ? (
+                        <p className="error-msg">{newsError}</p>
+                    ) : newsItems.length === 0 ? (
+                        <p>No recent news for {ticker}.</p>
+                    ) : (
+                        <ViewNews newsItems={newsItems} />
+                    )
+                )}
 
                 {/* prediction tab */}
                 {activeTab === 'Prediction' && <ViewPrediction predData={predData} />}
@@ -169,8 +167,8 @@ function StockDetail() {
 
                 {/* order book tab */}
                 {activeTab === 'OrderBook' && <ViewOrderBook orderBook={orderBookData} />}
-            </div>
-        </div>
+            </>
+        </AppLayout>
     )
 }
 
