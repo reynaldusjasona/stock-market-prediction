@@ -1,5 +1,4 @@
 .alerts-page { display: flex; min-height: 100vh; }
-.alerts-content { margin-left: 220px; padding: 40px; flex: 1; }
 .alerts-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
 .alerts-header h1 { font-size: 28px; font-weight: 700; }
 .alerts-header p { color: #888; font-size: 14px; margin-top: 4px; }

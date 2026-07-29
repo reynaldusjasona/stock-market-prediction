@@ -44,8 +44,14 @@ COMPANY_ALIASES: dict[str, list[str]] = {
     "MCD": ["mcdonald's", "mcdonalds", "mcdonald's corporation", "mcdonald"],
     "NKE": ["nike", "nike inc", "nike inc."],
     "SBUX": ["starbucks", "starbucks corporation"],
-    "JPM": ["jpmorgan chase", "jp morgan chase", "jpmorgan", "chase bank", "j.p. morgan chase", "j.p. morgan"],
-    "BAC": ["bank of america", "bank of america corporation", "bofa", "bofa securities", "merrill lynch"],
+    "JPM": [
+        "jpmorgan chase", "jp morgan chase", "jpmorgan", "chase bank",
+        "j.p. morgan chase", "j.p. morgan",
+    ],
+    "BAC": [
+        "bank of america", "bank of america corporation", "bofa",
+        "bofa securities", "merrill lynch",
+    ],
     "GS": ["goldman sachs", "goldman sachs group"],
     "V": ["visa inc", "visa corporation"],
     "MA": ["mastercard", "mastercard inc"],
@@ -455,10 +461,6 @@ def fetch_gdelt_chunk(
     return [dict(row.items()) for row in query_job.result()]
 
 
-
-    return len(rows)
-
-
 def _prepare_raw_rows(rows: list[dict]) -> list[dict]:
     """
     Validate GDELT articles and assign each article to a trading session.
@@ -529,6 +531,7 @@ def _append_to_cache(
 
     return len(df)
 
+
 def _deduplicate_cache(
     cache_path: Path = _RAW_CACHE_PATH,
 ) -> int:
@@ -554,6 +557,7 @@ def _deduplicate_cache(
     )
 
     return before - len(dataframe)
+
 
 def run_backfill() -> None:
     """
@@ -637,7 +641,7 @@ def run_backfill() -> None:
         "Ticker counts       : "
         f"{dict(sorted(ticker_counts.items()))}"
     )
-               
+
 
 if __name__ == "__main__":
     run_backfill()

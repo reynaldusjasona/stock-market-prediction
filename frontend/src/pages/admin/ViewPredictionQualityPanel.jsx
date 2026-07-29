@@ -41,7 +41,7 @@ function ViewPredictionQualityPanel() {
   useEffect(() => {
     adminApi.getModelQuality()
       .then(d => {
-        const rows = Array.isArray(d) ? d : (d?.classes || d?.metrics || [])
+        const rows = Array.isArray(d) ? d : (d?.classes || d?.metrics || d?.data || [])
         const latest = {}
         rows.forEach(r => {
           const k = r.class_name
@@ -61,8 +61,8 @@ function ViewPredictionQualityPanel() {
 
   const chartData = classes.map(c => ({
     class:c.class_name,
-    Precision:c.precision_score ?? null,
-    Recall:c.recall_score ?? null,
+    Precision:c.precision_score ?? c.precision ?? null,
+    Recall:c.recall_score ?? c.recall ?? null,
     'F1 Score':c.f1_score ?? null,
   }))
 
@@ -132,8 +132,8 @@ function ViewPredictionQualityPanel() {
                     {c.class_name}
                   </span>
                 </td>
-                <td style={{fontFamily:'var(--font-mono)'}}>{pct(c.precision_score)}</td>
-                <td style={{fontFamily:'var(--font-mono)'}}>{pct(c.recall_score)}</td>
+                <td style={{fontFamily:'var(--font-mono)'}}>{pct(c.precision_score ?? c.precision)}</td>
+                <td style={{fontFamily:'var(--font-mono)'}}>{pct(c.recall_score ?? c.recall)}</td>
                 <td style={{fontFamily:'var(--font-mono)', fontWeight:600, color:f1Color(c.f1_score)}}>{pct(c.f1_score)}</td>
                 <td style={{fontFamily:'var(--font-mono)', color:'var(--text-muted)'}}>
                   {c.support != null ? c.support.toLocaleString() : '—'}

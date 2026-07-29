@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
+import AppLayout from '../components/layout/AppLayout'
 import '../styles/Portfolio.css'
 import ViewHoldingsDetails from '../components/portfolio/ViewHoldingsDetails'
 import AddStockToHolding from '../components/portfolio/AddStockToHolding'
@@ -16,13 +16,7 @@ function Portfolio() {
     const [liveprices, setLivePrices] = useState({})
     const [totalValue, setTotalValue] = useState(0)
     const [totalGainLoss, setTotalGainLoss] = useState(0)
-    const { logout } = useAuth()
     const navigate = useNavigate()
-
-    function handleLogout() {
-        logout()
-        navigate('/login')
-    }
 
     useEffect(() => {
         loadPortfolio()
@@ -99,20 +93,7 @@ function Portfolio() {
     if (loading) return <p>Loading...</p>
 
     return (
-        <div className="portfolio-page">
-            <aside className="sidebar">
-                <div className="sidebar-logo">StockWise <span>AI</span></div>
-                <span className="sidebar-link" onClick={() => navigate('/dashboard')}>Dashboard</span>
-                <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
-                <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                <span className="sidebar-link active">Portfolio</span>
-                <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
-                <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
-                <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-            </aside>
-
+        <AppLayout>
             <div className="portfolio-content">
                 <div className="portfolio-header">
                     <h1>Portfolio</h1>
@@ -148,9 +129,9 @@ function Portfolio() {
                     onAdd={addHolding}
                 />
 
-                <ViewHoldingsDetails holdings={holdings} livePrices={liveprices} onRemove={removeHolding} />
+                <ViewHoldingsDetails holdings={holdings} livePrices={liveprices} onRemove={removeHolding} navigate={navigate} />
             </div>
-        </div>
+        </AppLayout>
     )
 }
 
