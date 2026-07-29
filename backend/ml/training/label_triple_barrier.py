@@ -6,28 +6,28 @@ import pandas as pd
 LABELS = {"Buy", "Hold", "Sell"}
 
 
-def calculate_dynamic_target (
-    df: pd.DataFrame, 
-    close_col: str = "Close", 
-    volatility_window: int = 20, 
-) -> pd.Series: 
-    """ 
-    Calculate dynamic return target based on historical rolling volatility. 
-    
-    Args: 
-        df (pd.DataFrame): DataFrame containing stock price data with a 'Close' column. 
-        close_col (str): Name of the column containing closing prices. Default is 'Close'. 
+def calculate_dynamic_target(
+    df: pd.DataFrame,
+    close_col: str = "Close",
+    volatility_window: int = 20,
+) -> pd.Series:
+    """
+    Calculate dynamic return target based on historical rolling volatility.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing stock price data with a 'Close' column.
+        close_col (str): Name of the column containing closing prices. Default is 'Close'.
         volatility_window (int): Window size for calculating rolling volatility. Default is 20.
 
     Returns:
         pd.Series: A Series containing the dynamic return target for each row in the DataFrame.
-    
-    The one-period shift ensures the target for day t uses only information available before day t. 
+
+    The one-period shift ensures the target for day t uses only information available before day t.
     """
 
     if close_col not in df.columns:
         raise ValueError(f"Column '{close_col}' not found in DataFrame.")
-    
+
     if volatility_window < 2:
         raise ValueError("volatility_window must be at least 2.")
 
@@ -36,8 +36,12 @@ def calculate_dynamic_target (
     daily_returns = close.pct_change()
 
     # Calculate dynamic target
-    dynamic_target = daily_returns.rolling(window=volatility_window, min_periods=volatility_window).std().shift(1)
-
+    dynamic_target = (
+        daily_returns
+        .rolling(window=volatility_window, min_periods=volatility_window)
+        .std()
+        .shift(1)
+    )
 
     return dynamic_target
 
@@ -47,30 +51,30 @@ def apply_triple_barrier_one_day(
     close_col: str = "Close",
     profit_taking_multiplier: float = 1.0,
     stop_loss_multiplier: float = 1.5,
-    volatility_window: int = 20, 
-    min_return: float = 0.005, 
+    volatility_window: int = 20,
+    min_return: float = 0.005,
     drop_ambiguous: bool = True,
     drop_unlabeled: bool = True,
 ) -> pd.DataFrame:
     """
     Apply the triple barrier method to label each row in the DataFrame as 'Buy', 'Hold', or 'Sell'.
 
-    For each day: 
-    - entry price = today' close price 
+    For each day:
+    - entry price = today' close price
     - upper barrier = entry price * (1 + profit_taking_multiplier * dynamic_target)
     - lower barrier = entry price * (1 - stop_loss_multiplier * dynamic_target)
     - examine next day's high and low prices to determine if either barrier was breached.
-    
-    - Buy: Tomorrow's high reaches the upper barrier only. 
-    - Sell: Tomorrow's low reaches the lower barrier only. 
-    - Hold: Neither barrier is reached 
-    - Ambigious: Both barriers are reached. Daily OHLC data cannot determine which barrier was touched first.
 
+    - Buy: Tomorrow's high reaches the upper barrier only.
+    - Sell: Tomorrow's low reaches the lower barrier only.
+    - Hold: Neither barrier is reached
+    - Ambigious: Both barriers are reached. Daily OHLC data cannot determine
+      which barrier was touched first.
 
     Returns:
-        pd.DataFrame: A DataFrame with triple barrier columns and  plus a 'Label' column with labels ('Buy', 'Hold', 'Sell').
+        pd.DataFrame: A DataFrame with triple barrier columns and  plus a
+        'Label' column with labels ('Buy', 'Hold', 'Sell').
     """
-
 
     required_columns = {"Date", "High", "Low", close_col}
     missing_columns = required_columns.difference(df.columns)
@@ -100,8 +104,7 @@ def apply_triple_barrier_one_day(
         errors="coerce",
     )
 
-    result = (result.sort_values("Date").reset_index(drop=True)
-    )
+    result = (result.sort_values("Date").reset_index(drop=True))
 
     for column in ["High", "Low", close_col]:
         result[column] = pd.to_numeric(
@@ -118,9 +121,13 @@ def apply_triple_barrier_one_day(
     result["next_high"] = result["High"].shift(-1)
     result["next_low"] = result["Low"].shift(-1)
 
-    result["upper_barrier_price"] = (result[close_col] * (1 + profit_taking_multiplier * result["dynamic_target"]))
+    result["upper_barrier_price"] = (
+        result[close_col] * (1 + profit_taking_multiplier * result["dynamic_target"])
+    )
 
-    result["lower_barrier_price"] = (result[close_col] * (1 - stop_loss_multiplier * result["dynamic_target"]))
+    result["lower_barrier_price"] = (
+        result[close_col] * (1 - stop_loss_multiplier * result["dynamic_target"])
+    )
 
     result["Upper_Touched"] = (result["next_high"] >= result["upper_barrier_price"])
 
@@ -196,8 +203,7 @@ def apply_triple_barrier_one_day(
     return result.reset_index(drop=True)
 
 
-
-def apply_triple_barrier_by_ticker (
+def apply_triple_barrier_by_ticker(
     df: pd.DataFrame,
     ticker_column: str = "Ticker",
     profit_taking_multiplier: float = 1.0,
@@ -205,11 +211,11 @@ def apply_triple_barrier_by_ticker (
     volatility_window: int = 20,
     min_return: float = 0.005,
     drop_ambiguous: bool = True,
-    drop_unlabeled: bool = True,  
-) -> pd.DataFrame: 
+    drop_unlabeled: bool = True,
+) -> pd.DataFrame:
 
     """
-    apply one day labeling method to each ticker 
+    apply one day labeling method to each ticker
     """
     if ticker_column not in df.columns:
         raise ValueError(
@@ -242,7 +248,7 @@ def apply_triple_barrier_by_ticker (
             "No ticker data was available for labeling."
         )
 
-    result = pd.concat(labeled_data,ignore_index=True)
+    result = pd.concat(labeled_data, ignore_index=True)
 
     result = (
         result
@@ -253,16 +259,3 @@ def apply_triple_barrier_by_ticker (
     )
 
     return result
-
-
-    
-
-
-
-
-
-
-
-
-
-
