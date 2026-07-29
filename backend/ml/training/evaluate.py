@@ -3,7 +3,6 @@ from pathlib import Path
 import joblib
 import pandas as pd
 import xgboost as xgb
-import numpy as np
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -149,7 +148,6 @@ def run_evaluation() -> dict:
         drop_unlabeled=True,
     )
 
-
     excluded_columns = [
         "Date",
         "Ticker",
@@ -166,7 +164,6 @@ def run_evaluation() -> dict:
         "Lower_Touched",
         "Barrier_Type",
     ]
-
 
     feature_columns = [
         col
