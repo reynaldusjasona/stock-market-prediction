@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react'
+import {useAuth} from '../../context/AuthContext'
 import traderApi from '../../js/traderApi'
 import ViewSignalReviewsPage from './ViewSignalReviewsPage'
 import ViewClientsPage from './ViewClientsPage'
@@ -118,6 +119,7 @@ function TraderDashboardPage() {
   const[tab,setTab]= useState('overview')
   const[showAccount,setShowAccount] = useState(false)
   const[editAccount,setEditAccount] = useState(false)
+  const { logout } = useAuth()
 
   const user= readUser()
   const traderStatus= user.trader_status || 'pending'
@@ -182,6 +184,12 @@ function TraderDashboardPage() {
 
         <div className="trader-sidenav-footer">
           <a href="/dashboard" className="trader-back-link">← Back to investor view</a>
+          <button className="trader-back-link"
+            onClick={() => { logout(); window.location.href = '/login' }}
+            style={{ background:'none', border:'none', cursor:'pointer', width:'100%',
+              textAlign:'left', fontFamily:'var(--font-sans)', fontSize:'0.81rem' }}>
+            Logout
+          </button>
         </div>
       </aside>
 
