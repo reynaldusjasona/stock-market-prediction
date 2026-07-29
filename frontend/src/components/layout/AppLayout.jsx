@@ -5,15 +5,15 @@ import { api } from '../../api/api'
 import '../../styles/AppLayout.css'
 
 const NAV_LINKS = [
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'All Stocks', path: '/allstocks' },
+    { label: 'Dashboard', path: '/dashboard', trader: true },
+    { label: 'All Stocks', path: '/allstocks', trader: true },
     { label: 'Recommendations', path: '/recommendations' },
     { label: 'Browse Traders', path: '/browse-traders' },
     { label: 'Watchlist', path: '/watchlist' },
     { label: 'Portfolio', path: '/portfolio' },
     { label: 'Alerts', path: '/alerts' },
-    { label: 'Notifications', path: '/notifications' },
-    { label: 'Feedback', path: '/feedback' },
+    { label: 'Notifications', path: '/notifications', trader: true },
+    { label: 'Feedback', path: '/feedback', trader: true },
 ]
 
 function AppLayout({ children }) {
@@ -55,11 +55,14 @@ function AppLayout({ children }) {
 
     const initial = user?.name ? user.name.charAt(0).toUpperCase() : '?'
 
+    const isTrader = user?.role === 'trader'
+    const navLinks = isTrader ? NAV_LINKS.filter((link) => link.trader) : NAV_LINKS
+
     return (
         <div className="app-shell">
             <aside className="sidebar">
                 <div className="sidebar-logo">StockWise <span>AI</span></div>
-                {NAV_LINKS.map((link) => (
+                {navLinks.map((link) => (
                     <span
                         key={link.path}
                         className={location.pathname === link.path ? 'sidebar-link active' : 'sidebar-link'}
@@ -68,6 +71,11 @@ function AppLayout({ children }) {
                         {link.label}
                     </span>
                 ))}
+                {isTrader && (
+                    <span className="sidebar-link" onClick={() => navigate('/trader/dashboard')}>
+                        &#8592; Back to trader view
+                    </span>
+                )}
                 <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
             </aside>
 
