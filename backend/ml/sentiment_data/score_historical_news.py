@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from ml.training.build_sentiment_features import score_headlines
+from ml.sentiment_data.build_finbert_pipeline import score_headlines
 
 
 DATA_DIR = Path(__file__).resolve().parent / "historical_sentiment_data"
@@ -140,7 +140,7 @@ def score_data(df: pd.DataFrame) -> None:
         CHUNK_SIZE,
     ):
         chunk = pending.iloc[
-            start : start + CHUNK_SIZE
+            start: start + CHUNK_SIZE
         ].copy()
 
         scores = score_headlines(

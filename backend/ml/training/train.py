@@ -229,7 +229,7 @@ def run_training() -> dict:
     print("Dataset built successfully")
     print(y.value_counts())
     print(y.value_counts(normalize=True))
-    
+
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(X, y)
 
     le = LabelEncoder()
