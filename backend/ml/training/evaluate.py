@@ -3,6 +3,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 import xgboost as xgb
+import numpy as np
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -16,6 +17,7 @@ from sklearn.preprocessing import LabelEncoder
 
 from ml.training.features import get_multiple_tickers
 from ml.training.train import TRAIN_TICKERS, split_data
+from ml.training.label_triple_barrier import apply_triple_barrier_by_ticker
 
 _MODEL_FILE = "xgboost_model_latest.joblib"
 _ENCODER_FILE = "label_encoder.pkl"
@@ -135,7 +137,45 @@ def run_evaluation() -> dict:
     model, label_encoder = load_model()
 
     print("Rebuilding dataset for evaluation...")
-    X, y = get_multiple_tickers(TRAIN_TICKERS)
+    combined = get_multiple_tickers(TRAIN_TICKERS)
+    labeled_data = apply_triple_barrier_by_ticker(
+        df=combined,
+        ticker_column="Ticker",
+        profit_taking_multiplier=1.0,
+        stop_loss_multiplier=1.0,
+        volatility_window=20,
+        min_return=0.005,
+        drop_ambiguous=True,
+        drop_unlabeled=True,
+    )
+
+
+    excluded_columns = [
+        "Date",
+        "Ticker",
+        "Label",
+
+        # Triple Barrier columns
+        "dynamic_target",
+        "next_high",
+        "next_low",
+        "next_close",
+        "upper_barrier_price",
+        "lower_barrier_price",
+        "Upper_Touched",
+        "Lower_Touched",
+        "Barrier_Type",
+    ]
+
+
+    feature_columns = [
+        col
+        for col in labeled_data.columns
+        if col not in excluded_columns
+    ]
+
+    X = labeled_data[feature_columns]
+    y = labeled_data["Label"].astype(str)
     _, _, X_test, _, _, y_test = split_data(X, y)
 
     print(f"Test set size: {len(X_test)}")
@@ -145,7 +185,6 @@ def run_evaluation() -> dict:
     print(f"Precision: {metrics['precision']}")
     print(f"Recall   : {metrics['recall']}")
     print(f"F1       : {metrics['f1']}")
-
 
     return metrics
 
