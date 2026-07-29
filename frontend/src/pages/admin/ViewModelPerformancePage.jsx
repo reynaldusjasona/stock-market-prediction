@@ -52,10 +52,14 @@ function ViewModelPerformancePage(){
 
   const metrics=[
     {label:'Accuracy',val: pct(perf?.accuracy),color: accColor(perf?.accuracy, config)},
-    {label:'Precision',val: perf?.precision!=null ? pct(perf.precision) : pct(avgPrecision),color: ''},
+    {label:'Precision',val: pct(perf?.precision_score ?? perf?.precision ?? avgPrecision),color: ''},
     {label:'Recall',val: pct(perf?.recall),color: ''},
     {label:'F1 Score',val: pct(perf?.f1_score),color: ''},
-    {label:'ROC AUC',val: pct(perf?.roc_auc),color: ''},
+    {label:'ROC AUC',val: (() => {
+      if (perf?.roc_auc != null) return pct(perf.roc_auc)
+      const match = perf?.notes?.match(/ROC-?AUC\s+([\d.]+)/i)
+      return match ? pct(parseFloat(match[1])) : '—'
+    })(),color: ''},
     {label:'Model Version',val: perf?.model_version || '—', color: ''},
   ]
 
@@ -82,7 +86,7 @@ function ViewModelPerformancePage(){
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1rem', marginBottom:'1.5rem' }}>
         {[
           { label:'Last Trained',     val: perf?.last_trained ? fmtTime(perf.last_trained) : (perf?.last_trained_at ? fmtTime(perf.last_trained_at) : null) },
-          { label:'Training Samples', val: perf?.training_samples?.toLocaleString() },
+          { label:'Training Samples', val: (perf?.total_predictions ?? perf?.training_samples)?.toLocaleString() ?? '—' },
           { label:'Model Version',    val: perf?.model_version },
         ].map(c => (
           <div key={c.label} className="admin-card" style={{ padding:'1rem 1.35rem' }}>
