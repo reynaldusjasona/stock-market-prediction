@@ -18,8 +18,7 @@ function Login() {
             const data = await api.post('/auth/login', { email, password })
             login(data.user, data.token)
 
-            const role         = data.user?.role
-            const traderStatus = data.user?.trader_status
+            const role = data.user?.role
 
             if (role === 'trader') {
                 navigate('/trader/dashboard')
@@ -46,25 +45,27 @@ function Login() {
     }
 
     return (
-        <div className="login-page">
-            <div className="login-left">
-                <h2>Predict the Market with <span>AI Precision</span></h2>
-                <p>Access institutional-grade technical analysis and predictive modeling powered by our proprietary neural networks.</p>
-            </div>
-            <div className="login-right">
-                <h1>Welcome back</h1>
-                <p className="subtitle">Please enter your credentials to access your dashboard.</p>
-                {error && <p className="error-msg">{error}</p>}
-                {resendMessage && <p className="subtitle">{resendMessage}</p>}
-                <div className="form-group">
-                    <label>Email Address</label>
-                    <input type="email" placeholder="name@company.com"
-                        value={email} onChange={e => setEmail(e.target.value)}/>
-                </div>
-                <div className="form-group">
-                    <label>Password</label>
-                    <input type="password" placeholder="••••••••"
-                        value={password} onChange={e => setPassword(e.target.value)}/>
+        <div className="auth-page">
+            <div className="auth-panel">
+                <div className="auth-right">
+                    <p className="auth-logo">StockWise <span>AI</span></p>
+                    <h1>Welcome back</h1>
+                    <p className="subtitle">Please enter your credentials to access your dashboard.</p>
+                    {error && <p className="error-msg">{error}</p>}
+                    {resendMessage && <p className="subtitle">{resendMessage}</p>}
+                    <div className="form-group">
+                        <label>Email Address</label>
+                        <input type="email" placeholder="name@company.com"
+                            value={email} onChange={e => setEmail(e.target.value)}/>
+                    </div>
+                    <div className="form-group">
+                        <label>Password</label>
+                        <input type="password" placeholder="••••••••"
+                            value={password} onChange={e => setPassword(e.target.value)}/>
+                    </div>
+                    <button className="btn-full" onClick={handleLogin}>Log in →</button>
+                    <p className="auth-footer">Didn't get a verification email? <span onClick={handleResendVerification}>Resend it</span></p>
+                    <p className="auth-footer">Don't have an account? <span onClick={() => navigate('/register')}>Register</span></p>
                 </div>
             </div>
         </div>
