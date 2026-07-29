@@ -4,7 +4,7 @@ from app.core.security import get_current_user
 from app.services.prediction_service import (
     getRecommendationDetails as svcGetRecommendationDetails,
 )
-from ml.prediction_service import get_prediction, get_prediction_history
+from ml.inference.prediction_service import get_prediction, get_prediction_history
 
 router = APIRouter()
 

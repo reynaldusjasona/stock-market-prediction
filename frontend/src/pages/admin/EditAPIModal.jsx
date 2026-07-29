@@ -10,7 +10,7 @@ function EditAPIModal({target,onClose,onDone}){
     api_key:'',
     purpose:target.purpose||target.description||'',
     rate_limit:target.rate_limit!= null?String(target.rate_limit):'',
-    is_active:target.is_active!== false,
+    is_active:target.is_active!== false && target.is_enabled!== false,
   })
   const [loading,setLoading]= useState(false)
   const [confirming,setConfirming]= useState(false)
@@ -29,9 +29,14 @@ function EditAPIModal({target,onClose,onDone}){
 		setAlert({msg:'Base URL required.',type:'error'}); 
 		return 
 	}
-    const payload = {name: form.name.trim(),base_url: form.base_url.trim(),
-      purpose: form.purpose.trim(), rate_limit: form.rate_limit ? parseInt(form.rate_limit) : null,
-      is_active: form.is_active}
+    const payload = {
+      name:           form.name.trim(),
+      base_url:       form.base_url.trim(),
+      description:    form.purpose.trim(),
+      rate_limit:     form.rate_limit ? String(form.rate_limit).trim() : null,
+      api_type:       'REST',
+      status:         'active',
+    }
     if (form.api_key.trim()) 
 		payload.api_key = form.api_key.trim()
     setLoading(true)
