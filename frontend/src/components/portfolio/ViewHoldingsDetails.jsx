@@ -1,6 +1,6 @@
 import RemoveStockFromHolding from './RemoveStockFromHolding'
 
-function ViewHoldingsDetails({ holdings, livePrices, onRemove }) {
+function ViewHoldingsDetails({ holdings, livePrices, onRemove, navigate }) {
     return (
         <div className="holdings-table-wrap">
             <table>
@@ -21,7 +21,11 @@ function ViewHoldingsDetails({ holdings, livePrices, onRemove }) {
                         const marketValue = currentPrice ? item.shares * currentPrice : null
                         const gainLoss = currentPrice ? (currentPrice - item.average_buy_price) * item.shares : null
                         return (
-                            <tr key={item.id}>
+                            <tr
+                                key={item.id}
+                                onClick={() => navigate(`/stock/${item.ticker}`)}
+                                style={{ cursor: 'pointer' }}
+                            >
                                 <td className="ticker-cell">{item.ticker}</td>
                                 <td>{item.shares}</td>
                                 <td>${Number(item.average_buy_price).toFixed(2)}</td>
@@ -30,7 +34,7 @@ function ViewHoldingsDetails({ holdings, livePrices, onRemove }) {
                                 <td className={gainLoss >= 0 ? 'positive' : 'negative'}>
                                     {gainLoss ? (gainLoss >= 0 ? '+' : '') + '$' + gainLoss.toFixed(2) : '-'}
                                 </td>
-                                <td>
+                                <td onClick={(e) => e.stopPropagation()}>
                                     <RemoveStockFromHolding ticker={item.ticker} onRemove={onRemove} />
                                 </td>
                             </tr>

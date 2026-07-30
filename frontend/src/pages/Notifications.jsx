@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
+import AppLayout from '../components/layout/AppLayout'
 import '../styles/Notifications.css'
 import ViewNotifications from '../components/notifications/ViewNotifications'
 
@@ -18,14 +17,6 @@ function timeAgo(dateString) {
 function Notifications() {
     const [notifications, setNotifications] = useState([])
     const [loading, setLoading] = useState(true)
-    const navigate = useNavigate()
-    const { user, logout } = useAuth()
-    const isTrader = user?.role === 'trader'
-
-    function handleLogout() {
-        logout()
-        navigate('/login')
-    }
 
     // get all notifications for the user
     async function loadNotifications() {
@@ -55,38 +46,7 @@ function Notifications() {
     if (loading) return <p>Loading...</p>
 
     return (
-        <div className="notifications-page">
-                                                <aside className="sidebar">
-                <div className="sidebar-logo">StockWise <span>AI</span></div>
-
-                {/* Both roles */}
-                <span className="sidebar-link" onClick={() => navigate('/dashboard')}>Dashboard</span>
-                <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
-                <span className="sidebar-link active" onClick={() => navigate('/notifications')}>Notifications</span>
-                <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-
-                {/* Investor only */}
-                {!isTrader && (
-                    <>
-                        <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                        <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                        <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
-                        <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
-                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-                    </>
-                )}
-
-                {/* Trader — Back to Trader Portal + Logout pinned to bottom */}
-                {isTrader && (
-                    <div style={{ marginTop:'auto', borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:'0.5rem' }}>
-                        <span className="sidebar-link" onClick={() => navigate('/trader/dashboard')}>
-                            ← Back to Trader Portal
-                        </span>
-                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-                    </div>
-                )}
-            </aside>
-
+        <AppLayout>
             <div className="notifications-content">
                 <div className="notifications-header">
                     <h1>Notifications</h1>
@@ -99,7 +59,7 @@ function Notifications() {
                     <ViewNotifications notifications={notifications} onMarkRead={markRead} timeAgo={timeAgo} />
                 )}
             </div>
-        </div>
+        </AppLayout>
     )
 }
 
