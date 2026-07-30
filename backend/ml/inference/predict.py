@@ -5,7 +5,7 @@ from ml.training.features import _FEATURE_COLS, calculate_indicators, fetch_stoc
 
 
 def get_latest_features(
-    ticker: str, 
+    ticker: str,
     start: str = "2020-01-01",
     end: str = "2025-12-31",
 ) -> pd.DataFrame:
@@ -13,17 +13,15 @@ def get_latest_features(
     Fetch the most recent feature row for a ticker.
 
     Downloads OHLCV data via fetch_stock_data, computes all technical
-    indicators via calculate_indicators, drops the Label column (not needed
-    for inference), and returns only the final row as a single-row DataFrame
-    with the 13 feature columns.
+    indicators via calculate_indicators (the same function and column set
+    used by the training pipeline), and returns only the final row as a
+    single-row DataFrame with the _FEATURE_COLS columns.
 
     Raises ValueError if the processed DataFrame is empty (e.g. insufficient
     historical data to compute rolling windows).
     """
     raw = fetch_stock_data(ticker)
-    processed = calculate_indicators(raw, ticker=ticker, start=start, end=end, sentiment_source="live")
-
-    processed = processed.drop(columns=["Label"])
+    processed = calculate_indicators(raw, ticker=ticker, start=start, end=end)
 
     if processed.empty:
         raise ValueError(
@@ -51,7 +49,12 @@ def getPrediction(ticker: str) -> dict:
     Returns a dict with keys: ticker, signal, confidence,
     risk_level, reasoning.
     """
-    model, label_encoder = load_model()
+    try:
+        model, label_encoder = load_model()
+    except (FileNotFoundError, OSError) as exc:
+        print(f"Error loading model artifacts: {exc}")
+        return {"error": "Model not yet trained. Run training pipeline first."}
+
     features = get_latest_features(ticker)
 
     pred_enc = model.predict(features)[0]
@@ -71,7 +74,6 @@ def getPrediction(ticker: str) -> dict:
     reasoning = (
         f"RSI14 is {row['RSI14']:.1f}. "
         f"MACD is {row['MACD']:.4f}. "
-        f"SMA20 is {row['SMA20']:.2f}. "
         f"Model confidence is {confidence:.1f}%."
     )
 
