@@ -139,20 +139,17 @@ async def getAllSubscriptions(status_filter: Optional[str] = None) -> list:
 
 
 async def createCheckoutSession(userID: str, email: str, role: str) -> dict:
+    plan_name = "trader" if role == "trader" else "investor"
+
     if not _STRIPE_SECRET_KEY:
         return {
             "checkout_url": (
                 f"{_FRONTEND_URL}/subscription"
-                "?status=success&session_id=mock_session"
+                f"?status=success&plan={plan_name}&session_id=mock_session"
             )
         }
 
-    if role == "trader":
-        price_id = _STRIPE_TRADER_PRICE_ID
-        plan_name = "trader"
-    else:
-        price_id = _STRIPE_INVESTOR_PRICE_ID
-        plan_name = "investor"
+    price_id = _STRIPE_TRADER_PRICE_ID if role == "trader" else _STRIPE_INVESTOR_PRICE_ID
 
     if not price_id:
         raise HTTPException(
@@ -161,8 +158,8 @@ async def createCheckoutSession(userID: str, email: str, role: str) -> dict:
         )
 
     success_url = (
-        f"{_FRONTEND_URL}/subscription"
-        "?status=success&session_id={CHECKOUT_SESSION_ID}"
+        f"{_FRONTEND_URL}/subscription?status=success&plan={plan_name}"
+        "&session_id={CHECKOUT_SESSION_ID}"
     )
     session = stripe.checkout.Session.create(
         mode="subscription",
