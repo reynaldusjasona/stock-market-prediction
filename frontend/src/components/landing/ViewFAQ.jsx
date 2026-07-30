@@ -1,19 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { api } from '../../api/api'
 
 function ViewFAQ() {
     const [openFaq, setOpenFaq] = useState(null)
+    const [faqs, setFaqs] = useState([])
 
-    const faqs = [
-        { question: 'How accurate are the AI predictions?', answer: 'Our models maintain a back-tested accuracy of 82% over a 3-year period across the S&P 500.' },
-        { question: 'Which markets do you cover?', answer: 'We currently cover US equity markets including NYSE and NASDAQ.' },
-        { question: 'Can I cancel my subscription anytime?', answer: 'Yes, you can cancel anytime with no hidden fees.' },
-    ]
+    useEffect(() => {
+        api.get('/faq')
+            .then((data) => setFaqs(data.faqs || []))
+            .catch((err) => console.log('faq failed:', err.message))
+    }, [])
+
+    if (faqs.length === 0) return null
 
     return (
         <section className="section" id="faq">
             <h2 className="section-title">Frequently Asked Questions</h2>
             {faqs.map((faq, index) => (
-                <div className="faq-item" key={index}>
+                <div className="faq-item" key={faq.id || index}>
                     <div className="faq-question" onClick={() => setOpenFaq(openFaq === index ? null : index)}>
                         <span>{faq.question}</span>
                         <span>{openFaq === index ? '∧' : '∨'}</span>
