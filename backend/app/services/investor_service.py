@@ -27,7 +27,7 @@ async def listApprovedTraders(user_id: str) -> dict:
     result = (
         supabase.table("users")
         .select(
-            "id, name, email, license_number, created_at, "
+            "id, name, license_number, created_at, "
             "phone, specialization, years_experience, bio"
         )
         .eq("role", "trader")
