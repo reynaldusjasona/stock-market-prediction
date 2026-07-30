@@ -16,6 +16,7 @@ from app.routers import (
     recommendations,
     trader,
     faq,
+    traders,
 )
 
 app = FastAPI(
@@ -49,6 +50,7 @@ app.include_router(
 )
 app.include_router(trader.router, prefix="/api", tags=["Trader"])
 app.include_router(faq.router, prefix="/api", tags=["FAQ"])
+app.include_router(traders.router, prefix="/api", tags=["Traders"])
 
 
 @app.get("/")
