@@ -1,68 +1,3 @@
-.dashboard {
-    display: flex;
-    min-height: 100vh;
-}
-
-.sidebar {
-    width: 220px;
-    background: #0a0b0e;
-    border-right: 1px solid #1a1b20;
-    padding: 24px 0;
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    height: 100vh;
-}
-
-.sidebar-logo {
-    padding: 0 24px 24px;
-    font-size: 16px;
-    font-weight: 700;
-    color: #ffffff;
-    border-bottom: 1px solid #1a1b20;
-    margin-bottom: 16px;
-}
-
-.sidebar-logo span {
-    color: #00ff41;
-}
-
-.sidebar-link {
-    padding: 12px 24px;
-    color: #888;
-    font-size: 14px;
-    cursor: pointer;
-    display: block;
-}
-
-.sidebar-link:hover {
-    color: #ffffff;
-    background: #13141a;
-}
-
-.sidebar-link.active {
-    color: #00ff41;
-}
-
-.sidebar-logout {
-    margin-top: auto;
-    padding: 12px 24px;
-    color: #888;
-    font-size: 14px;
-    cursor: pointer;
-    border-top: 1px solid #1a1b20;
-}
-
-.sidebar-logout:hover {
-    color: #ff4444;
-}
-
-.main-content {
-    margin-left: 220px;
-    padding: 40px;
-    flex: 1;
-}
-
 .page-header {
     margin-bottom: 32px;
 }
@@ -126,6 +61,37 @@
 
 .ticker-price {
     color: #ffffff;
+}
+
+.dashboard-recommendations {
+    margin-top: 32px;
+}
+
+.dashboard-recommendations-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.dashboard-recommendations-header .section-heading {
+    margin-bottom: 0;
+}
+
+.view-all-link {
+    color: #00ff41;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.dashboard-recommendations .recommendations-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 1000px) {
+    .dashboard-recommendations .recommendations-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .change-positive {

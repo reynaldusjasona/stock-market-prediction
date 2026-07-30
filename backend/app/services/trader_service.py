@@ -10,36 +10,18 @@ _VALID_ENDORSEMENTS = {"agree", "disagree"}
 async def getTraderSignals(
     trader_id: str, ticker: Optional[str] = None, limit: int = 20
 ) -> list:
-    query = supabase.table("predictions").select(
-        "id, ticker, signal, confidence_score, prediction_date"
+    query = (
+        supabase.table("trader_signal")
+        .select(
+            "id, trader_id, investor_id, ticker, signal, confidence_score, "
+            "reasoning, verdict, note, endorsed_at, created_at"
+        )
+        .eq("trader_id", trader_id)
     )
     if ticker:
         query = query.eq("ticker", ticker.upper())
-    result = query.order("prediction_date", desc=True).limit(limit).execute()
-    predictions = result.data or []
-
-    tickers = list({p["ticker"] for p in predictions if p.get("ticker")})
-    stockMap = {}
-    if tickers:
-        stocksResult = (
-            supabase.table("stocks")
-            .select("ticker, company_name")
-            .in_("ticker", tickers)
-            .execute()
-        )
-        stockMap = {s["ticker"]: s for s in (stocksResult.data or [])}
-
-    return [
-        {
-            "id": p["id"],
-            "ticker": p["ticker"],
-            "company_name": stockMap.get(p["ticker"], {}).get("company_name"),
-            "predicted_action": p.get("signal"),
-            "confidence_score": p.get("confidence_score"),
-            "prediction_date": p.get("prediction_date"),
-        }
-        for p in predictions
-    ]
+    result = query.order("created_at", desc=True).limit(limit).execute()
+    return result.data or []
 
 
 async def getTraderClients(trader_id: str) -> list:
