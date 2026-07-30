@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from fastapi import HTTPException
@@ -70,7 +71,7 @@ async def getTraderClients(trader_id: str) -> list:
 
 async def endorseSignal(
     trader_id: str,
-    prediction_id: str,
+    signal_id: str,
     endorsement: str,
     notes: Optional[str] = None,
 ) -> dict:
@@ -80,26 +81,25 @@ async def endorseSignal(
             detail="Endorsement must be 'agree' or 'disagree'",
         )
 
-    predictionResult = (
-        supabase.table("predictions")
+    signalResult = (
+        supabase.table("trader_signal")
         .select("id")
-        .eq("id", prediction_id)
+        .eq("id", signal_id)
+        .eq("trader_id", trader_id)
         .execute()
     )
-    if not predictionResult.data:
-        raise HTTPException(status_code=404, detail="Prediction not found")
+    if not signalResult.data:
+        raise HTTPException(status_code=404, detail="Signal not found")
 
     result = (
-        supabase.table("signal_endorsements")
-        .upsert(
-            {
-                "trader_id": trader_id,
-                "prediction_id": prediction_id,
-                "endorsement": endorsement,
-                "notes": notes,
-            },
-            on_conflict="trader_id,prediction_id",
-        )
+        supabase.table("trader_signal")
+        .update({
+            "verdict": endorsement,
+            "note": notes,
+            "endorsed_at": datetime.utcnow().isoformat(),
+        })
+        .eq("id", signal_id)
+        .eq("trader_id", trader_id)
         .execute()
     )
     if not result.data:
