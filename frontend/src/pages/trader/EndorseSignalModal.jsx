@@ -10,21 +10,26 @@ function EndorseSignalModal({ signal, onClose, onEndorsed }) {
   const[note, setNote] = useState('')
   const[busy, setBusy] = useState(false)
 
-  if (!signal) 
+  if (!signal)
 	  return null
 
   const handleEndorse= async (verdict) => {
     setBusy(true)
     try{
-      await traderApi.endorseSignal({ ticker: signal.ticker, verdict, note: note.trim() })
+      await traderApi.endorseSignal({
+        prediction_id: signal.id,
+        ticker: signal.ticker,
+        verdict,
+        note: note.trim(),
+      })
       showToast(`${signal.ticker} marked as ${verdict}`, 'success')
       onEndorsed?.()
-    } 
+    }
 	catch (err){
       showToast(err.message || 'Failed to submit endorsement', 'error')
-    } 
-	finally{ 
-	  setBusy(false) 
+    }
+	finally{
+	  setBusy(false)
 	}
   }
 
@@ -39,7 +44,6 @@ function EndorseSignalModal({ signal, onClose, onEndorsed }) {
             </svg>
           </button>
         </div>
-
         <div className="admin-modal-body">
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem', marginBottom:'1.25rem' }}>
             <div>
@@ -59,7 +63,7 @@ function EndorseSignalModal({ signal, onClose, onEndorsed }) {
             <div>
               <div className="admin-form-label">Requested By</div>
               <div style={{ fontSize:'0.85rem', color:'var(--text-muted)' }}>
-                {signal.requested_by_name || signal.requested_by || '—'}
+                {signal.investor_name || signal.requested_by_name || (signal.investor_id ? `Investor #${signal.investor_id.slice(0,8)}` : '—')}
               </div>
             </div>
             {signal.reasoning && (
@@ -72,7 +76,6 @@ function EndorseSignalModal({ signal, onClose, onEndorsed }) {
               </div>
             )}
           </div>
-
           <div className="admin-form-group" style={{ marginBottom:0 }}>
             <label className="admin-form-label" htmlFor="esNote">Note for the Investor (optional)</label>
             <textarea className="admin-form-textarea" id="esNote" maxLength={300}
@@ -80,7 +83,6 @@ function EndorseSignalModal({ signal, onClose, onEndorsed }) {
               value={note} onChange={e => setNote(e.target.value)}/>
           </div>
         </div>
-
         <div className="admin-modal-footer">
           <button className="btn-admin btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>
           <button className="btn-admin btn-danger" onClick={() => handleEndorse('disagree')} disabled={busy}>
