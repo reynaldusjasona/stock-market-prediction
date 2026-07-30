@@ -49,6 +49,20 @@ async def listFeedback(
     return await feedback_service.getAllFeedback(status, page, limit)
 
 
+@router.get("/public")
+async def listPublicFeedback():
+    rows = await feedback_service.getPublicApprovedFeedback()
+    testimonials = [
+        {
+            "id": row["id"],
+            "name": (row.get("users") or {}).get("name") or "StockWise AI investor",
+            "text": row["message"],
+        }
+        for row in rows
+    ]
+    return {"testimonials": testimonials}
+
+
 @router.patch("/{feedback_id}/approve")
 async def approveFeedback(
     feedback_id: str,
