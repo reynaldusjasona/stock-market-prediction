@@ -45,12 +45,22 @@ async def verifyAdminSession(adminID: str) -> bool:
     return True
 
 
-async def updateUserDetails(userID: str, role: str, status: str) -> dict:
+async def updateUserDetails(
+    userID: str,
+    role: str,
+    status: str,
+    name: str = "",
+    email: str = "",
+) -> dict:
     updates: dict = {}
     if role:
         updates["role"] = role
     if status:
         updates["status"] = status
+    if name:
+        updates["name"] = name
+    if email:
+        updates["email"] = email
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
     result = (
@@ -98,6 +108,10 @@ async def suspendAccount(adminID: str, userID: str) -> dict:
     return await changeUserStatus(userID, "suspended")
 
 
+async def unsuspendAccount(userID: str) -> dict:
+    return await changeUserStatus(userID, "active")
+
+
 async def searchUserByKeywords(keywords: str) -> list:
     pattern = f"%{keywords}%"
     result = (
@@ -115,7 +129,27 @@ async def getAllUserAccount() -> list:
         .select(_ADMIN_FIELDS)
         .execute()
     )
-    return result.data or []
+    users = result.data or []
+    if not users:
+        return []
+
+    userIDs = [u["id"] for u in users]
+    subsResult = (
+        supabase.table("subscriptions")
+        .select("user_id, status, expires_at")
+        .in_("user_id", userIDs)
+        .execute()
+    )
+    subsMap = {s["user_id"]: s for s in (subsResult.data or [])}
+
+    for user in users:
+        sub = subsMap.get(user["id"])
+        user["subscription_status"] = sub.get("status") if sub else None
+        user["subscription_expires_at"] = (
+            sub.get("expires_at") if sub else None
+        )
+
+    return users
 
 
 async def getLatestMetrics() -> list:
@@ -144,6 +178,35 @@ async def getPriceAlerts() -> dict:
     }
 
 
+async def _getModelAccuracy() -> float:
+    try:
+        result = (
+            supabase.table("prediction_metrics")
+            .select("accuracy")
+            .order("evaluated_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        if not result.data:
+            return 0.0
+        return result.data[0].get("accuracy", 0.0) or 0.0
+    except Exception:
+        return 0.0
+
+
+async def _getPendingFeedbackCount() -> int:
+    try:
+        result = (
+            supabase.table("feedback")
+            .select("id", count="exact")
+            .eq("status", "pending")
+            .execute()
+        )
+        return result.count or 0
+    except Exception:
+        return 0
+
+
 async def getDashboardStats() -> dict:
     try:
         usersResult = (
@@ -169,6 +232,8 @@ async def getDashboardStats() -> dict:
             "total_subscriptions": subscriptionsResult.count or 0,
             "total_predictions": predictionsResult.count or 0,
             "total_alerts": alertsResult.count or 0,
+            "model_accuracy": await _getModelAccuracy(),
+            "pending_feedback": await _getPendingFeedbackCount(),
         }
     except Exception:
         return {
@@ -176,6 +241,8 @@ async def getDashboardStats() -> dict:
             "total_subscriptions": 0,
             "total_predictions": 0,
             "total_alerts": 0,
+            "model_accuracy": 0.0,
+            "pending_feedback": 0,
         }
 
 
@@ -188,6 +255,9 @@ _FALLBACK_MODEL_METRICS = {
     "training_samples": 50000,
     "last_trained": "2026-06-18",
     "note": "Fallback metrics from offline evaluation",
+    "recall": 0.0,
+    "f1_score": 0.0,
+    "model_version": "N/A",
 }
 
 
@@ -196,12 +266,17 @@ async def getModelPerformance() -> dict:
         result = (
             supabase.table("prediction_metrics")
             .select("*")
-            .order("created_at", desc=True)
+            .order("evaluated_at", desc=True)
             .limit(1)
             .execute()
         )
         if result.data:
-            return result.data[0]
+            row = result.data[0]
+            row["recall"] = row.get("recall_score") or 0.0
+            row["f1_score"] = row.get("f1_score") or 0.0
+            row["last_trained"] = row.get("evaluated_at") or "N/A"
+            row["model_version"] = row.get("model_version") or "N/A"
+            return row
         return _FALLBACK_MODEL_METRICS
     except Exception:
         return _FALLBACK_MODEL_METRICS
@@ -331,36 +406,108 @@ async def dismissAlert(alertId: str) -> dict:
         return None
 
 
-async def getLandingContent() -> list:
+def _default_landing_content() -> dict:
+    return {
+        "hero": {
+            "tag": "",
+            "headline": "",
+            "subline": "",
+            "cta_label": "",
+            "secondary_label": "",
+        },
+        "about": {
+            "subtitle": "",
+            "cards": [],
+        },
+        "features": {
+            "subtitle": "",
+            "items": [],
+        },
+        "testimonials": [],
+        "subscription": {
+            "title": "",
+            "subtitle": "",
+            "plan_name": "",
+            "price": "",
+            "period": "",
+            "bullets": [],
+            "cta_label": "",
+            "footnote": "",
+        },
+        "faqs": [],
+    }
+
+
+def _apply_landing_defaults(content: dict) -> dict:
+    defaults = _default_landing_content()
+    merged = {**defaults, **content}
+    for key in ("hero", "about", "features", "subscription"):
+        section = content.get(key)
+        merged[key] = (
+            {**defaults[key], **section} if isinstance(section, dict) else defaults[key]
+        )
+    for key in ("testimonials", "faqs"):
+        section = content.get(key)
+        merged[key] = section if isinstance(section, list) else defaults[key]
+    return merged
+
+
+async def getLandingContent() -> dict:
     try:
         result = (
-            supabase.table("landing_content")
+            supabase.table("landing_page_config")
             .select("*")
-            .order("display_order")
+            .limit(1)
             .execute()
         )
-        return result.data
+        content = result.data[0].get("content") if result.data else None
+        if not isinstance(content, dict):
+            content = {}
+        return _apply_landing_defaults(content)
     except Exception:
-        return []
+        return _default_landing_content()
 
 
-async def updateLandingContent(sections: list, adminId: str) -> list:
-    for section in sections:
-        updateDict = {
-            k: v for k, v in section.items() if k != "section_key"
-        }
-        updateDict["updated_at"] = datetime.utcnow().isoformat()
-        updateDict["updated_by"] = adminId
-        supabase.table("landing_content").update(updateDict).eq(
-            "section_key", section["section_key"]
-        ).execute()
-    result = (
-        supabase.table("landing_content")
-        .select("*")
-        .order("display_order")
-        .execute()
-    )
-    return result.data
+async def updateLandingContent(content: dict, adminID: str) -> dict:
+    if not isinstance(content, dict):
+        raise HTTPException(
+            status_code=400, detail="Landing content must be a JSON object"
+        )
+    try:
+        existing = (
+            supabase.table("landing_page_config")
+            .select("id")
+            .limit(1)
+            .execute()
+        )
+        if existing.data:
+            rowID = existing.data[0]["id"]
+            result = (
+                supabase.table("landing_page_config")
+                .update({
+                    "content": content,
+                    "updated_at": "now()",
+                    "updated_by": adminID,
+                })
+                .eq("id", rowID)
+                .execute()
+            )
+        else:
+            result = (
+                supabase.table("landing_page_config")
+                .insert({
+                    "content": content,
+                    "updated_by": adminID,
+                })
+                .execute()
+            )
+        if result.data:
+            return _apply_landing_defaults(result.data[0].get("content", {}))
+        return _apply_landing_defaults(content)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def getActivityLogs(
@@ -399,12 +546,14 @@ async def getActivityLogs(
 
     items = []
     for log in logs:
-        user = userMap.get(log.get("user_id"), {})
+        user = userMap.get(log.get("user_id"))
         items.append({
             "id": log["id"],
             "user_id": log.get("user_id"),
-            "user_name": user.get("name"),
-            "user_email": user.get("email"),
+            "user_name": user.get("name") if user else None,
+            "user_email": user.get("email") if user else None,
+            "admin_name": user.get("name") if user else "Unknown",
+            "admin_email": user.get("email") if user else "Unknown",
             "action": log.get("action"),
             "target_type": log.get("target_type"),
             "target_id": log.get("target_id"),
@@ -632,6 +781,8 @@ async def createApiSource(data: dict) -> dict:
     if not data.get("name"):
         raise HTTPException(status_code=400, detail="Name is required")
     insert_data = {k: v for k, v in data.items() if k in _API_SOURCE_FIELDS}
+    if "is_enable" in insert_data:
+        insert_data["is_enabled"] = insert_data.pop("is_enable")
     result = supabase.table("api_sources").insert(insert_data).execute()
     return result.data[0]
 
@@ -643,6 +794,8 @@ async def updateApiSource(sourceId: str, data: dict) -> dict:
         raise HTTPException(
             status_code=400, detail="No valid fields to update"
         )
+    if "is_enable" in update_data:
+        update_data["is_enabled"] = update_data.pop("is_enable")
     update_data["updated_at"] = datetime.utcnow().isoformat()
     result = (
         supabase.table("api_sources")
@@ -657,3 +810,70 @@ async def deleteApiSource(sourceId: str) -> dict:
     await getApiSourceById(sourceId)
     supabase.table("api_sources").delete().eq("id", sourceId).execute()
     return {"message": "API source deleted", "id": sourceId}
+
+
+async def getAdminAlerts() -> list:
+    try:
+        result = (
+            supabase.table("admin_alerts")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return result.data or []
+    except Exception:
+        return []
+
+
+async def getAdminAlertsSummary() -> dict:
+    try:
+        result = (
+            supabase.table("admin_alerts")
+            .select("severity, is_resolved")
+            .execute()
+        )
+        rows = result.data or []
+        summary = {
+            "critical": 0,
+            "warning": 0,
+            "info": 0,
+            "total": 0,
+            "resolved": 0,
+            "unresolved": 0,
+        }
+        for row in rows:
+            severity = row.get("severity")
+            if severity in summary:
+                summary[severity] += 1
+            summary["total"] += 1
+            if row.get("is_resolved"):
+                summary["resolved"] += 1
+            else:
+                summary["unresolved"] += 1
+        return summary
+    except Exception:
+        return {
+            "critical": 0,
+            "warning": 0,
+            "info": 0,
+            "total": 0,
+            "resolved": 0,
+            "unresolved": 0,
+        }
+
+
+async def resolveAdminAlert(alertID: str) -> dict:
+    try:
+        result = (
+            supabase.table("admin_alerts")
+            .update({"is_resolved": True})
+            .eq("id", alertID)
+            .execute()
+        )
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Alert not found")
+        return result.data[0]
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=404, detail="Alert not found")
