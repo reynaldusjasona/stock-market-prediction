@@ -54,6 +54,21 @@ async def getAllFeedback(
     }
 
 
+async def getPublicApprovedFeedback(limit: int = 9) -> list:
+    try:
+        result = (
+            supabase.table("feedback")
+            .select("id, subject, message, rating, created_at, users(name)")
+            .eq("status", "approved")
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return result.data or []
+    except Exception:
+        return []
+
+
 async def updateFeedbackStatus(feedbackID: str, new_status: str) -> Optional[dict]:
     result = (
         supabase.table("feedback")

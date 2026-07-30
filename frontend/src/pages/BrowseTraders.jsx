@@ -1,47 +1,35 @@
-// UI scaffolding only — pending backend implementation.
-// There is no backend support yet for listing traders or sending a
-// connection request (no GET /traders, no POST /engagements). This page
-// renders mock trader profiles and a "Request to Connect" button that
-// only shows a "coming soon" message, per that gap. Do not wire this up
-// to traderApi.js's listTraders/engageTrader/getOwnEngagement/endEngagement
-// until the backend endpoints exist.
-import { useState } from 'react'
+// GET /traders exists and is wired up below. Sending a connection
+// request still isn't - there is no POST /engagements backend yet, so
+// "Request to Connect" stays a "coming soon" placeholder. Don't wire that
+// part up to traderApi.js's engageTrader/getOwnEngagement/endEngagement
+// until that endpoint exists.
+import { useState, useEffect } from 'react'
+import { api } from '../api/api'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/BrowseTraders.css'
 
-const MOCK_TRADERS = [
-    {
-        id: 'mock-1',
-        name: 'Alex Rivera',
-        license_number: 'CFA-48213',
-        specialty: 'Growth & Technology Equities',
-        bio: '12 years managing tech-focused portfolios. Favors momentum plays backed by earnings surprises.',
-    },
-    {
-        id: 'mock-2',
-        name: 'Priya Nandakumar',
-        license_number: 'CFA-59027',
-        specialty: 'Dividend & Value Investing',
-        bio: 'Specializes in undervalued blue-chips with strong cash flow. Conservative, long-horizon approach.',
-    },
-    {
-        id: 'mock-3',
-        name: 'Marcus Webb',
-        license_number: 'CFA-33190',
-        specialty: 'Options & Derivatives',
-        bio: 'Focuses on hedged strategies and volatility plays for risk-aware investors.',
-    },
-    {
-        id: 'mock-4',
-        name: 'Sofia Alvarez',
-        license_number: 'CFA-61455',
-        specialty: 'Emerging Markets',
-        bio: 'Tracks high-growth opportunities across Asia and Latin America equities.',
-    },
-]
-
 function BrowseTraders() {
     const [notice, setNotice] = useState(null)
+    const [traders, setTraders] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        api.get('/traders')
+            .then((data) => {
+                const real = (data.traders || [])
+                    .filter((t) => t.license_number && (t.specialization || t.bio))
+                    .map((t) => ({
+                        id: t.id,
+                        name: t.name,
+                        license_number: t.license_number,
+                        specialty: t.specialization || 'Generalist',
+                        bio: t.bio || 'No bio provided yet.',
+                    }))
+                setTraders(real)
+            })
+            .catch((err) => console.log('traders failed:', err.message))
+            .finally(() => setLoading(false))
+    }, [])
 
     function handleRequestConnect(trader) {
         setNotice(`This feature is launching soon. You'll be able to connect with ${trader.name} directly.`)
@@ -57,20 +45,26 @@ function BrowseTraders() {
 
                 {notice && <p className="success-msg">{notice}</p>}
 
-                <div className="traders-grid">
-                    {MOCK_TRADERS.map((trader) => (
-                        <div className="trader-card" key={trader.id}>
-                            <div className="trader-avatar">{trader.name.charAt(0)}</div>
-                            <p className="trader-name">{trader.name}</p>
-                            <p className="trader-license">{trader.license_number}</p>
-                            <p className="trader-specialty">{trader.specialty}</p>
-                            <p className="trader-bio">{trader.bio}</p>
-                            <button className="btn-connect" onClick={() => handleRequestConnect(trader)}>
-                                Request to Connect
-                            </button>
-                        </div>
-                    ))}
-                </div>
+                {loading ? (
+                    <p>Loading traders...</p>
+                ) : traders.length === 0 ? (
+                    <p className="empty-state">No traders available yet — check back soon.</p>
+                ) : (
+                    <div className="traders-grid">
+                        {traders.map((trader) => (
+                            <div className="trader-card" key={trader.id}>
+                                <div className="trader-avatar">{trader.name.charAt(0)}</div>
+                                <p className="trader-name">{trader.name}</p>
+                                <p className="trader-license">{trader.license_number}</p>
+                                <p className="trader-specialty">{trader.specialty}</p>
+                                <p className="trader-bio">{trader.bio}</p>
+                                <button className="btn-connect" onClick={() => handleRequestConnect(trader)}>
+                                    Request to Connect
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </AppLayout>
     )
