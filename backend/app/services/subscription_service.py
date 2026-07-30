@@ -129,17 +129,17 @@ async def createCheckoutSession(userID: str, email: str, role: str) -> dict:
             status_code=400,
             detail="Admin accounts do not require a subscription.",
         )
+    plan_name = "investor"
 
     if not _STRIPE_SECRET_KEY:
         return {
             "checkout_url": (
                 f"{_FRONTEND_URL}/subscription"
-                "?status=success&session_id=mock_session"
+                f"?status=success&plan={plan_name}&session_id=mock_session"
             )
         }
 
     price_id = _STRIPE_INVESTOR_PRICE_ID
-    plan_name = "investor"
 
     if not price_id:
         raise HTTPException(
@@ -148,8 +148,8 @@ async def createCheckoutSession(userID: str, email: str, role: str) -> dict:
         )
 
     success_url = (
-        f"{_FRONTEND_URL}/subscription"
-        "?status=success&session_id={CHECKOUT_SESSION_ID}"
+        f"{_FRONTEND_URL}/subscription?status=success&plan={plan_name}"
+        "&session_id={CHECKOUT_SESSION_ID}"
     )
     session = stripe.checkout.Session.create(
         mode="subscription",
@@ -257,7 +257,7 @@ async def handleWebhookEvent(
         try:
             plan = session["metadata"]["plan"]
         except (KeyError, TypeError):
-            plan = "premium"
+            plan = "investor"
         if userID:
             await _activateSubscriptionFromWebhook(userID, plan)
 

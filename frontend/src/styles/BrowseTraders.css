@@ -16,6 +16,11 @@
     margin-bottom: 16px;
 }
 
+.empty-state {
+    color: #888;
+    font-size: 14px;
+}
+
 .traders-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

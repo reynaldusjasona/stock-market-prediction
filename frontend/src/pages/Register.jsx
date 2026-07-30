@@ -1,14 +1,8 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/api'
 import '../styles/AuthLayout.css'
 import '../styles/Register.css'
-
-const selectStyle = {
-  width:'100%', padding:'0.6rem 0.85rem', borderRadius:'8px',
-  background:'#12171a', border:'1px solid rgba(255,255,255,0.1)',
-  color:'#e8eaed', fontSize:'0.875rem', fontFamily:'inherit'
-}
 
 function Register() {
     const [name, setName] = useState('')
@@ -19,6 +13,8 @@ function Register() {
     const [error, setError] = useState(null)
     const [registered, setRegistered] = useState(false)
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const cameToSubscribe = searchParams.get('intent') === 'subscribe'
 
     async function handleRegister() {
         setError(null)
@@ -53,6 +49,12 @@ function Register() {
                             <p className="subtitle">
                                 Trader accounts also require admin approval. Once you've verified your email, you'll
                                 need to wait for an admin to review your license before you can log in.
+                            </p>
+                        )}
+                        {role === 'investor' && cameToSubscribe && (
+                            <p className="subtitle">
+                                Once you've verified your email and logged in, head to your Account page to subscribe
+                                and unlock AI predictions, recommendations, and price alerts.
                             </p>
                         )}
                         <button className="btn-full" onClick={() => navigate('/login')}>Go to login</button>
