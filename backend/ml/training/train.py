@@ -6,10 +6,12 @@ import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_sample_weight
+
 from ml.training.features import get_multiple_tickers
+from ml.training.label_triple_barrier import apply_triple_barrier_by_ticker
+
 
 TRAIN_TICKERS = [
     # Technology
@@ -64,6 +66,42 @@ def split_data(
     return X_train, X_val, X_test, y_train, y_val, y_test
 
 
+# def train_model(
+#     X_train: pd.DataFrame,
+#     y_train: np.ndarray,
+#     X_val: pd.DataFrame,
+#     y_val: np.ndarray,
+# ) -> xgb.XGBClassifier:
+#     """
+#     Train XGBoost using fixed hyperparameters for fast experiments.
+#     """
+
+#     param_grid = {
+#         "n_estimators": [200, 400],
+#         "max_depth": [4, 6, 8],
+#         "learning_rate": [0.01, 0.05, 0.1],
+#         "subsample": [0.8, 1.0],
+#         "colsample_bytree": [0.8, 1.0]
+#     }
+#     base_model = xgb.XGBClassifier(
+#         eval_metric="mlogloss",
+#         random_state=42,
+#     )
+#     cv = TimeSeriesSplit(n_splits=3)
+#     grid_search = GridSearchCV(
+#         estimator=base_model,
+#         param_grid=param_grid,
+#         cv=cv,
+#         scoring="f1_macro",
+#         n_jobs=1,
+#         verbose=1,
+#     )
+#     sample_weight = compute_sample_weight(class_weight="balanced", y=y_train)
+#     grid_search.fit(X_train, y_train, sample_weight=sample_weight)
+#     print(f"Best parameters: {grid_search.best_params_}")
+#     print(f"Best CV f1 macro: {grid_search.best_score_:.4f}")
+#     return grid_search.best_estimator_
+
 def train_model(
     X_train: pd.DataFrame,
     y_train: np.ndarray,
@@ -71,34 +109,32 @@ def train_model(
     y_val: np.ndarray,
 ) -> xgb.XGBClassifier:
     """
-    Train XGBoost using fixed hyperparameters for fast experiments.
+    Train XGBoost using a fixed set of hyperparameters.
+    Use this for quick testing before running GridSearchCV.
     """
 
-    param_grid = {
-        "n_estimators": [200, 400],
-        "max_depth": [4, 6, 8],
-        "learning_rate": [0.01, 0.05, 0.1],
-        "subsample": [0.8, 1.0],
-        "colsample_bytree": [0.8, 1.0]
-    }
-    base_model = xgb.XGBClassifier(
+    model = xgb.XGBClassifier(
+        n_estimators=200,
+        max_depth=6,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=1.0,
         eval_metric="mlogloss",
         random_state=42,
     )
-    cv = TimeSeriesSplit(n_splits=3)
-    grid_search = GridSearchCV(
-        estimator=base_model,
-        param_grid=param_grid,
-        cv=cv,
-        scoring="f1_macro",
-        n_jobs=1,
-        verbose=1,
+
+    sample_weight = compute_sample_weight(
+        class_weight="balanced",
+        y=y_train,
     )
-    sample_weight = compute_sample_weight(class_weight="balanced", y=y_train)
-    grid_search.fit(X_train, y_train, sample_weight=sample_weight)
-    print(f"Best parameters: {grid_search.best_params_}")
-    print(f"Best CV f1 macro: {grid_search.best_score_:.4f}")
-    return grid_search.best_estimator_
+
+    model.fit(
+        X_train,
+        y_train,
+        sample_weight=sample_weight,
+    )
+
+    return model
 
 
 def save_model(
@@ -112,8 +148,8 @@ def save_model(
     Creates save_dir (and any missing parents) if it does not already exist.
     Saves:
       <save_dir>/xgboost_model_YYYYMMDD_HHMMSS.joblib — timestamped model
-      <save_dir>/xgboost_model_latest.joblib           — copy of the latest model
-      <save_dir>/label_encoder.pkl                     — the fitted LabelEncoder
+      <save_dir>/xgboost_model_20260729_214646.joblib           — copy of the latest model
+      <save_dir>/label_encoder_3class.pkl                     — the fitted LabelEncoder
 
     Returns the absolute path string of the timestamped model file.
     """
@@ -122,8 +158,8 @@ def save_model(
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     model_file = save_path / f"xgboost_model_{timestamp}.joblib"
-    latest_file = save_path / "xgboost_model_latest.joblib"
-    encoder_file = save_path / "label_encoder.pkl"
+    latest_file = save_path / "xgboost_model_20260729_214646.joblib"
+    encoder_file = save_path / "label_encoder_3class.pkl"
 
     joblib.dump(model, model_file)
     shutil.copy2(model_file, latest_file)
@@ -137,17 +173,56 @@ def run_training() -> dict:
     Orchestrate the full training pipeline end-to-end.
 
     Steps:
-      1. Fetch and engineer features for all 10 training tickers.
-      2. Split into train / val / test sets (time-based, no shuffle).
-      3. Fit a LabelEncoder on y_train; transform y_train and y_val.
-      4. Train the XGBClassifier with early stopping on the val set.
-      5. Save model and encoder to backend/ml/saved_models/.
-      6. Print sample counts, class distribution, and saved path.
+      1. Fetch and engineer features for all training tickers.
+      2. Label data by Triple Barrier Method
+      3. Split into train / val / test sets (time-based, no shuffle).
+      4. Fit a LabelEncoder on y_train; transform y_train and y_val.
+      5. Train the XGBClassifier with early stopping on the val set.
+      6. Save model and encoder to backend/ml/saved_models/.
+      7. Print sample counts, class distribution, and saved path.
 
     Returns a dict with keys: model_path, n_train, n_val, n_test.
     """
     print("Fetching feature data for all tickers...")
-    X, y = get_multiple_tickers(TRAIN_TICKERS)
+    combined = get_multiple_tickers(TRAIN_TICKERS)
+
+    labeled_data = apply_triple_barrier_by_ticker(
+        df=combined,
+        ticker_column="Ticker",
+        profit_taking_multiplier=1.0,
+        stop_loss_multiplier=1.0,
+        volatility_window=20,
+        min_return=0.005,
+        drop_ambiguous=True,
+        drop_unlabeled=True,
+    )
+
+    excluded_columns = [
+        "Date",
+        "Ticker",
+        "Label",
+
+        # Triple Barrier columns
+        "dynamic_target",
+        "next_high",
+        "next_low",
+        "next_close",
+        "upper_barrier_price",
+        "lower_barrier_price",
+        "Upper_Touched",
+        "Lower_Touched",
+        "Barrier_Type",
+    ]
+
+    feature_columns = [
+        col
+        for col in labeled_data.columns
+        if col not in excluded_columns
+    ]
+
+    X = labeled_data[feature_columns]
+    y = labeled_data["Label"].astype(str)
+
     print("Dataset built successfully")
     print(y.value_counts())
     print(y.value_counts(normalize=True))
