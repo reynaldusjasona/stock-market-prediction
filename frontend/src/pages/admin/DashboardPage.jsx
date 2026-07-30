@@ -83,7 +83,6 @@ function DashboardPage(){
 
   useEffect(()=>{
     document.title = 'Admin Dashboard — StockWise AI'
-    // TODO: unify token storage with AuthContext (localStorage vs sessionStorage)
     if (!sessionStorage.getItem('sw_token')||sessionStorage.getItem('sw_role') !== 'admin') {
       window.location.replace('/admin/login')
       return
