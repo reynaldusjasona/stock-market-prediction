@@ -51,6 +51,11 @@ function Dashboard() {
             console.log('recommendations failed:', err.message)
         }
 
+        // opportunistically check price alerts here too, since dashboard is
+        // usually the first page visited after login - no need to block
+        // the rest of the page on this
+        api.post('/alerts/check-all').catch((err) => console.log('alert check failed:', err.message))
+
         setLoading(false)
     }
 

@@ -35,6 +35,17 @@ async def detectAlertCondition(
     return await alert_service.detectAlertCondition(userID, ticker)
 
 
+# must stay registered before POST /{ticker} below - otherwise that
+# catch-all would swallow "check-all" as if it were a ticker symbol
+@router.post("/check-all")
+async def checkAllAlerts(
+    current_user: dict = Depends(get_current_user),
+):
+    userID = current_user["sub"]
+    triggered = await alert_service.checkAllAlertsForUser(userID)
+    return {"triggered": triggered}
+
+
 @router.post("/{ticker}", status_code=status.HTTP_201_CREATED)
 async def createAlertsForm(
     ticker: str,
