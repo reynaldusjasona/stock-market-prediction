@@ -1,0 +1,82 @@
+.browse-traders-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.browse-traders-header p {
+    color: #888;
+    font-size: 14px;
+    margin-top: 4px;
+    margin-bottom: 24px;
+}
+
+.success-msg {
+    color: #00ff41;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.traders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+}
+
+.trader-card {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+}
+
+.trader-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #00ff41;
+    color: #0d0e12;
+    font-weight: 700;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.trader-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.trader-license {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.trader-specialty {
+    font-size: 13px;
+    color: #00ff41;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.trader-bio {
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.btn-connect {
+    width: 100%;
+    background: #00ff41;
+    color: #000000;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
