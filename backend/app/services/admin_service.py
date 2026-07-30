@@ -406,6 +406,52 @@ async def dismissAlert(alertId: str) -> dict:
         return None
 
 
+def _default_landing_content() -> dict:
+    return {
+        "hero": {
+            "tag": "",
+            "headline": "",
+            "subline": "",
+            "cta_label": "",
+            "secondary_label": "",
+        },
+        "about": {
+            "subtitle": "",
+            "cards": [],
+        },
+        "features": {
+            "subtitle": "",
+            "items": [],
+        },
+        "testimonials": [],
+        "subscription": {
+            "title": "",
+            "subtitle": "",
+            "plan_name": "",
+            "price": "",
+            "period": "",
+            "bullets": [],
+            "cta_label": "",
+            "footnote": "",
+        },
+        "faqs": [],
+    }
+
+
+def _apply_landing_defaults(content: dict) -> dict:
+    defaults = _default_landing_content()
+    merged = {**defaults, **content}
+    for key in ("hero", "about", "features", "subscription"):
+        section = content.get(key)
+        merged[key] = (
+            {**defaults[key], **section} if isinstance(section, dict) else defaults[key]
+        )
+    for key in ("testimonials", "faqs"):
+        section = content.get(key)
+        merged[key] = section if isinstance(section, list) else defaults[key]
+    return merged
+
+
 async def getLandingContent() -> dict:
     try:
         result = (
@@ -414,14 +460,19 @@ async def getLandingContent() -> dict:
             .limit(1)
             .execute()
         )
-        if result.data:
-            return result.data[0].get("content", {})
-        return {}
+        content = result.data[0].get("content") if result.data else None
+        if not isinstance(content, dict):
+            content = {}
+        return _apply_landing_defaults(content)
     except Exception:
-        return {}
+        return _default_landing_content()
 
 
 async def updateLandingContent(content: dict, adminID: str) -> dict:
+    if not isinstance(content, dict):
+        raise HTTPException(
+            status_code=400, detail="Landing content must be a JSON object"
+        )
     try:
         existing = (
             supabase.table("landing_page_config")
@@ -451,8 +502,10 @@ async def updateLandingContent(content: dict, adminID: str) -> dict:
                 .execute()
             )
         if result.data:
-            return result.data[0].get("content", {})
-        return content
+            return _apply_landing_defaults(result.data[0].get("content", {}))
+        return _apply_landing_defaults(content)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
