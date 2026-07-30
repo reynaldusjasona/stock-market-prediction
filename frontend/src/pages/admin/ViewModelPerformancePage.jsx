@@ -60,8 +60,7 @@ function ViewModelPerformancePage(){
       const match = perf?.notes?.match(/ROC-?AUC\s+([\d.]+)/i)
       return match ? pct(parseFloat(match[1])) : '—'
     })(),color: ''},
-    {label:'Model Version',val: perf?.model_version || '—', color: ''},
-  ]
+      ]
 
   return(
     <div>
