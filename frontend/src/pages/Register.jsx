@@ -4,6 +4,12 @@ import { api } from '../api/api'
 import '../styles/AuthLayout.css'
 import '../styles/Register.css'
 
+const selectStyle = {
+  width:'100%', padding:'0.6rem 0.85rem', borderRadius:'8px',
+  background:'#12171a', border:'1px solid rgba(255,255,255,0.1)',
+  color:'#e8eaed', fontSize:'0.875rem', fontFamily:'inherit'
+}
+
 function Register() {
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')

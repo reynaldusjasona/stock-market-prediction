@@ -46,13 +46,17 @@ function ViewModelPerformancePage(){
     adminApi.getModelPerformance().then(setPerf).finally(()=>setLoading(false))
   }
 
+  const avgPrecision = (perf?.buy_precision!=null && perf?.sell_precision!=null && perf?.hold_precision!=null)
+    ? (perf.buy_precision + perf.sell_precision + perf.hold_precision) / 3
+    : null
+
   const metrics=[
     {label:'Accuracy',val: pct(perf?.accuracy),color: accColor(perf?.accuracy, config)},
-    {label:'Precision',val: pct(perf?.precision),color: ''},
+    {label:'Precision',val: perf?.precision!=null ? pct(perf.precision) : pct(avgPrecision),color: ''},
     {label:'Recall',val: pct(perf?.recall),color: ''},
     {label:'F1 Score',val: pct(perf?.f1_score),color: ''},
-    {label:'MAE',val: perf?.mae  != null ? perf.mae.toFixed(4): '—', color: ''},
-    {label:'RMSE',val: perf?.rmse != null ? perf.rmse.toFixed(4): '—', color: ''},
+    {label:'ROC AUC',val: pct(perf?.roc_auc),color: ''},
+    {label:'Model Version',val: perf?.model_version || '—', color: ''},
   ]
 
   return(
@@ -77,7 +81,7 @@ function ViewModelPerformancePage(){
       {/* Meta row */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1rem', marginBottom:'1.5rem' }}>
         {[
-          { label:'Last Trained',     val: fmtTime(perf?.last_trained_at) },
+          { label:'Last Trained',     val: perf?.last_trained ? fmtTime(perf.last_trained) : (perf?.last_trained_at ? fmtTime(perf.last_trained_at) : null) },
           { label:'Training Samples', val: perf?.training_samples?.toLocaleString() },
           { label:'Model Version',    val: perf?.model_version },
         ].map(c => (
