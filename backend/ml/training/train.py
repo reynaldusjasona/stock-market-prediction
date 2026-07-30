@@ -148,8 +148,8 @@ def save_model(
     Creates save_dir (and any missing parents) if it does not already exist.
     Saves:
       <save_dir>/xgboost_model_YYYYMMDD_HHMMSS.joblib — timestamped model
-      <save_dir>/xgboost_model_latest.joblib           — copy of the latest model
-      <save_dir>/label_encoder.pkl                     — the fitted LabelEncoder
+      <save_dir>/xgboost_model_20260729_214646.joblib           — copy of the latest model
+      <save_dir>/label_encoder_3class.pkl                     — the fitted LabelEncoder
 
     Returns the absolute path string of the timestamped model file.
     """
@@ -158,8 +158,8 @@ def save_model(
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     model_file = save_path / f"xgboost_model_{timestamp}.joblib"
-    latest_file = save_path / "xgboost_model_latest.joblib"
-    encoder_file = save_path / "label_encoder.pkl"
+    latest_file = save_path / "xgboost_model_20260729_214646.joblib"
+    encoder_file = save_path / "label_encoder_3class.pkl"
 
     joblib.dump(model, model_file)
     shutil.copy2(model_file, latest_file)
