@@ -14,7 +14,7 @@ function Feedback() {
     async function submitFeedback() {
         if (!subject || !message) return
         try {
-            await api.post('/feedback', { subject, message, rating: rating || null })
+            await api.post('/feedback', { subject, message, rating: rating > 0 ? rating : null })
             setSuccess(true)
             setSubject('')
             setMessage('')

@@ -6,9 +6,9 @@ const traderApi = {
     const q = new URLSearchParams(params).toString()
     return api.get(`/trader/signals${q ? '?' + q : ''}`)
   },
-  endorseSignal({ ticker, prediction_id, verdict, note }) {
+  endorseSignal({ signal_id, verdict, note }) {
     return api.post('/trader/signals/endorse', {
-      prediction_id: prediction_id || ticker,
+      signal_id,
       endorsement: verdict,
       notes: note || '',
     })

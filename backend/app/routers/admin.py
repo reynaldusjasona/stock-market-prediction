@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.core.security import get_current_user
@@ -48,20 +48,6 @@ class UpdateUserRequest(BaseModel):
     status: Optional[str] = None
     name: Optional[str] = None
     email: Optional[str] = None
-
-
-class LandingSectionUpdate(BaseModel):
-    section_key: str
-    title: Optional[str] = None
-    subtitle: Optional[str] = None
-    content: Optional[str] = None
-    image_url: Optional[str] = None
-    display_order: Optional[int] = None
-    is_visible: Optional[bool] = None
-
-
-class UpdateLandingRequest(BaseModel):
-    sections: list[LandingSectionUpdate]
 
 
 class ApiSourceCreate(BaseModel):
@@ -276,30 +262,22 @@ async def getLandingContentRoute(
     current_user: dict = Depends(_require_admin),
 ):
     result = await getLandingContent()
-    return {"sections": result}
+    return result
 
 
 @router.put("/admin/landing", tags=["Admin"])
 async def updateLandingContentRoute(
-    body: UpdateLandingRequest,
+    body: dict = Body(...),
     current_user: dict = Depends(_require_admin),
 ):
     adminID = current_user.get("sub")
-    sections = [
-        s.model_dump(exclude_unset=True) for s in body.sections
-    ]
-    try:
-        result = await updateLandingContent(sections, adminID)
-    except Exception:
-        raise HTTPException(
-            status_code=500, detail="Failed to update landing content"
-        )
+    result = await updateLandingContent(body, adminID)
     await logActivity(
         userID=adminID,
         action="landing_updated",
-        targetType="landing_content",
+        targetType="landing_page_config",
     )
-    return {"sections": result, "message": "Landing content updated"}
+    return {"message": "Landing page updated", "content": result}
 
 
 @router.get("/admin/feedback/{feedback_id}", tags=["Admin"])
@@ -442,5 +420,4 @@ async def deleteApiSourceRoute(
 @router.get("/landing", tags=["Public"])
 async def getPublicLandingContent():
     result = await getLandingContent()
-    visible = [s for s in result if s.get("is_visible", True)]
-    return {"sections": visible}
+    return result
