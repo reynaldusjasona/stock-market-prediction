@@ -4,10 +4,17 @@ from typing import Optional
 from app.core.database import supabase
 
 
-async def createFeedback(userID: str, subject: str, message: str) -> dict:
+async def createFeedback(
+    userID: str, subject: str, message: str, rating: Optional[int] = None
+) -> dict:
     result = (
         supabase.table("feedback")
-        .insert({"user_id": userID, "subject": subject, "message": message})
+        .insert({
+            "user_id": userID,
+            "subject": subject,
+            "message": message,
+            "rating": rating,
+        })
         .execute()
     )
     return result.data[0]
