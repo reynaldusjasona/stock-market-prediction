@@ -42,8 +42,13 @@ function Alerts() {
         }
     }
 
+    // opportunistically check all of this user's alerts against current
+    // prices whenever they visit this page, since there's no background
+    // job doing this - then load the (possibly just-updated) alert list
     useEffect(() => {
-        loadAlerts()
+        api.post('/alerts/check-all')
+            .catch((err) => console.log('alert check failed:', err.message))
+            .finally(() => loadAlerts())
     }, [])
 
     // search function - same pattern as watchlist
