@@ -1,30 +1,26 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
 import { formatPrice as fmt } from '../utils/format'
+import AppLayout from '../components/layout/AppLayout'
 import '../styles/Dashboard.css'
+import '../styles/Recommendations.css'
 import ViewTrendingTickers from '../components/dashboard/ViewTrendingTickers'
 import ViewTopGainersLosers from '../components/dashboard/ViewTopGainersLosers'
 import ViewStocksList from '../components/dashboard/ViewStocksList'
+import ViewStockRecommendation from '../components/recommendations/ViewStockRecommendation'
 
 function Dashboard() {
     const [trendList, setTrendList] = useState([])
-    const [gainers,   setGainers]   = useState([])
-    const [losers,    setLosers]    = useState([])
+    const [gainers, setGainers] = useState([])
+    const [losers, setLosers] = useState([])
     const [stockList, setStockList] = useState([])
-    const [loading,   setLoading]   = useState(true)
-    const [error,     setError]     = useState(null)
-    const { user, logout } = useAuth()
+    const [recommendations, setRecommendations] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
     const navigate = useNavigate()
 
-    const isTrader = user?.role === 'trader'
-
-    function handleLogout() {
-        logout()
-        navigate('/login')
-    }
-
+    // get all data needed for dashboard
     async function getData() {
         try {
             const trendData = await api.get('/stocks/trending')
@@ -32,76 +28,70 @@ function Dashboard() {
         } catch (err) {
             console.log('trending failed:', err.message)
         }
+
         try {
             const moverData = await api.get('/stocks/movers')
             setGainers(moverData.gainers || [])
-            setLosers(moverData.losers   || [])
+            setLosers(moverData.losers || [])
         } catch (err) {
             console.log('movers failed:', err.message)
         }
+
         try {
             const allStocks = await api.get('/stocks')
             setStockList(allStocks)
         } catch (err) {
             console.log('stocks failed:', err.message)
         }
+
+        try {
+            const recData = await api.get('/recommendations/personalized?limit=3')
+            setRecommendations(recData.recommendations || [])
+        } catch (err) {
+            console.log('recommendations failed:', err.message)
+        }
+
         setLoading(false)
     }
 
-    useEffect(() => { getData() }, [])
+    useEffect(() => {
+        getData()
+    }, [])
 
     if (loading) return <p>Loading...</p>
-    if (error)   return <p>{error}</p>
+    if (error) return <p>{error}</p>
+
 
     return (
-        <div className="dashboard">
-                        <aside className="sidebar">
-                <div className="sidebar-logo">StockWise <span>AI</span></div>
-
-                {/* Both roles */}
-                <span className="sidebar-link active">Dashboard</span>
-                <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
-                <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
-                <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-
-                {/* Investor only */}
-                {!isTrader && (
-                    <>
-                        <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                        <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                        <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
-                        <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
-                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-                    </>
-                )}
-
-                {/* Trader — Back to Trader Portal + Logout pinned to bottom */}
-                {isTrader && (
-                    <div style={{ marginTop:'auto', borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:'0.5rem' }}>
-                        <span className="sidebar-link" onClick={() => navigate('/trader/dashboard')}>
-                            ← Back to Trader Portal
-                        </span>
-                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-                    </div>
-                )}
-            </aside>
-
-            <div className="main-content">
-                <div className="page-header">
-                    <h1>Welcome back, {isTrader ? 'Trader' : 'Investor'}</h1>
-                    <p>Market analysis is updated and ready for your next move.</p>
-                </div>
-
-                <h2 className="section-heading">Market Overview</h2>
-
-                <div className="market-grid">
-                    <ViewTrendingTickers trendList={trendList} fmt={fmt} />
-                    <ViewTopGainersLosers gainers={gainers} losers={losers} fmt={fmt} />
-                </div>
-                <ViewStocksList stockList={stockList} navigate={navigate} fmt={fmt} />
+        <AppLayout>
+            <div className="page-header">
+                <h1>Welcome back, Investor</h1>
+                <p>Market analysis is updated and ready for your next move.</p>
             </div>
-        </div>
+
+            <h2 className="section-heading">Market Overview</h2>
+
+            <div className="market-grid">
+                <ViewTrendingTickers trendList={trendList} fmt={fmt} navigate={navigate} />
+                <ViewTopGainersLosers gainers={gainers} losers={losers} fmt={fmt} navigate={navigate} />
+            </div>
+
+            <ViewStocksList stockList={stockList} navigate={navigate} fmt={fmt} />
+
+            <div className="dashboard-recommendations">
+                <div className="dashboard-recommendations-header">
+                    <h2 className="section-heading">AI Recommendations</h2>
+                    <span className="view-all-link" onClick={() => navigate('/recommendations')}>
+                        View All Recommendations &rarr;
+                    </span>
+                </div>
+                {recommendations.length === 0 ? (
+                    <p className="empty-state">No recommendations available yet.</p>
+                ) : (
+                    <ViewStockRecommendation recommendations={recommendations} navigate={navigate} />
+                )}
+            </div>
+        </AppLayout>
     )
 }
-
 export default Dashboard
