@@ -510,6 +510,58 @@ async def updateLandingContent(content: dict, adminID: str) -> dict:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def appendFeedbackTestimonial(feedback: dict) -> None:
+    """
+    Append an approved feedback row to landing_page_config.content.testimonials
+    as {feedback_id, name, quote, rating}. Read-modify-write so nothing else in
+    content is lost. No-op if this feedback_id is already present (guards
+    against the same feedback being approved/appended twice).
+    """
+    feedback_id = feedback.get("id")
+    user_id = feedback.get("user_id")
+
+    name = "Anonymous"
+    if user_id:
+        user_result = (
+            supabase.table("users")
+            .select("name")
+            .eq("id", user_id)
+            .execute()
+        )
+        if user_result.data:
+            name = user_result.data[0].get("name") or name
+
+    existing = (
+        supabase.table("landing_page_config")
+        .select("id, content")
+        .limit(1)
+        .execute()
+    )
+    if not existing.data:
+        return
+
+    row = existing.data[0]
+    content = row.get("content") if isinstance(row.get("content"), dict) else {}
+    testimonials = content.get("testimonials")
+    if not isinstance(testimonials, list):
+        testimonials = []
+
+    if any(t.get("feedback_id") == feedback_id for t in testimonials):
+        return
+
+    testimonials.append({
+        "feedback_id": feedback_id,
+        "name": name,
+        "quote": feedback.get("message"),
+        "rating": feedback.get("rating"),
+    })
+    content["testimonials"] = testimonials
+
+    supabase.table("landing_page_config").update(
+        {"content": content}
+    ).eq("id", row["id"]).execute()
+
+
 async def getActivityLogs(
     page: int = 1,
     limit: int = 20,
