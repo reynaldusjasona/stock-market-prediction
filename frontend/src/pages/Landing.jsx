@@ -81,16 +81,16 @@ function Landing() {
                 <h2 className="section-title" style={{ textAlign: 'center' }}>Get Started</h2>
                 <p className="section-sub" style={{ textAlign: 'center' }}>Everything StockWise AI offers, built for how you invest.</p>
                 <div className="landing-plans-grid">
-                    {plans.filter((p) => p.plan === 'investor').map((p) => (
-                        <div className="plan-card" key={p.plan}>
-                            <p className="plan-name">{(p.name || p.plan).toUpperCase()}</p>
-                            <p className="plan-price">${p.price}<span>/{p.period}</span></p>
+                    {plans.filter((p) => p.id === 'investor').map((p) => (
+                        <div className="plan-card" key={p.id}>
+                            <p className="plan-name">{(p.name || p.id).toUpperCase()}</p>
+                            <p className="plan-price">${p.price}<span>/{p.interval}</span></p>
                             <ul>
                                 {(p.features || []).map((f) => (
                                     <li key={f}>✓ {f}</li>
                                 ))}
                             </ul>
-                            <button className="btn-primary" onClick={() => navigate('/register')}>Get started</button>
+                            <button className="btn-primary" onClick={() => navigate('/register?intent=subscribe')}>Get started</button>
                             <p style={{ textAlign: 'center', color: '#888', marginTop: '12px', fontSize: '14px' }}>Cancel anytime.</p>
                         </div>
                     ))}
