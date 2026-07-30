@@ -14,14 +14,22 @@ async def getTraderSignals(
         supabase.table("trader_signal")
         .select(
             "id, trader_id, investor_id, ticker, signal, confidence_score, "
-            "reasoning, verdict, note, endorsed_at, created_at"
+            "reasoning, verdict, note, endorsed_at, created_at, "
+            "investor:users!investor_id(name)"
         )
         .eq("trader_id", trader_id)
     )
     if ticker:
         query = query.eq("ticker", ticker.upper())
     result = query.order("created_at", desc=True).limit(limit).execute()
-    return result.data or []
+    rows = result.data or []
+
+    signals = []
+    for row in rows:
+        investor = row.pop("investor", None) or {}
+        row["investor_name"] = investor.get("name")
+        signals.append(row)
+    return signals
 
 
 async def getTraderClients(trader_id: str) -> list:
