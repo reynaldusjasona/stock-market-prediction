@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../api/api'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/Subscription.css'
 
@@ -11,6 +12,7 @@ function Subscription() {
     const [error, setError] = useState(null)
     const [success, setSuccess] = useState(null)
     const [searchParams, setSearchParams] = useSearchParams()
+    const { refreshSubscription } = useAuth()
 
     // plans are public, subscription is the current user's own
     async function loadPlans() {
@@ -29,6 +31,9 @@ function Subscription() {
         } catch (err) {
             console.log('subscription failed:', err.message)
         }
+        // keep AuthContext's cached copy in sync too, so LockedFeature
+        // gates elsewhere in the app unlock without a full reload
+        refreshSubscription()
     }
 
     useEffect(() => {
@@ -110,7 +115,7 @@ function Subscription() {
                         <div>
                             <p className="current-sub-label">Current Plan</p>
                             <p className="current-sub-plan">
-                                {plans.find((p) => p.plan === currentSub.plan)?.name || currentSub.plan.toUpperCase()}
+                                {plans.find((p) => p.id === currentSub.plan)?.name || currentSub.plan.toUpperCase()}
                             </p>
                             <p className="current-sub-meta">
                                 Status: <span className="badge-active">{currentSub.status}</span>
@@ -123,15 +128,15 @@ function Subscription() {
 
                 <div className="plans-grid">
                     {plans.map((p) => (
-                        <div className="plan-card-sub" key={p.plan}>
-                            <p className="plan-card-name">{p.name || p.plan.toUpperCase()}</p>
-                            <p className="plan-card-price">${p.price}<span>/{p.period}</span></p>
+                        <div className="plan-card-sub" key={p.id}>
+                            <p className="plan-card-name">{p.name || p.id.toUpperCase()}</p>
+                            <p className="plan-card-price">${p.price}<span>/{p.interval}</span></p>
                             <ul>
                                 {p.features.map((f) => (
                                     <li key={f}>✓ {f}</li>
                                 ))}
                             </ul>
-                            {currentSub && currentSub.plan === p.plan && currentSub.status === 'active' ? (
+                            {currentSub && currentSub.plan === p.id && currentSub.status === 'active' ? (
                                 <button className="btn-subscribed" disabled>Current Plan</button>
                             ) : (
                                 <button className="btn-subscribe" onClick={startCheckout}>Subscribe</button>
