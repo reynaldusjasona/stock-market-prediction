@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
 import { formatPrice as formatNum } from '../utils/format'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/Dashboard.css'
 import '../styles/StockDetail.css'
@@ -22,6 +23,7 @@ function formatLarge(num) {
 function StockDetail() {
     const { ticker } = useParams()
     const navigate = useNavigate()
+    const { user } = useAuth()
 
     // states in kind of a random order lol
     const [activeTab, setActiveTab] = useState('Chart')
@@ -110,7 +112,14 @@ function StockDetail() {
         <AppLayout>
             <>
                 <div className="page-header">
-                    <span className="back-link" onClick={() => navigate('/dashboard')}>&larr; Back</span>
+                    <div className="page-header-top">
+                        <span className="back-link" onClick={() => navigate('/dashboard')}>&larr; Back</span>
+                        {user?.role === 'investor' && (
+                            <button className="btn-browse-traders" onClick={() => navigate('/browse-traders')}>
+                                Browse Traders
+                            </button>
+                        )}
+                    </div>
                     <h1>{ticker}</h1>
                     {stockInfo && (
                         <div className="stock-header-stats">
