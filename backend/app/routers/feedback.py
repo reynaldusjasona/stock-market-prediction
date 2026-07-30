@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from app.core.security import get_current_user
-from app.services import feedback_service
+from app.services import admin_service, feedback_service
 
 router = APIRouter()
 
@@ -59,6 +59,10 @@ async def approveFeedback(
     result = await feedback_service.updateFeedbackStatus(feedback_id, "approved")
     if result is None:
         raise HTTPException(status_code=404, detail="Feedback not found")
+    try:
+        await admin_service.appendFeedbackTestimonial(result)
+    except Exception:
+        pass  # approve succeeded, testimonial append is best-effort
     return result
 
 
