@@ -74,7 +74,6 @@ def getPrediction(ticker: str) -> dict:
     reasoning = (
         f"RSI14 is {row['RSI14']:.1f}. "
         f"MACD is {row['MACD']:.4f}. "
-        f"SMA20 is {row['SMA20']:.2f}. "
         f"Model confidence is {confidence:.1f}%."
     )
 
