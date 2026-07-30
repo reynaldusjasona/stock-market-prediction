@@ -66,24 +66,48 @@ async def detectAlertCondition(userID: str, ticker: str) -> list:
         if not is_triggered:
             continue
 
-        await markAlertAsTriggered(alert["id"])
-
         message = (
             f"{ticker} has reached {current_price}. "
             f"Your {condition} alert at {target_price} was triggered."
         )
+        email_sent = False
+        if user_email:
+            email_sent = await send_email(user_email, message)
+
         supabase.table("notifications").insert({
             "user_id": userID,
             "title": "Price Alert Triggered",
             "message": message,
+            "type": "price_alert",
             "is_read": False,
+            "email_sent": bool(email_sent),
         }).execute()
 
-        if user_email:
-            await send_email(user_email, message)
+        # mark triggered last - if the notification insert above fails,
+        # the alert stays active and will be correctly retried on the
+        # next check, instead of silently being marked done with no
+        # notification ever created
+        await markAlertAsTriggered(alert["id"])
 
         triggered.append(alert)
 
+    return triggered
+
+
+async def checkAllAlertsForUser(userID: str) -> list:
+    result = (
+        supabase.table("price_alerts")
+        .select("ticker")
+        .eq("user_id", userID)
+        .eq("is_active", True)
+        .eq("is_triggered", False)
+        .execute()
+    )
+    tickers = {row["ticker"] for row in (result.data or [])}
+
+    triggered = []
+    for ticker in tickers:
+        triggered += await detectAlertCondition(userID, ticker)
     return triggered
 
 
