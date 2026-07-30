@@ -35,8 +35,25 @@ async def getAllFeedback(
     result = query.range(offset, offset + limit - 1).execute()
     count_result = count_query.execute()
 
+    rows = result.data or []
+    user_ids = list({row["user_id"] for row in rows if row.get("user_id")})
+    user_map = {}
+    if user_ids:
+        users_result = (
+            supabase.table("users")
+            .select("id, name, email")
+            .in_("id", user_ids)
+            .execute()
+        )
+        user_map = {u["id"]: u for u in (users_result.data or [])}
+
+    for row in rows:
+        user = user_map.get(row.get("user_id"))
+        row["user_name"] = user.get("name") if user else "Unknown"
+        row["user_email"] = user.get("email") if user else "Unknown"
+
     return {
-        "data": result.data or [],
+        "data": rows,
         "total": count_result.count or 0,
         "page": page,
         "limit": limit,
