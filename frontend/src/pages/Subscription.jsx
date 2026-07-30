@@ -39,10 +39,28 @@ function Subscription() {
     // handle redirect back from Stripe Checkout
     useEffect(() => {
         const status = searchParams.get('status')
+        const plan = searchParams.get('plan')
         if (status === 'success') {
-            setSuccess('Payment successful! Activating your subscription...')
-            // fallback activation in case the webhook hasn't fired yet
-            api.post('/subscription').catch(() => {}).finally(() => loadSubscription())
+            setSuccess('Payment successful! Confirming your subscription...')
+            if (plan) {
+                // fallback activation in case the webhook hasn't fired yet
+                api.post('/subscription', { plan })
+                    .catch((err) => {
+                        // 409 means the webhook already activated it - not a real failure
+                        if (err.status === 409) return
+                        console.log('subscription activation fallback failed:', err.message)
+                        setSuccess(null)
+                        setError(
+                            "Payment succeeded, but we couldn't confirm your subscription "
+                            + "automatically. Please refresh this page in a moment, or "
+                            + "contact support if it still doesn't show up."
+                        )
+                    })
+                    .finally(() => loadSubscription())
+            } else {
+                console.log('checkout success redirect missing plan param; skipping fallback activation')
+                loadSubscription()
+            }
             setSearchParams({}, { replace: true })
         } else if (status === 'cancelled') {
             setError('Payment cancelled.')

@@ -33,9 +33,11 @@ async def createSubscription(
     body: SubscribeRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    if body.plan != "premium":
+    valid_plans = {p["plan"] for p in subscription_service.PLANS}
+    if body.plan not in valid_plans:
         raise HTTPException(
-            status_code=400, detail="Invalid plan. Only 'premium' is available."
+            status_code=400,
+            detail=f"Invalid plan. Must be one of: {', '.join(sorted(valid_plans))}",
         )
     userID = current_user["sub"]
     try:
