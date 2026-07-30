@@ -14,6 +14,7 @@ _VALID_STATUSES = {"pending", "approved", "rejected"}
 class FeedbackCreate(BaseModel):
     subject: str = Field(max_length=255)
     message: str = Field(min_length=1)
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -25,7 +26,7 @@ async def createFeedback(
         raise HTTPException(status_code=403, detail="Forbidden")
     try:
         return await feedback_service.createFeedback(
-            current_user["sub"], body.subject, body.message
+            current_user["sub"], body.subject, body.message, body.rating
         )
     except Exception:
         raise HTTPException(status_code=500, detail="Internal server error")
