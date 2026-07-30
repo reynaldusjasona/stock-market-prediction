@@ -17,8 +17,7 @@ function EndorseSignalModal({ signal, onClose, onEndorsed }) {
     setBusy(true)
     try{
       await traderApi.endorseSignal({
-        prediction_id: signal.id,
-        ticker: signal.ticker,
+        signal_id: signal.id,
         verdict,
         note: note.trim(),
       })
