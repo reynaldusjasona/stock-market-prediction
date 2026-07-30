@@ -4,6 +4,7 @@ import { api } from '../api/api'
 import { formatPrice as formatNum } from '../utils/format'
 import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
+import LockedFeature from '../components/LockedFeature'
 import '../styles/Dashboard.css'
 import '../styles/StockDetail.css'
 import ViewStockChart from '../components/stock/ViewStockChart'
@@ -167,7 +168,14 @@ function StockDetail() {
                 )}
 
                 {/* prediction tab */}
-                {activeTab === 'Prediction' && <ViewPrediction predData={predData} />}
+                {activeTab === 'Prediction' && (
+                    <LockedFeature
+                        title="AI Predictions"
+                        description="Subscribe to unlock AI-powered Buy / Hold / Sell predictions for this stock."
+                    >
+                        <ViewPrediction predData={predData} />
+                    </LockedFeature>
+                )}
 
                 {/* fundamental tab */}
                 {activeTab === 'Fundamental' && (
