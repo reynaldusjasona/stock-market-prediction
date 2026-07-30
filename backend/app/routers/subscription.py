@@ -33,7 +33,13 @@ async def createSubscription(
     body: SubscribeRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    valid_plans = {p["plan"] for p in subscription_service.PLANS}
+    role = current_user.get("role", "investor")
+    if role == "trader":
+        raise HTTPException(
+            status_code=400,
+            detail="Traders have free access and do not require a subscription.",
+        )
+    valid_plans = {p["id"] for p in subscription_service.PLANS}
     if body.plan not in valid_plans:
         raise HTTPException(
             status_code=400,
@@ -73,6 +79,28 @@ async def createCheckoutSession(
     return await subscription_service.createCheckoutSession(
         userID, email, role
     )
+
+
+@router.post("/signal-access/checkout")
+async def createSignalAccessCheckoutSession(
+    current_user: dict = Depends(get_current_user),
+):
+    if current_user.get("role") != "investor":
+        raise HTTPException(
+            status_code=400,
+            detail="Only investors can purchase signal access.",
+        )
+    userID = current_user["sub"]
+    email = current_user.get("email", "")
+    return await subscription_service.createSignalAccessCheckout(userID, email)
+
+
+@router.get("/signal-access/status")
+async def getSignalAccessStatus(
+    current_user: dict = Depends(get_current_user),
+):
+    userID = current_user["sub"]
+    return await subscription_service.getSignalAccessStatus(userID)
 
 
 @router.post("/webhook")

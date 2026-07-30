@@ -1,28 +1,22 @@
-import {api} from '../api/api'
+import { api } from '../api/api'
 
 const traderApi = {
-  applyAsTrader(payload){ return api.post('/trader/apply', payload) },        
-  getOwnApplication(){ return api.get('/trader/application') },
-
-  listTraderApplications(status = '') {
-    return api.get(`/admin/trader-applications${status ? `?status=${status}` : ''}`)
+  getClients()          { return api.get('/trader/clients') },
+  getSignalsForReview(params = {}) {
+    const q = new URLSearchParams(params).toString()
+    return api.get(`/trader/signals${q ? '?' + q : ''}`)
   },
-  reviewTraderApplication(profileId, decision, reason = null, note = '') {
-    return api.put(`/admin/trader-applications/${profileId}`, {
-      status: decision,
-      rejection_reason: reason,
-      verification_note: note,
+  endorseSignal({ ticker, prediction_id, verdict, note }) {
+    return api.post('/trader/signals/endorse', {
+      prediction_id: prediction_id || ticker,
+      endorsement: verdict,
+      notes: note || '',
     })
   },
-
-  getClients(){ return api.get('/trader/clients') },
-  getSignalsForReview(){ return api.get('/trader/signals') },
-  endorseSignal(payload){ return api.post('/trader/signals/endorse', payload) }, // { ticker, verdict:'agree'|'disagree', note }
-
-  listTraders(){ return api.get('/traders') },
-  engageTrader(traderId){ return api.post('/engagements', { trader_id: traderId }) },
-  getOwnEngagement(){ return api.get('/engagements/me') },
-  endEngagement(id){ return api.delete(`/engagements/${id}`) },
+  getEndorsements(params = {}) {
+    const q = new URLSearchParams(params).toString()
+    return api.get(`/trader/endorsements${q ? '?' + q : ''}`)
+  },
 }
 
 export default traderApi
