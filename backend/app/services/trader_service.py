@@ -78,6 +78,19 @@ async def getTraderClients(trader_id: str) -> list:
     return clients
 
 
+async def getApprovedTraders() -> list:
+    result = (
+        supabase.table("users")
+        .select("id, name, license_number, specialization, bio, years_experience")
+        .eq("role", "trader")
+        .eq("trader_status", "approved")
+        .eq("status", "active")
+        .order("name")
+        .execute()
+    )
+    return result.data or []
+
+
 async def endorseSignal(
     trader_id: str,
     prediction_id: str,
