@@ -70,6 +70,10 @@ class VerifyTwoFactorRequest(BaseModel):
 class UpdateAccountRequest(BaseModel):
     name: Optional[str] = None
     password: Optional[str] = None
+    phone: Optional[str] = None
+    specialization: Optional[str] = None
+    years_experience: Optional[int] = None
+    bio: Optional[str] = None
 
 
 class RiskToleranceRequest(BaseModel):
@@ -241,7 +245,13 @@ async def updateAccount(investorID: str, body: UpdateAccountRequest):
         raise HTTPException(status_code=400, detail=validation["error"])
 
     return await svcUpdateAccount(
-        investorID, body.name or "", body.password or ""
+        investorID,
+        body.name or "",
+        body.password or "",
+        phone=body.phone,
+        specialization=body.specialization,
+        years_experience=body.years_experience,
+        bio=body.bio,
     )
 
 

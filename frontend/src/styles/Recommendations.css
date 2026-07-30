@@ -3,12 +3,6 @@
     min-height: 100vh;
 }
 
-.recommendations-content {
-    margin-left: 220px;
-    padding: 40px;
-    flex: 1;
-}
-
 .recommendations-header h1 {
     font-size: 28px;
     font-weight: 700;
@@ -34,10 +28,22 @@
     padding: 24px;
 }
 
+.rec-ticker-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .rec-ticker {
     font-size: 16px;
     font-weight: 700;
     color: #ffffff;
+}
+
+.rec-company {
+    font-size: 13px;
+    color: #888;
 }
 
 .rec-signal {
@@ -48,6 +54,10 @@
 }
 
 .signal-buy {
+    color: #00ff41;
+}
+
+.signal-strong-buy {
     color: #00ff41;
 }
 
