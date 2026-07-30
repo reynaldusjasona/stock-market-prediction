@@ -259,7 +259,7 @@ function OverviewPanel({stats, onNav}){
 
   const cards=[
     {label:'Total Users',val: s.total_users ?? '—', nav:'users',    color:''},
-    {label:'Model Accuracy',val: s.model_accuracy != null ? s.model_accuracy.toFixed(1)+'%' : '—', nav:'model', color:'var(--accent)'},
+    {label:'Model Accuracy',val: s.model_accuracy != null ? (s.model_accuracy * 100).toFixed(1)+'%' : '—', nav:'model', color:'var(--accent)'},
     {label:'Pending Feedback',val: s.pending_feedback ?? '—', nav:'feedback', color:''},
     {label:'Total Alerts',val: s.total_alerts ?? s.open_alerts ?? '—', nav:'alerts', color: ((s.total_alerts ?? s.open_alerts) > 0) ? '#ff4444' : ''},
   ]
