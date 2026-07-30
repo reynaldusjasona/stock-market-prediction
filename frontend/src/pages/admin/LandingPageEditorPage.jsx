@@ -3,7 +3,7 @@ import adminApi from '../../js/adminApi'
 import {showToast} from '../../js/adminUi'
 import '../../styles/admin/adminShared.css'
 
-const BLANK = {
+const BLANK ={
   hero: { tag:'', headline:'', subline:'', cta_label:'', secondary_label:'' },
   about: { subtitle:'', cards:[{title:'',body:''},{title:'',body:''},{title:'',body:''}] },
   features: { subtitle:'', items:[{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''}] },
@@ -16,7 +16,7 @@ const clone = o => JSON.parse(JSON.stringify(o))
 
 const SECTIONS = [
   {key:'hero',label:'Hero' },
-  {key:'about', label:'About' },
+  {key:'about',label:'About' },
   {key:'features',label:'Features' },
   {key:'testimonials',label:'Testimonials' },
   {key:'subscription',label:'Subscription' },
@@ -24,7 +24,7 @@ const SECTIONS = [
 ]
 
 function LandingPageEditorPage() {
-  const[data,setData] = useState(null)
+  const[data,setData]= useState(null)
   const[loading,setLoading]= useState(true)
   const[saving,setSaving]= useState(false)
   const[dirty,setDirty]= useState(false)
@@ -36,12 +36,12 @@ function LandingPageEditorPage() {
       .then(d => {
         if (!d) { setData(clone(BLANK)); return }
         setData({
-          hero:{ ...BLANK.hero, ...(d.hero || {}) },
+          hero: { ...BLANK.hero, ...(d.hero || {}) },
           about:{ ...BLANK.about, ...(d.about || {}), cards: d.about?.cards?.length ? d.about.cards : BLANK.about.cards },
           features:{ ...BLANK.features, ...(d.features || {}), items: d.features?.items?.length ? d.features.items : BLANK.features.items },
           testimonials: d.testimonials?.length ? d.testimonials : clone(BLANK.testimonials),
           subscription:{ ...BLANK.subscription, ...(d.subscription || {}), bullets: d.subscription?.bullets?.length ? d.subscription.bullets : BLANK.subscription.bullets },
-          faqs:d.faqs?.length ? d.faqs : clone(BLANK.faqs),
+          faqs: d.faqs?.length ? d.faqs : clone(BLANK.faqs),
         })
       })
       .catch(err => {
@@ -53,14 +53,14 @@ function LandingPageEditorPage() {
 
   const mark = () => { if (!dirty) setDirty(true) }
 
-  const setHero = fn => setData(d => { const n = clone(d); fn(n.hero); mark(); return n })
+  const setHero= fn => setData(d => { const n = clone(d); fn(n.hero); mark(); return n })
   const setAbout= fn => setData(d => { const n = clone(d); fn(n.about); mark(); return n })
   const setFeatures= fn => setData(d => { const n = clone(d); fn(n.features); mark(); return n })
   const setTestimonials= fn => setData(d => { const n = clone(d); fn(n.testimonials); mark(); return n })
   const setSubscription= fn => setData(d => { const n = clone(d); fn(n.subscription); mark(); return n })
   const setFaqs= fn => setData(d => { const n = clone(d); fn(n.faqs); mark(); return n })
 
-  const handleSave = async () => {
+  const handleSave = async()=> {
     if (!data.hero.headline?.trim()) { showToast('Hero headline is required', 'error'); setTab('hero'); return }
     setSaving(true)
     try {
@@ -71,16 +71,15 @@ function LandingPageEditorPage() {
 	catch (err){
       showToast(err.message || 'Failed to save', 'error')
     } 
-	finally{ 
+	finally { 
 	  setSaving(false) 
 	}
   }
 
   if (loading) 
 	  return <div style={{ textAlign:'center', padding:'4rem' }}><span className="admin-spinner"/></div>
-	  return <div style={{ textAlign:'center', padding:'4rem' }}><span className="admin-spinner"/></div>
 
-  return (
+  return(
     <div>
       <div className="admin-page-header" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:'1rem' }}>
         <div>

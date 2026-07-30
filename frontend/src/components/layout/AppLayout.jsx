@@ -54,13 +54,12 @@ function AppLayout({ children }) {
     }
 
     const initial = user?.name ? user.name.charAt(0).toUpperCase() : '?'
-
     const isTrader = user?.role === 'trader'
     const navLinks = isTrader ? NAV_LINKS.filter((link) => link.trader) : NAV_LINKS
 
     return (
         <div className="app-shell">
-            <aside className="sidebar">
+            <aside className="sidebar" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div className="sidebar-logo">StockWise <span>AI</span></div>
                 {navLinks.map((link) => (
                     <span
@@ -71,14 +70,20 @@ function AppLayout({ children }) {
                         {link.label}
                     </span>
                 ))}
-                {isTrader && (
-                    <span className="sidebar-link" onClick={() => navigate('/trader/dashboard')}>
-                        &#8592; Back to trader view
-                    </span>
-                )}
-                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-            </aside>
 
+                {!isTrader && (
+                    <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
+                )}
+
+                {isTrader && (
+                    <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.5rem' }}>
+                        <span className="sidebar-link" onClick={() => navigate('/trader/dashboard')}>
+                            &#8592; Back to Trader Portal
+                        </span>
+                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
+                    </div>
+                )}
+            </aside>
             <div className="app-main">
                 <div className="topbar">
                     <div className="topbar-search">
@@ -105,7 +110,6 @@ function AppLayout({ children }) {
                             </div>
                         )}
                     </div>
-
                     <div className="topbar-actions">
                         <span
                             className="topbar-bell"
@@ -114,7 +118,6 @@ function AppLayout({ children }) {
                         >
                             &#128276;
                         </span>
-
                         <div className="topbar-profile">
                             <div
                                 className="topbar-profile-trigger"
@@ -132,7 +135,6 @@ function AppLayout({ children }) {
                         </div>
                     </div>
                 </div>
-
                 <main className="main-content">{children}</main>
             </div>
         </div>
