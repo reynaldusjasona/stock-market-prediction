@@ -30,7 +30,6 @@ function ViewSignalReviewsPage() {
 
   const handleEndorsed = ()=> {setSelected(null); load()}
 
-  // A signal is "reviewed" if it has a verdict/endorsement already set
   const pending  = signals.filter(s => !s.verdict && !s.endorsement)
   const reviewed = signals.filter(s => s.verdict || s.endorsement)
 
@@ -62,7 +61,7 @@ function ViewSignalReviewsPage() {
                       <td style={{ fontFamily:'var(--font-mono)' }}>
                         {s.confidence_score != null ? `${Number(s.confidence_score).toFixed(1)}%` : '—'}
                       </td>
-                      <td style={{ fontSize:'0.82rem', color:'var(--text-muted)' }}>{s.requested_by_name || s.investor_id || '—'}</td>
+                      <td style={{ fontSize:'0.82rem', color:'var(--text-muted)' }}>{s.investor_name || s.requested_by_name || (s.investor_id ? `Investor #${s.investor_id.slice(0,8)}` : '—')}</td>
                       <td>
                         <div className="action-cell" onClick={e => e.stopPropagation()}>
                           <button className="btn-admin btn-primary" onClick={() => setSelected(s)}>Review</button>
