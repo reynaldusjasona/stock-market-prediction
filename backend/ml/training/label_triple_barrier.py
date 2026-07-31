@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-LABELS = {"Buy", "Hold", "Sell"}
+LABELS = {"Buy", "Sell"}
 
 
 def calculate_dynamic_target (
@@ -45,15 +45,16 @@ def calculate_dynamic_target (
 def apply_triple_barrier_one_day(
     df: pd.DataFrame,
     close_col: str = "Close",
-    profit_taking_multiplier: float = 1.0,
+    profit_taking_multiplier: float = 1.5,
     stop_loss_multiplier: float = 1.5,
     volatility_window: int = 20, 
     min_return: float = 0.005, 
     drop_ambiguous: bool = True,
     drop_unlabeled: bool = True,
+    binary_only: bool = True,
 ) -> pd.DataFrame:
     """
-    Apply the triple barrier method to label each row in the DataFrame as 'Buy', 'Hold', or 'Sell'.
+    Apply the triple barrier method to label each row in the DataFrame as 'Buy' or  'Sell'.
 
     For each day: 
     - entry price = today' close price 
@@ -63,12 +64,11 @@ def apply_triple_barrier_one_day(
     
     - Buy: Tomorrow's high reaches the upper barrier only. 
     - Sell: Tomorrow's low reaches the lower barrier only. 
-    - Hold: Neither barrier is reached 
     - Ambigious: Both barriers are reached. Daily OHLC data cannot determine which barrier was touched first.
 
 
     Returns:
-        pd.DataFrame: A DataFrame with triple barrier columns and  plus a 'Label' column with labels ('Buy', 'Hold', 'Sell').
+        pd.DataFrame: A DataFrame with triple barrier columns and  plus a 'Label' column with labels ('Buy' and 'Sell').
     """
 
 
@@ -187,10 +187,16 @@ def apply_triple_barrier_one_day(
         result = result.loc[
             ~ambiguous_mask
         ].copy()
-
-    if drop_unlabeled:
-        result = result.loc[
+    
+    if binary_only: 
+        #exclude time-barrier events. 
+        result = result.loc [
             result["Label"].isin(LABELS)
+        ].copy()
+
+    elif drop_unlabeled:
+        result = result.loc[
+            result["Label"].isin({"Buy", "Hold", "Sell"})
         ].copy()
 
     return result.reset_index(drop=True)
@@ -200,12 +206,13 @@ def apply_triple_barrier_one_day(
 def apply_triple_barrier_by_ticker (
     df: pd.DataFrame,
     ticker_column: str = "Ticker",
-    profit_taking_multiplier: float = 1.0,
-    stop_loss_multiplier: float = 1.0,
+    profit_taking_multiplier: float = 1.5,
+    stop_loss_multiplier: float = 1.5,
     volatility_window: int = 20,
     min_return: float = 0.005,
     drop_ambiguous: bool = True,
-    drop_unlabeled: bool = True,  
+    drop_unlabeled: bool = True, 
+    binary_only: bool = True,  
 ) -> pd.DataFrame: 
 
     """
@@ -232,6 +239,7 @@ def apply_triple_barrier_by_ticker (
             min_return=min_return,
             drop_ambiguous=drop_ambiguous,
             drop_unlabeled=drop_unlabeled,
+            binary_only=binary_only,
         )
 
         labeled_ticker[ticker_column] = ticker
