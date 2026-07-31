@@ -19,8 +19,8 @@ from ml.training.features import get_multiple_tickers
 from ml.training.train import TRAIN_TICKERS, split_data
 from ml.training.label_triple_barrier import apply_triple_barrier_by_ticker
 
-_MODEL_FILE = "xgboost_model_latest.joblib"
-_ENCODER_FILE = "label_encoder.pkl"
+_MODEL_FILE = "xgboost_model_20260729_214646.joblib"
+_ENCODER_FILE = "label_encoder_3class.pkl"
 
 
 def load_model(
@@ -29,7 +29,7 @@ def load_model(
     """
     Load the trained XGBClassifier and LabelEncoder from disk.
 
-    Expects both xgboost_model.pkl and label_encoder.pkl to exist inside
+    Expects both xgboost_model.pkl and label_encoder_3class.pkl to exist inside
     model_dir. Raises FileNotFoundError with a descriptive message if either
     file is missing.
 
