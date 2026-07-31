@@ -6,6 +6,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_sample_weight
@@ -67,42 +68,6 @@ def split_data(
     return X_train, X_val, X_test, y_train, y_val, y_test
 
 
-# def train_model(
-#     X_train: pd.DataFrame,
-#     y_train: np.ndarray,
-#     X_val: pd.DataFrame,
-#     y_val: np.ndarray,
-# ) -> xgb.XGBClassifier:
-#     """
-#     Train XGBoost using fixed hyperparameters for fast experiments.
-#     """
-
-#     param_grid = {
-#         "n_estimators": [200, 400],
-#         "max_depth": [4, 6, 8],
-#         "learning_rate": [0.01, 0.05, 0.1],
-#         "subsample": [0.8, 1.0],
-#         "colsample_bytree": [0.8, 1.0]
-#     }
-#     base_model = xgb.XGBClassifier(
-#         eval_metric="mlogloss",
-#         random_state=42,
-#     )
-#     cv = TimeSeriesSplit(n_splits=3)
-#     grid_search = GridSearchCV(
-#         estimator=base_model,
-#         param_grid=param_grid,
-#         cv=cv,
-#         scoring="f1_macro",
-#         n_jobs=1,
-#         verbose=1,
-#     )
-#     sample_weight = compute_sample_weight(class_weight="balanced", y=y_train)
-#     grid_search.fit(X_train, y_train, sample_weight=sample_weight)
-#     print(f"Best parameters: {grid_search.best_params_}")
-#     print(f"Best CV f1 macro: {grid_search.best_score_:.4f}")
-#     return grid_search.best_estimator_
-
 def train_model(
     X_train: pd.DataFrame,
     y_train: np.ndarray,
@@ -110,33 +75,83 @@ def train_model(
     y_val: np.ndarray,
 ) -> xgb.XGBClassifier:
     """
-    Train XGBoost using a fixed set of hyperparameters.
-    Use this for quick testing before running GridSearchCV.
+    Train XGBoost using fixed hyperparameters for fast experiments.
     """
 
-    model = xgb.XGBClassifier(
-        n_estimators=200,
-        max_depth=6,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=1.0,
-        eval_metric="mlogloss",
+    param_grid = {
+        "n_estimators": [200, 400],
+        "max_depth": [4, 6, 8],
+        "learning_rate": [0.01, 0.05, 0.1],
+        "subsample": [0.8, 1.0],
+        "colsample_bytree": [0.8, 1.0]
+    }
+    base_model = xgb.XGBClassifier(
+        eval_metric="logloss",
         random_state=42,
     )
-
-    sample_weight = compute_sample_weight(
-        class_weight="balanced",
-        y=y_train,
+    cv = TimeSeriesSplit(n_splits=3)
+    grid_search = GridSearchCV(
+        estimator=base_model,
+        param_grid=param_grid,
+        cv=cv,
+        scoring="f1_macro",
+        n_jobs=1,
+        verbose=1,
     )
+    sample_weight = compute_sample_weight(class_weight="balanced", y=y_train)
+    grid_search.fit(X_train, y_train, sample_weight=sample_weight)
+    print(f"Best parameters: {grid_search.best_params_}")
+    print(f"Best CV f1 macro: {grid_search.best_score_:.4f}")
+    return grid_search.best_estimator_
+
+# def train_model(
+#     X_train: pd.DataFrame,
+#     y_train: np.ndarray,
+#     X_val: pd.DataFrame,
+#     y_val: np.ndarray,
+# ) -> xgb.XGBClassifier:
+#     """
+#     Train XGBoost using a fixed set of hyperparameters.
+#     Use this for quick testing before running GridSearchCV.
+#     """
+
+#     model = xgb.XGBClassifier(
+#         n_estimators=100,
+#         max_depth=3,
+#         learning_rate=0.03,
+#         subsample=0.8,
+#         colsample_bytree=0.8,
+#         min_child_weight=10,
+#         gamma=0,
+#         reg_alpha=0.1, 
+#         reg_lambda=1.5, 
+#         eval_metric="logloss",
+#         random_state=42,
+#     )
+
+#     sample_weight = compute_sample_weight(
+#         class_weight="balanced",
+#         y=y_train,
+#     )
 
 
-    model.fit(
-        X_train,
-        y_train,
-        sample_weight=sample_weight,
-    )
+#     model.fit(
+#         X_train,
+#         y_train,
+#         sample_weight=sample_weight,
+#         eval_set=[(X_val, y_val)],
+#         verbose=True,
+#     )
 
-    return model
+
+#     train_pred = model.predict(X_train)
+
+#     print(
+#         "Train accuracy:",
+#         accuracy_score(y_train, train_pred)
+#     )
+
+#     return model
 
 
 def save_model(
@@ -191,12 +206,13 @@ def run_training() -> dict:
     labeled_data = apply_triple_barrier_by_ticker(
         df=combined,
         ticker_column="Ticker",
-        profit_taking_multiplier=1.0,
-        stop_loss_multiplier=1.0,
+        profit_taking_multiplier=1.5,
+        stop_loss_multiplier=1.5,
         volatility_window=20,
         min_return=0.005,
         drop_ambiguous=True,
         drop_unlabeled=True,
+        binary_only=True,
     )
 
     excluded_columns = [
@@ -248,12 +264,17 @@ def run_training() -> dict:
     model_path = save_model(model, le)
     print(f"Model saved to: {model_path}")
 
+    proba = model.predict_proba(X_test)
+
+    print(proba[:20])
+
     return {
         "model_path": model_path,
         "n_train": len(X_train),
         "n_val": len(X_val),
         "n_test": len(X_test),
     }
+
 
 
 if __name__ == "__main__":
