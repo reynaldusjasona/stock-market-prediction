@@ -6,7 +6,6 @@ import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_sample_weight
@@ -123,8 +122,8 @@ def train_model(
 #         colsample_bytree=0.8,
 #         min_child_weight=10,
 #         gamma=0,
-#         reg_alpha=0.1, 
-#         reg_lambda=1.5, 
+#         reg_alpha=0.1,
+#         reg_lambda=1.5,
 #         eval_metric="logloss",
 #         random_state=42,
 #     )
@@ -273,7 +272,6 @@ def run_training() -> dict:
         "n_val": len(X_val),
         "n_test": len(X_test),
     }
-
 
 
 if __name__ == "__main__":

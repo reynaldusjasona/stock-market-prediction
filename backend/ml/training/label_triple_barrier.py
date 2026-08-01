@@ -65,10 +65,11 @@ def apply_triple_barrier_one_day(
     - upper barrier = entry price * (1 + profit_taking_multiplier * dynamic_target)
     - lower barrier = entry price * (1 - stop_loss_multiplier * dynamic_target)
     - examine next day's high and low prices to determine if either barrier was breached.
-    
-    - Buy: Tomorrow's high reaches the upper barrier only. 
-    - Sell: Tomorrow's low reaches the lower barrier only. 
-    - Ambigious: Both barriers are reached. Daily OHLC data cannot determine which barrier was touched first.
+
+    - Buy: Tomorrow's high reaches the upper barrier only.
+    - Sell: Tomorrow's low reaches the lower barrier only.
+    - Ambigious: Both barriers are reached. Daily OHLC data cannot determine
+      which barrier was touched first.
 
     - Buy: Tomorrow's high reaches the upper barrier only.
     - Sell: Tomorrow's low reaches the lower barrier only.
@@ -77,7 +78,8 @@ def apply_triple_barrier_one_day(
       which barrier was touched first.
 
     Returns:
-        pd.DataFrame: A DataFrame with triple barrier columns and  plus a 'Label' column with labels ('Buy' and 'Sell').
+        pd.DataFrame: A DataFrame with triple barrier columns and  plus a 'Label'
+        column with labels ('Buy' and 'Sell').
     """
 
     required_columns = {"Date", "High", "Low", close_col}
@@ -198,10 +200,10 @@ def apply_triple_barrier_one_day(
         result = result.loc[
             ~ambiguous_mask
         ].copy()
-    
-    if binary_only: 
-        #exclude time-barrier events. 
-        result = result.loc [
+
+    if binary_only:
+        # exclude time-barrier events.
+        result = result.loc[
             result["Label"].isin(LABELS)
         ].copy()
 
@@ -221,9 +223,9 @@ def apply_triple_barrier_by_ticker(
     volatility_window: int = 20,
     min_return: float = 0.005,
     drop_ambiguous: bool = True,
-    drop_unlabeled: bool = True, 
-    binary_only: bool = True,  
-) -> pd.DataFrame: 
+    drop_unlabeled: bool = True,
+    binary_only: bool = True,
+) -> pd.DataFrame:
 
     """
     apply one day labeling method to each ticker
