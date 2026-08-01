@@ -12,7 +12,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_sample_weight
 
 from ml.training.features import get_multiple_tickers
-from ml.training.label_triple_barrier import apply_triple_barrier_by_ticker 
+from ml.training.label_triple_barrier import apply_triple_barrier_by_ticker
 
 
 TRAIN_TICKERS = [
@@ -232,7 +232,6 @@ def run_training() -> dict:
         "Barrier_Type",
     ]
 
-
     feature_columns = [
         col
         for col in labeled_data.columns
@@ -241,11 +240,11 @@ def run_training() -> dict:
 
     X = labeled_data[feature_columns]
     y = labeled_data["Label"].astype(str)
-    
+
     print("Dataset built successfully")
     print(y.value_counts())
     print(y.value_counts(normalize=True))
-    
+
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(X, y)
 
     le = LabelEncoder()

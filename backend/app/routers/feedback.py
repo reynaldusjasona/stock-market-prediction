@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from app.core.security import get_current_user
-from app.services import feedback_service
+from app.services import admin_service, feedback_service
 
 router = APIRouter()
 
@@ -14,6 +14,7 @@ _VALID_STATUSES = {"pending", "approved", "rejected"}
 class FeedbackCreate(BaseModel):
     subject: str = Field(max_length=255)
     message: str = Field(min_length=1)
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -25,7 +26,7 @@ async def createFeedback(
         raise HTTPException(status_code=403, detail="Forbidden")
     try:
         return await feedback_service.createFeedback(
-            current_user["sub"], body.subject, body.message
+            current_user["sub"], body.subject, body.message, body.rating
         )
     except Exception:
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -48,6 +49,20 @@ async def listFeedback(
     return await feedback_service.getAllFeedback(status, page, limit)
 
 
+@router.get("/public")
+async def listPublicFeedback():
+    rows = await feedback_service.getPublicApprovedFeedback()
+    testimonials = [
+        {
+            "id": row["id"],
+            "name": (row.get("users") or {}).get("name") or "StockWise AI investor",
+            "text": row["message"],
+        }
+        for row in rows
+    ]
+    return {"testimonials": testimonials}
+
+
 @router.patch("/{feedback_id}/approve")
 async def approveFeedback(
     feedback_id: str,
@@ -58,6 +73,10 @@ async def approveFeedback(
     result = await feedback_service.updateFeedbackStatus(feedback_id, "approved")
     if result is None:
         raise HTTPException(status_code=404, detail="Feedback not found")
+    try:
+        await admin_service.appendFeedbackTestimonial(result)
+    except Exception:
+        pass  # approve succeeded, testimonial append is best-effort
     return result
 
 

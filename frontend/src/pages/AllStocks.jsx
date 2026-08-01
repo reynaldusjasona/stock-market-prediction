@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
+import AppLayout from '../components/layout/AppLayout'
 import '../styles/AllStocks.css'
 import ViewStocksList from '../components/allstocks/ViewStocksList'
 
@@ -9,13 +9,7 @@ function AllStocks() {
     const [stocks, setStocks] = useState([])
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
-    const { logout } = useAuth()
     const navigate = useNavigate()
-
-    function handleLogout() {
-        logout()
-        navigate('/login')
-    }
 
     // no search yet - just show trending stocks
     async function loadTrending() {
@@ -50,20 +44,7 @@ function AllStocks() {
     if (loading) return <p>Loading...</p>
 
     return (
-        <div className="allstocks-page">
-            <aside className="sidebar">
-                <div className="sidebar-logo">StockWise <span>AI</span></div>
-                <span className="sidebar-link" onClick={() => navigate('/dashboard')}>Dashboard</span>
-                <span className="sidebar-link active">All Stocks</span>
-                <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
-                <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
-                <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
-                <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-            </aside>
-
+        <AppLayout>
             <div className="allstocks-content">
                 <div className="allstocks-header">
                     <h1>All Stocks</h1>
@@ -79,7 +60,7 @@ function AllStocks() {
 
                 <ViewStocksList stocks={stocks} navigate={navigate} />
             </div>
-        </div>
+        </AppLayout>
     )
 }
 
