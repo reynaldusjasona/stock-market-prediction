@@ -271,7 +271,13 @@ async def getRiskTolerance(userID: str):
 
 
 @router.put("/auth/user/{userID}/risk-tolerance", tags=["Auth"])
-async def updateRiskTolerance(userID: str, body: RiskToleranceRequest):
+async def updateRiskTolerance(
+    userID: str,
+    body: RiskToleranceRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    if userID != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
     updated = await svcUpdateRiskTolerance(userID, body.level)
     await updateRecommendations(userID)
     return updated
@@ -283,7 +289,13 @@ async def getPreferences(userID: str):
 
 
 @router.put("/auth/user/{userID}/preferences", tags=["Auth"])
-async def updatePreferences(userID: str, body: PreferencesRequest):
+async def updatePreferences(
+    userID: str,
+    body: PreferencesRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    if userID != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
     updated = await svcUpdatePreferences(userID, body.preferences)
     await updateRecommendations(userID)
     return updated
