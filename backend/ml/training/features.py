@@ -1,5 +1,3 @@
-
-
 import numpy as np
 import pandas as pd
 import yfinance as yf
@@ -51,6 +49,7 @@ def calculate_indicators(
       10-day volatility, Distance from SMA20 and EMA20
     - Market-relative features: SPY 1-day, 5-day, and 10-day returns,
       SPY 10-day volatility, SPY distance from SMA20, Relative returns versus SPY
+    - Macro market features: VIX, 10Y Treasury yield, and DXY
     - Market features:
         - Rolling volatility (5-day, 20-day)
         - Intraday trading range
@@ -68,16 +67,80 @@ def calculate_indicators(
           - sentiment_momentum
 
     Prediction labels are generated using the next trading day's return.
-    Future returns are divided into quantiles:
-      Buy  - top 20% of future returns
-      Sell - bottom 20% of future returns
-      Hold - remaining 60%
+    Future returns are divided into :
+      Buy  -
+      Sell -
 
     Returns:
         A DataFrame containing all features and the
         generated prediction label.
     """
     out = df.copy()
+
+    # VIX
+    vix = fetch_stock_data("^VIX", start=start, end=end)
+
+    vix["VIX_Close"] = vix["Close"]
+    vix["VIX_Return_1D"] = vix["Close"].pct_change()
+    vix["VIX_Return_5D"] = vix["Close"].pct_change(5)
+
+    vix = vix[
+        [
+            "VIX_Close",
+            "VIX_Return_1D",
+            "VIX_Return_5D",
+        ]
+    ]
+
+    # Treasury
+    treasury = fetch_stock_data("^TNX", start=start, end=end)
+
+    treasury["Treasury_10Y"] = treasury["Close"] / 10
+    treasury["Treasury_Return_1D"] = treasury["Treasury_10Y"].pct_change()
+
+    treasury = treasury[
+        [
+            "Treasury_10Y",
+            "Treasury_Return_1D",
+        ]
+    ]
+
+    # Dollar Index
+    dxy = fetch_stock_data("DX-Y.NYB", start=start, end=end)
+
+    dxy["DXY_Close"] = dxy["Close"]
+    dxy["DXY_Return_1D"] = dxy["Close"].pct_change()
+
+    dxy = dxy[
+        [
+            "DXY_Close",
+            "DXY_Return_1D",
+        ]
+    ]
+
+    # ===========================
+    # NASDAQ (^IXIC)
+    # ===========================
+    nasdaq = fetch_stock_data("^IXIC", start=start, end=end)
+
+    nasdaq["NASDAQ_Return_1D"] = nasdaq["Close"].pct_change(1)
+    nasdaq["NASDAQ_Return_5D"] = nasdaq["Close"].pct_change(5)
+
+    # 10-day rolling volatility of daily returns
+    nasdaq["NASDAQ_Volatility_10D"] = (
+        nasdaq["Close"]
+        .pct_change()
+        .rolling(10)
+        .std()
+    )
+
+    nasdaq = nasdaq[
+        [
+            "NASDAQ_Return_1D",
+            "NASDAQ_Return_5D",
+            "NASDAQ_Volatility_10D",
+        ]
+    ]
 
     # SPY returns for relative performance features
     spy = fetch_stock_data("SPY", start=start, end=end)
@@ -158,6 +221,14 @@ def calculate_indicators(
     out["Dist_EMA20"] = (out["Close"] - out["EMA20"]) / out["EMA20"]
 
     out = out.join(spy, how="left")
+
+    # macro market features
+    out = out.join(vix, how="left")
+    out = out.join(treasury, how="left")
+    out = out.join(dxy, how="left")
+
+    # join nasdaq features
+    out = out.join(nasdaq, how="left")
 
     out["Relative_Return_1D"] = (
         out["Return_1D"] - out["SPY_Return_1D"]
@@ -248,24 +319,26 @@ def calculate_indicators(
         end=end,
     )
 
-    out.dropna(inplace=True)
-
     column_order = [
         "Open", "High", "Low", "Close", "Volume",
         "RSI14", "MACD", "MACD_Signal",
-        "BB_Lower", "BB_Width",
-        "Return_1D",
-        "Volume_Ratio",
+        "Distance_SMA20", "Distance_EMA20",
+        "BB_Upper", "BB_Lower", "BB_Width",
+        "Return_1D", "Return_5D", "Return_10D",
+        "Volume_MA20", "Volume_Ratio_20", "Volume_Ratio",
         "SPY_Return_1D", "SPY_Return_5D", "SPY_Return_10D", "SPY_Distance_SMA20",
-        "Relative_Return_1D",
-        "Volatility_20",
+        "Relative_Return_1D", "Relative_Return_5D", "Relative_Return_10D",
+        "Volatility_5", "Volatility_10D", "Volatility_20",
         "Intraday_Range", "Gap_Return",
-        "Upper_Shadow", "Lower_Shadow",
-        "sentiment_std", "sentiment_3d_avg",
+        "Body_Size", "Upper_Shadow", "Lower_Shadow",
+        "VIX_Close", "VIX_Return_1D", "VIX_Return_5D",
+        "Treasury_10Y", "Treasury_Return_1D",
+        "DXY_Close", "DXY_Return_1D",
+        "has_news", "sentiment_mean", "sentiment_std", "sentiment_3d_avg", "sentiment_momentum",
     ]
 
     out = out[column_order]
-    out.dropna(inplace=True)
+    out = out.ffill().bfill()
 
     return out
 
@@ -273,15 +346,19 @@ def calculate_indicators(
 _FEATURE_COLS = [
     "Open", "High", "Low", "Close", "Volume",
     "RSI14", "MACD", "MACD_Signal",
-    "BB_Lower", "BB_Width",
-    "Return_1D",
-    "Volume_Ratio",
+    "Distance_SMA20", "Distance_EMA20",
+    "BB_Upper", "BB_Lower", "BB_Width",
+    "Return_1D", "Return_5D", "Return_10D",
+    "Volume_MA20", "Volume_Ratio_20", "Volume_Ratio",
     "SPY_Return_1D", "SPY_Return_5D", "SPY_Return_10D", "SPY_Distance_SMA20",
-    "Relative_Return_1D",
-    "Volatility_20",
+    "Relative_Return_1D", "Relative_Return_5D", "Relative_Return_10D",
+    "Volatility_5", "Volatility_10D", "Volatility_20",
     "Intraday_Range", "Gap_Return",
-    "Upper_Shadow", "Lower_Shadow",
-    "sentiment_std", "sentiment_3d_avg",
+    "Body_Size", "Upper_Shadow", "Lower_Shadow",
+    "VIX_Close", "VIX_Return_1D", "VIX_Return_5D",
+    "Treasury_10Y", "Treasury_Return_1D",
+    "DXY_Close", "DXY_Return_1D",
+    "has_news", "sentiment_mean", "sentiment_std", "sentiment_3d_avg", "sentiment_momentum",
 ]
 
 
@@ -353,7 +430,10 @@ def get_multiple_tickers(
     ).reset_index(drop=True)
 
     sentiment_cols = [
+        "has_news",
+        "sentiment_mean",
         "sentiment_std",
+        "sentiment_momentum",
         "sentiment_3d_avg",
     ]
 
@@ -362,8 +442,10 @@ def get_multiple_tickers(
             combined[col],
             errors="coerce",
         )
-
+    combined["has_news"] = combined["has_news"].fillna(0.0)
+    combined["sentiment_mean"] = combined["sentiment_mean"].fillna(0.0)
     combined["sentiment_std"] = combined["sentiment_std"].fillna(0.0)
+    combined["sentiment_momentum"] = combined["sentiment_momentum"].fillna(0.0)
     combined["sentiment_3d_avg"] = combined["sentiment_3d_avg"].fillna(0.0)
 
     return combined
