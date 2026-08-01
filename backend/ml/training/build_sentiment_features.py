@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import time
 
 import pandas as pd
+import requests
 
 _MARKET_TZ = ZoneInfo("America/New_York")
 _MARKET_OPEN = time(9, 30)
@@ -13,6 +14,7 @@ _HISTORICAL_SENTIMENT_FILE = (
     / "historical_sentiment_data"
     / "historical_daily_sentiment.csv"
 )
+
 
 def assign_to_trading_session(published_at: pd.Timestamp) -> pd.Timestamp:
     """
@@ -85,8 +87,6 @@ def fetch_news(
         return pd.DataFrame(columns=["published_at", "headline"])
 
     return pd.DataFrame(rows)
-
-
 
 
 def get_historical_daily_sentiment(
