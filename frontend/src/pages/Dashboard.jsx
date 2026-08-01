@@ -1,28 +1,31 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
 import { formatPrice as fmt } from '../utils/format'
+import { useAuth } from '../context/AuthContext'
+import AppLayout from '../components/layout/AppLayout'
+import LockedFeature from '../components/LockedFeature'
+import CompleteProfileModal from '../components/CompleteProfileModal'
 import '../styles/Dashboard.css'
+import '../styles/Recommendations.css'
 import ViewTrendingTickers from '../components/dashboard/ViewTrendingTickers'
 import ViewTopGainersLosers from '../components/dashboard/ViewTopGainersLosers'
 import ViewStocksList from '../components/dashboard/ViewStocksList'
+import ViewStockRecommendation from '../components/recommendations/ViewStockRecommendation'
+
+const PROFILE_MODAL_DISMISSED_KEY = 'profileModalDismissed'
 
 function Dashboard() {
     const [trendList, setTrendList] = useState([])
     const [gainers, setGainers] = useState([])
     const [losers, setLosers] = useState([])
     const [stockList, setStockList] = useState([])
+    const [recommendations, setRecommendations] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    const { user, logout } = useAuth()
+    const [showProfileModal, setShowProfileModal] = useState(false)
     const navigate = useNavigate()
-
-    // logout and go back to login
-    function handleLogout() {
-        logout()
-        navigate('/login')
-    }
+    const { user, isSubscribed } = useAuth()
 
     // get all data needed for dashboard
     async function getData() {
@@ -48,48 +51,97 @@ function Dashboard() {
             console.log('stocks failed:', err.message)
         }
 
+        if (isSubscribed) {
+            try {
+                const recData = await api.get('/recommendations/personalized?limit=3')
+                setRecommendations(recData.recommendations || [])
+            } catch (err) {
+                console.log('recommendations failed:', err.message)
+            }
+        }
+
+        // opportunistically check price alerts here too, since dashboard is
+        // usually the first page visited after login - no need to block
+        // the rest of the page on this
+        api.post('/alerts/check-all').catch((err) => console.log('alert check failed:', err.message))
+
         setLoading(false)
     }
 
     useEffect(() => {
         getData()
-    }, [])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSubscribed])
+
+    // show the complete-profile nudge once per login session if the
+    // investor hasn't picked any markets yet - risk_tolerance always has
+    // a default value from registration, so it can't be used as the
+    // "incomplete" signal, sector_preferences being empty is the real one
+    useEffect(() => {
+        if (!user?.id) return
+        if (sessionStorage.getItem(PROFILE_MODAL_DISMISSED_KEY)) return
+
+        api.get(`/auth/user/${user.id}/preferences`)
+            .then((data) => {
+                if (!data.sector_preferences || data.sector_preferences.length === 0) {
+                    setShowProfileModal(true)
+                }
+            })
+            .catch((err) => console.log('preferences check failed:', err.message))
+    }, [user?.id])
+
+    function dismissProfileModal() {
+        sessionStorage.setItem(PROFILE_MODAL_DISMISSED_KEY, 'true')
+        setShowProfileModal(false)
+    }
 
     if (loading) return <p>Loading...</p>
     if (error) return <p>{error}</p>
 
 
     return (
-        <div className="dashboard">
-            <aside className="sidebar">
-                <div className="sidebar-logo">StockWise <span>AI</span></div>
-                <span className="sidebar-link active">Dashboard</span>
-                <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
-                <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
-                <span className="sidebar-link" onClick={() => navigate('/alerts')}>Alerts</span>
-                <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
-                <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-            </aside>
-    
-            <div className="main-content">
-                <div className="page-header">
-                    <h1>Welcome back, Investor</h1>
-                    <p>Market analysis is updated and ready for your next move.</p>
-                </div>
-    
-                <h2 className="section-heading">Market Overview</h2>
-    
-                <div className="market-grid">
-                    <ViewTrendingTickers trendList={trendList} fmt={fmt} />
-                    <ViewTopGainersLosers gainers={gainers} losers={losers} fmt={fmt} />
-                </div>
+        <AppLayout>
+            {showProfileModal && (
+                <CompleteProfileModal
+                    userID={user.id}
+                    onDone={dismissProfileModal}
+                    onDismiss={dismissProfileModal}
+                />
+            )}
 
-                <ViewStocksList stockList={stockList} navigate={navigate} fmt={fmt} />
+            <div className="page-header">
+                <h1>Welcome back, Investor</h1>
+                <p>Market analysis is updated and ready for your next move.</p>
             </div>
-        </div>
+
+            <h2 className="section-heading">Market Overview</h2>
+
+            <div className="market-grid">
+                <ViewTrendingTickers trendList={trendList} fmt={fmt} navigate={navigate} />
+                <ViewTopGainersLosers gainers={gainers} losers={losers} fmt={fmt} navigate={navigate} />
+            </div>
+
+            <ViewStocksList stockList={stockList} navigate={navigate} fmt={fmt} />
+
+            <div className="dashboard-recommendations">
+                <div className="dashboard-recommendations-header">
+                    <h2 className="section-heading">AI Recommendations</h2>
+                    <span className="view-all-link" onClick={() => navigate('/recommendations')}>
+                        View All Recommendations &rarr;
+                    </span>
+                </div>
+                <LockedFeature
+                    title="Personalized Recommendations"
+                    description="Subscribe to unlock AI-powered stock picks tailored to your risk tolerance and portfolio."
+                >
+                    {recommendations.length === 0 ? (
+                        <p className="empty-state">No recommendations available yet.</p>
+                    ) : (
+                        <ViewStockRecommendation recommendations={recommendations} navigate={navigate} />
+                    )}
+                </LockedFeature>
+            </div>
+        </AppLayout>
     )
 }
 export default Dashboard
