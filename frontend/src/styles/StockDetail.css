@@ -1,13 +1,29 @@
+.page-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
 .back-link {
     display: inline-block;
     color: #888;
     font-size: 13px;
     cursor: pointer;
-    margin-bottom: 8px;
 }
 
 .back-link:hover {
     color: #ffffff;
+}
+
+.btn-browse-traders {
+    background: #00ff41;
+    color: #000000;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .stock-header-stats {

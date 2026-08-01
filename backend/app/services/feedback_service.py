@@ -4,12 +4,13 @@ from typing import Optional
 from app.core.database import supabase
 
 
-async def createFeedback(userID: str, subject: str, message: str) -> dict:
-    result = (
-        supabase.table("feedback")
-        .insert({"user_id": userID, "subject": subject, "message": message})
-        .execute()
-    )
+async def createFeedback(
+    userID: str, subject: str, message: str, rating: Optional[int] = None
+) -> dict:
+    insert_data = {"user_id": userID, "subject": subject, "message": message}
+    if rating is not None:
+        insert_data["rating"] = rating
+    result = supabase.table("feedback").insert(insert_data).execute()
     return result.data[0]
 
 
@@ -28,12 +29,44 @@ async def getAllFeedback(
     result = query.range(offset, offset + limit - 1).execute()
     count_result = count_query.execute()
 
+    rows = result.data or []
+    user_ids = list({row["user_id"] for row in rows if row.get("user_id")})
+    user_map = {}
+    if user_ids:
+        users_result = (
+            supabase.table("users")
+            .select("id, name, email")
+            .in_("id", user_ids)
+            .execute()
+        )
+        user_map = {u["id"]: u for u in (users_result.data or [])}
+
+    for row in rows:
+        user = user_map.get(row.get("user_id"))
+        row["user_name"] = user.get("name") if user else "Unknown"
+        row["user_email"] = user.get("email") if user else "Unknown"
+
     return {
-        "data": result.data or [],
+        "data": rows,
         "total": count_result.count or 0,
         "page": page,
         "limit": limit,
     }
+
+
+async def getPublicApprovedFeedback(limit: int = 9) -> list:
+    try:
+        result = (
+            supabase.table("feedback")
+            .select("id, subject, message, rating, created_at, users(name)")
+            .eq("status", "approved")
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return result.data or []
+    except Exception:
+        return []
 
 
 async def updateFeedbackStatus(feedbackID: str, new_status: str) -> Optional[dict]:
