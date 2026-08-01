@@ -11,7 +11,6 @@ import ViewStockChart from '../components/stock/ViewStockChart'
 import ViewNews from '../components/stock/ViewNews'
 import ViewPrediction from '../components/stock/ViewPrediction'
 import ViewFundamentalAnalysis from '../components/stock/ViewFundamentalAnalysis'
-import ViewOrderBook from '../components/stock/ViewOrderBook'
 
 function formatLarge(num) {
     if (!num) return 'N/A'
@@ -36,7 +35,6 @@ function StockDetail() {
     const [newsError, setNewsError] = useState(null)
     const [fundData, setFundData] = useState(null)
     const [historyData, setHistoryData] = useState([])
-    const [orderBookData, setOrderBookData] = useState(null)
     const [activeInterval, setActiveInterval] = useState('1D')
 
     // switch between tabs
@@ -77,13 +75,6 @@ function StockDetail() {
             setFundData(fund)
         } catch (err) {
             console.log('fundamentals failed:', err.message)
-        }
-
-        try {
-            const ob = await api.get(`/stocks/${ticker}/orderbook`)
-            setOrderBookData(ob)
-        } catch (err) {
-            console.log('orderbook failed:', err.message)
         }
 
         setLoading(false)
@@ -138,7 +129,7 @@ function StockDetail() {
 
                 {/* tab bar */}
                 <div className="tab-bar">
-                    {['Chart', 'News', 'Prediction', 'Fundamental', 'OrderBook'].map((tab) => (
+                    {['Chart', 'News', 'Prediction', 'Fundamental'].map((tab) => (
                         <span
                             key={tab}
                             className={activeTab === tab ? 'tab-item active' : 'tab-item'}
@@ -181,9 +172,6 @@ function StockDetail() {
                 {activeTab === 'Fundamental' && (
                     <ViewFundamentalAnalysis fundData={fundData} formatNum={formatNum} formatLarge={formatLarge} />
                 )}
-
-                {/* order book tab */}
-                {activeTab === 'OrderBook' && <ViewOrderBook orderBook={orderBookData} />}
             </>
         </AppLayout>
     )
