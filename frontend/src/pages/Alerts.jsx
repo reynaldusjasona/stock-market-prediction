@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
+import AppLayout from '../components/layout/AppLayout'
+import LockedFeature from '../components/LockedFeature'
 import '../styles/Alerts.css'
 
 function Alerts() {
@@ -18,13 +18,6 @@ function Alerts() {
     const [editPrice, setEditPrice] = useState('')
     const [editCondition, setEditCondition] = useState('above')
     const [error, setError] = useState(null)
-    const { logout } = useAuth()
-    const navigate = useNavigate()
-
-    function handleLogout() {
-        logout()
-        navigate('/login')
-    }
 
     // fetch trending to get tickers, then fetch alerts for each
     async function loadAlerts() {
@@ -50,8 +43,13 @@ function Alerts() {
         }
     }
 
+    // opportunistically check all of this user's alerts against current
+    // prices whenever they visit this page, since there's no background
+    // job doing this - then load the (possibly just-updated) alert list
     useEffect(() => {
-        loadAlerts()
+        api.post('/alerts/check-all')
+            .catch((err) => console.log('alert check failed:', err.message))
+            .finally(() => loadAlerts())
     }, [])
 
     // search function - same pattern as watchlist
@@ -118,107 +116,101 @@ function Alerts() {
     }
 
     return (
-        <div className="alerts-page">
-            <aside className="sidebar">
-                <div className="sidebar-logo">StockWise <span>AI</span></div>
-                <span className="sidebar-link" onClick={() => navigate('/dashboard')}>Dashboard</span>
-                <span className="sidebar-link" onClick={() => navigate('/allstocks')}>All Stocks</span>
-                <span className="sidebar-link" onClick={() => navigate('/recommendations')}>Recommendations</span>
-                <span className="sidebar-link" onClick={() => navigate('/watchlist')}>Watchlist</span>
-                <span className="sidebar-link" onClick={() => navigate('/portfolio')}>Portfolio</span>
-                <span className="sidebar-link active">Alerts</span>
-                <span className="sidebar-link" onClick={() => navigate('/notifications')}>Notifications</span>
-                <span className="sidebar-link" onClick={() => navigate('/feedback')}>Feedback</span>
-                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-            </aside>
+        <AppLayout>
             <div className="alerts-content">
                 <div className="alerts-header">
                     <div>
                         <h1>Alerts</h1>
                         <p>Get notified when your conditions are met</p>
                     </div>
-                    <button className="btn-create-alert" onClick={() => setShowForm(!showForm)}>
+                </div>
+
+                <LockedFeature
+                    title="Price Alerts"
+                    description="Subscribe to unlock price alerts and get notified the moment a stock crosses your target."
+                >
+                    <button className="btn-create-alert" onClick={() => setShowForm(!showForm)} style={{ marginBottom: '20px' }}>
                         + Create Alert
                     </button>
-                </div>
 
-                {showForm && (
-                    <div className="alert-form">
-                        <div className="search-wrap">
-                            <input value={ticker} onChange={(e) => searchTickers(e.target.value)} placeholder="Search ticker..." />
-                            {showDropdown && searchResults.length > 0 && (
-                                <div className="search-dropdown">
-                                    {searchResults.map(s => (
-                                        <div key={s.ticker} className="search-item" onClick={() => selectTicker(s.ticker)}>
-                                            <span className="search-ticker">{s.ticker}</span>
-                                            <span className="search-name">{s.company_name}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                    {showForm && (
+                        <div className="alert-form">
+                            <div className="search-wrap">
+                                <input value={ticker} onChange={(e) => searchTickers(e.target.value)} placeholder="Search ticker..." />
+                                {showDropdown && searchResults.length > 0 && (
+                                    <div className="search-dropdown">
+                                        {searchResults.map(s => (
+                                            <div key={s.ticker} className="search-item" onClick={() => selectTicker(s.ticker)}>
+                                                <span className="search-ticker">{s.ticker}</span>
+                                                <span className="search-name">{s.company_name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <input type="number" value={targetPrice} onChange={(e) => setTargetPrice(e.target.value)} placeholder="Target price" />
+                            <select value={condition} onChange={(e) => setCondition(e.target.value)}>
+                                <option value="above">Price Above</option>
+                                <option value="below">Price Below</option>
+                            </select>
+                            <button className="btn-create-alert" onClick={createAlert} style={{ opacity: selectedTicker ? 1 : 0.5 }}>Save Alert</button>
+                            <button className="btn-cancel" onClick={() => setShowForm(false)}>Cancel</button>
                         </div>
-                        <input type="number" value={targetPrice} onChange={(e) => setTargetPrice(e.target.value)} placeholder="Target price" />
-                        <select value={condition} onChange={(e) => setCondition(e.target.value)}>
-                            <option value="above">Price Above</option>
-                            <option value="below">Price Below</option>
-                        </select>
-                        <button className="btn-create-alert" onClick={createAlert} style={{ opacity: selectedTicker ? 1 : 0.5 }}>Save Alert</button>
-                        <button className="btn-cancel" onClick={() => setShowForm(false)}>Cancel</button>
-                    </div>
-                )}
+                    )}
 
-                {error && <p className="error-msg">{error}</p>}
+                    {error && <p className="error-msg">{error}</p>}
 
-                <div className="alerts-table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Ticker</th>
-                                <th>Condition</th>
-                                <th>Target Price</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {!loading && alerts.length === 0 && (
-                                <tr><td colSpan="5" style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No alerts yet. Create one above.</td></tr>
-                            )}
-                            {alerts.map(alert => (
-                                <tr key={alert.id}>
-                                    <td className="ticker-cell">{alert.ticker}</td>
-                                    <td>Price {alert.condition} ${Number(alert.target_price).toFixed(2)}</td>
-                                    <td>${Number(alert.target_price).toFixed(2)}</td>
-                                    <td>
-                                        <span className={alert.is_triggered ? 'badge-triggered' : 'badge-active'}>
-                                            {alert.is_triggered ? 'Triggered' : 'Active'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {editingId === alert.id ? (
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} style={{ width: '100px' }} />
-                                                <select value={editCondition} onChange={(e) => setEditCondition(e.target.value)}>
-                                                    <option value="above">Above</option>
-                                                    <option value="below">Below</option>
-                                                </select>
-                                                <button onClick={() => saveEdit(alert.id)} className="btn-save">Save</button>
-                                                <button onClick={() => setEditingId(null)} className="btn-cancel">Cancel</button>
-                                            </div>
-                                        ) : (
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <button className="btn-edit" onClick={() => { setEditingId(alert.id); setEditPrice(alert.target_price); setEditCondition(alert.condition) }}>✏️</button>
-                                                <button className="btn-delete" onClick={() => deleteAlert(alert.id)}>🗑️</button>
-                                            </div>
-                                        )}
-                                    </td>
+                    <div className="alerts-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ticker</th>
+                                    <th>Condition</th>
+                                    <th>Target Price</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {!loading && alerts.length === 0 && (
+                                    <tr><td colSpan="5" style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No alerts yet. Create one above.</td></tr>
+                                )}
+                                {alerts.map(alert => (
+                                    <tr key={alert.id}>
+                                        <td className="ticker-cell">{alert.ticker}</td>
+                                        <td>Price {alert.condition} ${Number(alert.target_price).toFixed(2)}</td>
+                                        <td>${Number(alert.target_price).toFixed(2)}</td>
+                                        <td>
+                                            <span className={alert.is_triggered ? 'badge-triggered' : 'badge-active'}>
+                                                {alert.is_triggered ? 'Triggered' : 'Active'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {editingId === alert.id ? (
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} style={{ width: '100px' }} />
+                                                    <select value={editCondition} onChange={(e) => setEditCondition(e.target.value)}>
+                                                        <option value="above">Above</option>
+                                                        <option value="below">Below</option>
+                                                    </select>
+                                                    <button onClick={() => saveEdit(alert.id)} className="btn-save">Save</button>
+                                                    <button onClick={() => setEditingId(null)} className="btn-cancel">Cancel</button>
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <button className="btn-edit" onClick={() => { setEditingId(alert.id); setEditPrice(alert.target_price); setEditCondition(alert.condition) }}>✏️</button>
+                                                    <button className="btn-delete" onClick={() => deleteAlert(alert.id)}>🗑️</button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </LockedFeature>
             </div>
-        </div>
+        </AppLayout>
     )
 }
 

@@ -88,6 +88,7 @@ def fetch_news(
 
 
 
+
 def get_historical_daily_sentiment(
     ticker: str,
     start: str,
@@ -204,6 +205,7 @@ def get_historical_daily_sentiment(
         ]
     ]
 
+
 def add_sentiment_features(
     out: pd.DataFrame,
     ticker: str,
@@ -303,6 +305,7 @@ def add_sentiment_features(
 
     return out
 
+
 if __name__ == "__main__":
     # test assign_to_trading_session() with edge case
     cases = [
@@ -315,5 +318,3 @@ if __name__ == "__main__":
     for ts_str, desc in cases:
         result = assign_to_trading_session(pd.Timestamp(ts_str))
         print(f"{desc:35s} {ts_str} is considered as {result.date()}")
-    
-
