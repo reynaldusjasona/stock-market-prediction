@@ -10,7 +10,7 @@ _MARKET_OPEN = time(9, 30)
 _MARKET_CLOSE = time(16, 0)
 
 _HISTORICAL_SENTIMENT_FILE = (
-    Path(__file__).resolve().parent.parent
+    Path(__file__).resolve().parent
     / "historical_sentiment_data"
     / "historical_daily_sentiment.csv"
 )
