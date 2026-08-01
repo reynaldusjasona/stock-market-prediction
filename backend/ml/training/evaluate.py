@@ -87,13 +87,17 @@ def evaluate_model(
     print("Confusion Matrix:")
     print(cm)
 
+    if y_proba.ndim != 2 or y_proba.shape[1] != 2:
+        raise ValueError(
+            f"Expected binary class probabilities with shape (n, 2), "
+            f"but received {y_proba.shape}."
+        )
+
     roc_auc = round(
-        roc_auc_score(
-            y_test_enc, y_proba,
-            multi_class="ovr", average="weighted",
-        ), 4
+        roc_auc_score(y_test_enc, y_proba[:, 1]),
+        4,
     )
-    print(f"\nROC-AUC Score (weighted OvR): {roc_auc}")
+    print(f"\nROC-AUC Score (binary): {roc_auc}")
 
     return {
         "accuracy": round(accuracy_score(y_test_enc, y_pred_enc), 4),
@@ -140,12 +144,13 @@ def run_evaluation() -> dict:
     labeled_data = apply_triple_barrier_by_ticker(
         df=combined,
         ticker_column="Ticker",
-        profit_taking_multiplier=1.0,
-        stop_loss_multiplier=1.0,
+        profit_taking_multiplier=1.5,
+        stop_loss_multiplier=1.5,
         volatility_window=20,
         min_return=0.005,
         drop_ambiguous=True,
         drop_unlabeled=True,
+        binary_only=True,
     )
 
     excluded_columns = [
@@ -182,6 +187,18 @@ def run_evaluation() -> dict:
     print(f"Precision: {metrics['precision']}")
     print(f"Recall   : {metrics['recall']}")
     print(f"F1       : {metrics['f1']}")
+
+    importance = pd.DataFrame({
+        "Feature": X.columns,
+        "Importance": model.feature_importances_
+    })
+
+    print(
+        importance.sort_values(
+            "Importance",
+            ascending=False
+        ).head(15)
+    )
 
     return metrics
 
