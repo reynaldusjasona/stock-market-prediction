@@ -91,7 +91,7 @@ def evaluate_model(
         raise ValueError(
             f"Expected binary class probabilities with shape (n, 2), "
             f"but received {y_proba.shape}."
-        ) 
+        )
 
     roc_auc = round(
         roc_auc_score(y_test_enc, y_proba[:, 1]),
