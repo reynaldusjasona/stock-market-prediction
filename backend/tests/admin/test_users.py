@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from app.main import app
@@ -52,7 +51,10 @@ class TestUC6ViewUser:
 
 class TestUC7SearchUser:
     def test_A_7_BB_unique_name_match(self):
-        with patch("app.routers.admin.searchUserByKeywords", return_value=[{"id": "u1", "name": "UniqueXYZ"}]):
+        with patch(
+            "app.routers.admin.searchUserByKeywords",
+            return_value=[{"id": "u1", "name": "UniqueXYZ"}],
+        ):
             r = client.get("/api/admin/users/search?keywords=UniqueXYZ", headers=ADMIN_HEADERS)
         assert r.status_code == 200
 
@@ -70,45 +72,66 @@ class TestUC7SearchUser:
 
 class TestUC8UpdateUser:
     def test_A_8_BB_role_status_change(self):
-        with patch("app.routers.admin.validatePermission", return_value=True), \
-             patch("app.routers.admin.svcUpdateUserDetails", return_value={"role": "trader", "status": "active"}):
-            r = client.put("/api/admin/users/u1", json={"role": "trader", "status": "active"}, headers=ADMIN_HEADERS)
+        with patch("app.routers.admin.validatePermission", return_value=True), patch(
+            "app.routers.admin.svcUpdateUserDetails",
+            return_value={"role": "trader", "status": "active"},
+        ):
+            r = client.put(
+                "/api/admin/users/u1",
+                json={"role": "trader", "status": "active"},
+                headers=ADMIN_HEADERS,
+            )
         assert r.status_code == 200
 
     def test_A_8_WB_payload_only_role_and_status(self):
-        with patch("app.routers.admin.validatePermission", return_value=True), \
-             patch("app.routers.admin.svcUpdateUserDetails", return_value={}) as mock_upd:
-            client.put("/api/admin/users/u1", json={"role": "trader", "status": "active"}, headers=ADMIN_HEADERS)
+        with patch("app.routers.admin.validatePermission", return_value=True), patch(
+            "app.routers.admin.svcUpdateUserDetails", return_value={}
+        ) as mock_upd:
+            client.put(
+                "/api/admin/users/u1",
+                json={"role": "trader", "status": "active"},
+                headers=ADMIN_HEADERS,
+            )
         assert mock_upd.called
         args = mock_upd.call_args[0]
         assert args[1] == "trader" and args[2] == "active"
 
     def test_A_8_FN_role_change_reflected_in_traders_list(self):
-        with patch("app.routers.admin.validatePermission", return_value=True), \
-             patch("app.routers.admin.svcUpdateUserDetails", return_value={"role": "trader"}), \
-             patch("app.routers.admin.getAllUserAccount", return_value=[{"id": "u1", "role": "trader"}]):
-            client.put("/api/admin/users/u1", json={"role": "trader", "status": "active"}, headers=ADMIN_HEADERS)
+        with patch("app.routers.admin.validatePermission", return_value=True), patch(
+            "app.routers.admin.svcUpdateUserDetails", return_value={"role": "trader"}
+        ), patch(
+            "app.routers.admin.getAllUserAccount", return_value=[{"id": "u1", "role": "trader"}]
+        ):
+            client.put(
+                "/api/admin/users/u1",
+                json={"role": "trader", "status": "active"},
+                headers=ADMIN_HEADERS,
+            )
             r = client.get("/api/admin/users", headers=ADMIN_HEADERS)
         assert any(u["role"] == "trader" for u in r.json())
 
 
 class TestUC9SuspendUser:
     def test_A_9_BB_suspend_changes_status(self):
-        with patch("app.routers.admin.svcSuspendAccount", return_value={"status": "suspended"}), \
-             patch("app.routers.admin.logActivity", return_value=None):
+        with patch(
+            "app.routers.admin.svcSuspendAccount", return_value={"status": "suspended"}
+        ), patch("app.routers.admin.logActivity", return_value=None):
             r = client.patch("/api/admin/users/u1/suspend", headers=ADMIN_HEADERS)
         assert r.json()["status"] == "suspended"
 
     def test_A_9_WB_reason_included_in_payload(self):
-        with patch("app.routers.admin.svcSuspendAccount", return_value={}) as mock_susp, \
-             patch("app.routers.admin.logActivity", return_value=None):
+        with patch("app.routers.admin.svcSuspendAccount", return_value={}) as mock_susp, patch(
+            "app.routers.admin.logActivity", return_value=None
+        ):
             client.patch("/api/admin/users/u1/suspend", headers=ADMIN_HEADERS)
         assert mock_susp.called
 
     def test_A_9_FN_suspend_then_unsuspend(self):
-        with patch("app.routers.admin.svcSuspendAccount", return_value={"status": "suspended"}), \
-             patch("app.routers.admin.svcUnsuspendAccount", return_value={"status": "active"}), \
-             patch("app.routers.admin.logActivity", return_value=None):
+        with patch(
+            "app.routers.admin.svcSuspendAccount", return_value={"status": "suspended"}
+        ), patch("app.routers.admin.svcUnsuspendAccount", return_value={"status": "active"}), patch(
+            "app.routers.admin.logActivity", return_value=None
+        ):
             r1 = client.patch("/api/admin/users/u1/suspend", headers=ADMIN_HEADERS)
             r2 = client.patch("/api/admin/users/u1/unsuspend", headers=ADMIN_HEADERS)
         assert r1.json()["status"] == "suspended" and r2.json()["status"] == "active"
@@ -116,21 +139,27 @@ class TestUC9SuspendUser:
 
 class TestUC10DeleteUser:
     def test_A_10_BB_delete_removes_user(self):
-        with patch("app.routers.auth.getDeleteConfirm", return_value={"session_token": None}), \
-             patch("app.routers.auth.deleteAccountAndData", return_value=True):
+        with patch(
+            "app.routers.auth.getDeleteConfirm", return_value={"session_token": None}
+        ), patch("app.routers.auth.deleteAccountAndData", return_value=True):
             r = client.delete("/api/auth/user/u1")
         assert r.status_code == 200
 
     def test_A_10_WB_correct_route_used(self):
-        with patch("app.routers.auth.getDeleteConfirm", return_value={"session_token": None}) as mock_confirm, \
-             patch("app.routers.auth.deleteAccountAndData", return_value=True) as mock_del:
+        with patch(
+            "app.routers.auth.getDeleteConfirm", return_value={"session_token": None}
+        ) as mock_confirm, patch(
+            "app.routers.auth.deleteAccountAndData", return_value=True
+        ) as mock_del:
             client.delete("/api/auth/user/u1")
         assert mock_confirm.called and mock_del.called
 
     def test_A_10_FN_deleted_user_not_searchable(self):
-        with patch("app.routers.auth.getDeleteConfirm", return_value={"session_token": None}), \
-             patch("app.routers.auth.deleteAccountAndData", return_value=True), \
-             patch("app.routers.admin.searchUserByKeywords", return_value=[]):
+        with patch(
+            "app.routers.auth.getDeleteConfirm", return_value={"session_token": None}
+        ), patch("app.routers.auth.deleteAccountAndData", return_value=True), patch(
+            "app.routers.admin.searchUserByKeywords", return_value=[]
+        ):
             client.delete("/api/auth/user/u1")
             r = client.get("/api/admin/users/search?keywords=deleted-user", headers=ADMIN_HEADERS)
         assert r.json() == []

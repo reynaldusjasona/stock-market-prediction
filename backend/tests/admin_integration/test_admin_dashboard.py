@@ -1,6 +1,3 @@
-from app.core.database import supabase
-
-
 class TestAdminDashboard:
     def test_dashboard_stats_reflect_real_user_count(
         self, client, make_user, auth_headers
@@ -11,14 +8,15 @@ class TestAdminDashboard:
         assert before.status_code == 200, before.text
         before_count = before.json()["total_users"]
 
-        extra_one = make_user(role="investor")
-        extra_two = make_user(role="trader")
+        make_user(role="investor")
+        make_user(role="trader")
 
         after = client.get("/api/admin/stats", headers=auth_headers(admin))
         assert after.status_code == 200, after.text
         after_count = after.json()["total_users"]
 
         assert after_count == before_count + 2, (
+
             f"expected total_users to grow by 2 with two real inserts, "
             f"went {before_count} -> {after_count}"
         )

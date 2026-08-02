@@ -1,6 +1,3 @@
-from app.core.database import supabase
-
-
 class TestUpdateLandingPage:
     def test_update_persists_and_round_trips_through_get(
         self, client, make_user, auth_headers, db
@@ -34,7 +31,6 @@ class TestUpdateLandingPage:
         get_resp = client.get("/api/admin/landing", headers=auth_headers(admin))
         assert get_resp.status_code == 200, get_resp.text
         assert get_resp.json()["hero"]["headline"] == "Test Headline"
-
         logs = (
             db.table("activity_logs")
             .select("*")
@@ -141,7 +137,6 @@ class TestModelRetrain:
         )
         assert resp.status_code == 200, resp.text
         assert resp.json()["status"] == "queued"
-
         status_resp = client.get(
             "/api/admin/model/retrain/status", headers=auth_headers(admin)
         )
@@ -149,7 +144,6 @@ class TestModelRetrain:
         assert status_resp.json()["status"] == "queued"
         assert status_resp.json()["last_request"] is not None
 
-        # And the activity log records who requested it.
         logs = (
             db.table("activity_logs")
             .select("*")
