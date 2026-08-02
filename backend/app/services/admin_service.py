@@ -406,36 +406,160 @@ async def dismissAlert(alertId: str) -> dict:
         return None
 
 
-async def getLandingContent() -> list:
+def _default_landing_content() -> dict:
+    return {
+        "hero": {
+            "tag": "",
+            "headline": "",
+            "subline": "",
+            "cta_label": "",
+            "secondary_label": "",
+        },
+        "about": {
+            "subtitle": "",
+            "cards": [],
+        },
+        "features": {
+            "subtitle": "",
+            "items": [],
+        },
+        "testimonials": [],
+        "subscription": {
+            "title": "",
+            "subtitle": "",
+            "plan_name": "",
+            "price": "",
+            "period": "",
+            "bullets": [],
+            "cta_label": "",
+            "footnote": "",
+        },
+        "faqs": [],
+    }
+
+
+def _apply_landing_defaults(content: dict) -> dict:
+    defaults = _default_landing_content()
+    merged = {**defaults, **content}
+    for key in ("hero", "about", "features", "subscription"):
+        section = content.get(key)
+        merged[key] = (
+            {**defaults[key], **section} if isinstance(section, dict) else defaults[key]
+        )
+    for key in ("testimonials", "faqs"):
+        section = content.get(key)
+        merged[key] = section if isinstance(section, list) else defaults[key]
+    return merged
+
+
+async def getLandingContent() -> dict:
     try:
         result = (
-            supabase.table("landing_content")
+            supabase.table("landing_page_config")
             .select("*")
-            .order("display_order")
+            .limit(1)
             .execute()
         )
-        return result.data
+        content = result.data[0].get("content") if result.data else None
+        if not isinstance(content, dict):
+            content = {}
+        return _apply_landing_defaults(content)
     except Exception:
-        return []
+        return _default_landing_content()
 
 
-async def updateLandingContent(sections: list, adminId: str) -> list:
-    for section in sections:
-        updateDict = {
-            k: v for k, v in section.items() if k != "section_key"
-        }
-        updateDict["updated_at"] = datetime.utcnow().isoformat()
-        updateDict["updated_by"] = adminId
-        supabase.table("landing_content").update(updateDict).eq(
-            "section_key", section["section_key"]
-        ).execute()
-    result = (
-        supabase.table("landing_content")
-        .select("*")
-        .order("display_order")
+async def updateLandingContent(content: dict, adminID: str) -> dict:
+    if not isinstance(content, dict):
+        raise HTTPException(
+            status_code=400, detail="Landing content must be a JSON object"
+        )
+    try:
+        existing = (
+            supabase.table("landing_page_config")
+            .select("id")
+            .limit(1)
+            .execute()
+        )
+        if existing.data:
+            rowID = existing.data[0]["id"]
+            result = (
+                supabase.table("landing_page_config")
+                .update({
+                    "content": content,
+                    "updated_at": "now()",
+                    "updated_by": adminID,
+                })
+                .eq("id", rowID)
+                .execute()
+            )
+        else:
+            result = (
+                supabase.table("landing_page_config")
+                .insert({
+                    "content": content,
+                    "updated_by": adminID,
+                })
+                .execute()
+            )
+        if result.data:
+            return _apply_landing_defaults(result.data[0].get("content", {}))
+        return _apply_landing_defaults(content)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def appendFeedbackTestimonial(feedback: dict) -> None:
+    """
+    Append an approved feedback row to landing_page_config.content.testimonials
+    as {feedback_id, name, quote, rating}. Read-modify-write so nothing else in
+    content is lost. No-op if this feedback_id is already present (guards
+    against the same feedback being approved/appended twice).
+    """
+    feedback_id = feedback.get("id")
+    user_id = feedback.get("user_id")
+
+    name = "Anonymous"
+    if user_id:
+        user_result = (
+            supabase.table("users")
+            .select("name")
+            .eq("id", user_id)
+            .execute()
+        )
+        if user_result.data:
+            name = user_result.data[0].get("name") or name
+
+    existing = (
+        supabase.table("landing_page_config")
+        .select("id, content")
+        .limit(1)
         .execute()
     )
-    return result.data
+    if not existing.data:
+        return
+
+    row = existing.data[0]
+    content = row.get("content") if isinstance(row.get("content"), dict) else {}
+    testimonials = content.get("testimonials")
+    if not isinstance(testimonials, list):
+        testimonials = []
+
+    if any(t.get("feedback_id") == feedback_id for t in testimonials):
+        return
+
+    testimonials.append({
+        "feedback_id": feedback_id,
+        "name": name,
+        "quote": feedback.get("message"),
+        "rating": feedback.get("rating"),
+    })
+    content["testimonials"] = testimonials
+
+    supabase.table("landing_page_config").update(
+        {"content": content}
+    ).eq("id", row["id"]).execute()
 
 
 async def getActivityLogs(
@@ -709,6 +833,8 @@ async def createApiSource(data: dict) -> dict:
     if not data.get("name"):
         raise HTTPException(status_code=400, detail="Name is required")
     insert_data = {k: v for k, v in data.items() if k in _API_SOURCE_FIELDS}
+    if "is_enable" in insert_data:
+        insert_data["is_enabled"] = insert_data.pop("is_enable")
     result = supabase.table("api_sources").insert(insert_data).execute()
     return result.data[0]
 
@@ -720,6 +846,8 @@ async def updateApiSource(sourceId: str, data: dict) -> dict:
         raise HTTPException(
             status_code=400, detail="No valid fields to update"
         )
+    if "is_enable" in update_data:
+        update_data["is_enabled"] = update_data.pop("is_enable")
     update_data["updated_at"] = datetime.utcnow().isoformat()
     result = (
         supabase.table("api_sources")

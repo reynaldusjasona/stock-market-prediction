@@ -16,7 +16,7 @@ router = APIRouter(prefix="/trader", tags=["Trader"])
 
 
 class EndorseSignalRequest(BaseModel):
-    prediction_id: str
+    signal_id: str
     endorsement: str
     notes: Optional[str] = None
 
@@ -55,7 +55,7 @@ async def endorseSignalRoute(
     current_user: dict = Depends(require_approved_trader),
 ):
     result = await endorseSignal(
-        current_user["sub"], body.prediction_id, body.endorsement, body.notes
+        current_user["sub"], body.signal_id, body.endorsement, body.notes
     )
     return {"endorsement": result}
 
