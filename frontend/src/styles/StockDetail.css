@@ -26,6 +26,93 @@
     font-weight: 600;
 }
 
+.ask-trader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.ask-trader-modal {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 24px;
+    width: 360px;
+    max-width: 90vw;
+}
+
+.ask-trader-modal h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 16px;
+}
+
+.ask-trader-modal .form-group {
+    margin-bottom: 16px;
+}
+
+.ask-trader-modal label {
+    display: block;
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.ask-trader-modal select,
+.ask-trader-modal textarea {
+    width: 100%;
+    background: #0d0e12;
+    border: 1px solid #2a2b30;
+    border-radius: 6px;
+    color: #ffffff;
+    padding: 8px 10px;
+    font-size: 14px;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.ask-trader-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.ask-trader-actions .btn-primary {
+    background: #00ff41;
+    color: #000000;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.ask-trader-actions .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ask-trader-actions .btn-secondary {
+    background: transparent;
+    color: #888;
+    border: 1px solid #2a2b30;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
 .stock-header-stats {
     display: flex;
     align-items: center;
