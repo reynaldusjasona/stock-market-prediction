@@ -16,14 +16,23 @@ const NAV_LINKS = [
     { label: 'Feedback', path: '/feedback' },
 ]
 
+// pages an unsubscribed investor must still be able to reach - otherwise
+// there's no way to get to the Subscribe button at all
+const EXEMPT_PATHS = ['/account', '/subscription']
+
 function AppLayout({ children }) {
     const navigate = useNavigate()
     const location = useLocation()
-    const { user, logout } = useAuth()
+    const { user, isSubscribed, subscriptionLoaded, logout } = useAuth()
     const [query, setQuery] = useState('')
     const [results, setResults] = useState([])
     const [showResults, setShowResults] = useState(false)
     const [showProfileMenu, setShowProfileMenu] = useState(false)
+
+    // isSubscribed already covers traders (bypass built into AuthContext),
+    // so no separate role check is needed here
+    const isLocked = subscriptionLoaded && !isSubscribed && !EXEMPT_PATHS.includes(location.pathname)
+    const searchDisabled = !subscriptionLoaded || isLocked
 
     function handleLogout() {
         logout()
@@ -32,7 +41,7 @@ function AppLayout({ children }) {
 
     async function handleSearchChange(value) {
         setQuery(value)
-        if (value.length < 1) {
+        if (searchDisabled || value.length < 1) {
             setResults([])
             setShowResults(false)
             return
@@ -76,13 +85,14 @@ function AppLayout({ children }) {
                     <div className="topbar-search">
                         <input
                             type="text"
-                            placeholder="Search stock by name or ticker"
+                            placeholder={searchDisabled ? 'Subscribe to search stocks' : 'Search stock by name or ticker'}
                             value={query}
+                            disabled={searchDisabled}
                             onChange={(e) => handleSearchChange(e.target.value)}
                             onFocus={() => results.length > 0 && setShowResults(true)}
                             onBlur={() => setTimeout(() => setShowResults(false), 150)}
                         />
-                        {showResults && results.length > 0 && (
+                        {!searchDisabled && showResults && results.length > 0 && (
                             <div className="topbar-search-dropdown">
                                 {results.map((r) => (
                                     <div
@@ -125,7 +135,23 @@ function AppLayout({ children }) {
                     </div>
                 </div>
 
-                <main className="main-content">{children}</main>
+                <main className="main-content">
+                    {!subscriptionLoaded ? null : isLocked ? (
+                        <div className="page-lock-container">
+                            <div className="page-lock-blurred">{children}</div>
+                            <div className="page-lock-overlay">
+                                <div className="page-lock-card">
+                                    <div className="page-lock-icon">🔒</div>
+                                    <h3>Subscribe to unlock StockWise AI</h3>
+                                    <p>Subscribe to the Investor Plan to access your dashboard, stock data, watchlist, portfolio, and every other feature.</p>
+                                    <button className="btn-unlock" onClick={() => navigate('/subscription')}>
+                                        Subscribe to Unlock
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : children}
+                </main>
             </div>
         </div>
     )

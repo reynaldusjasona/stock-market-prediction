@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
 import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
-import LockedFeature from '../components/LockedFeature'
 import '../styles/Recommendations.css'
 import ViewStockRecommendation from '../components/recommendations/ViewStockRecommendation'
 import ViewRecommendationHistory from '../components/recommendations/ViewRecommendationHistory'
@@ -49,13 +48,8 @@ function Recommendations() {
                     <p>AI-generated Buy / Hold / Sell signals tailored to your profile</p>
                 </div>
 
-                <LockedFeature
-                    title="AI Recommendations"
-                    description="Subscribe to unlock personalized Buy / Hold / Sell signals tailored to your risk tolerance and holdings."
-                >
-                    <ViewStockRecommendation recommendations={recommendations} navigate={navigate} />
-                    <ViewRecommendationHistory />
-                </LockedFeature>
+                <ViewStockRecommendation recommendations={recommendations} navigate={navigate} />
+                <ViewRecommendationHistory />
             </div>
         </AppLayout>
     )
