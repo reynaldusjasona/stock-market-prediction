@@ -3,6 +3,7 @@ import random
 import re
 import secrets
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from fastapi import HTTPException
 
@@ -200,12 +201,28 @@ async def getInvestorRecordForEdit(investorID: str) -> dict:
     return result.data[0]
 
 
-async def updateAccount(investorID: str, name: str, password: str) -> dict:
+async def updateAccount(
+    investorID: str,
+    name: str,
+    password: str,
+    phone: Optional[str] = None,
+    specialization: Optional[str] = None,
+    years_experience: Optional[int] = None,
+    bio: Optional[str] = None,
+) -> dict:
     updates: dict = {}
     if name:
         updates["name"] = name
     if password:
         updates["password_hash"] = hashPassword(password)
+    if phone is not None:
+        updates["phone"] = phone
+    if specialization is not None:
+        updates["specialization"] = specialization
+    if years_experience is not None:
+        updates["years_experience"] = years_experience
+    if bio is not None:
+        updates["bio"] = bio
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
     result = (
