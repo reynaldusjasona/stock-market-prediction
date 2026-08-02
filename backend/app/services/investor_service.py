@@ -61,27 +61,38 @@ async def engageTrader(investor_id: str, trader_id: str) -> dict:
     if not trader.data:
         raise HTTPException(status_code=404, detail="Trader not found.")
 
+    # trader_clients has a unique constraint on (trader_id, investor_id), so
+    # a prior ended engagement leaves a row behind - reactivate it instead
+    # of inserting a duplicate, which would violate that constraint.
     existing = (
         supabase.table("trader_clients")
-        .select("id")
+        .select("id, status")
         .eq("trader_id", trader_id)
         .eq("investor_id", investor_id)
         .execute()
     )
     if existing.data:
-        raise HTTPException(
-            status_code=409, detail="Already engaged with this trader."
+        existingRow = existing.data[0]
+        if existingRow.get("status") == "active":
+            raise HTTPException(
+                status_code=409, detail="Already engaged with this trader."
+            )
+        result = (
+            supabase.table("trader_clients")
+            .update({"status": "active"})
+            .eq("id", existingRow["id"])
+            .execute()
         )
-
-    result = (
-        supabase.table("trader_clients")
-        .insert({
-            "trader_id": trader_id,
-            "investor_id": investor_id,
-            "status": "active",
-        })
-        .execute()
-    )
+    else:
+        result = (
+            supabase.table("trader_clients")
+            .insert({
+                "trader_id": trader_id,
+                "investor_id": investor_id,
+                "status": "active",
+            })
+            .execute()
+        )
     return {
         "message": "Trader engaged successfully",
         "engagement": result.data[0] if result.data else None,
@@ -118,6 +129,53 @@ async def getOwnEngagement(investor_id: str) -> dict:
             "trader": traderMap.get(link["trader_id"]),
         })
     return {"engagements": engagements}
+
+
+async def createStockInquiry(
+    investor_id: str, trader_id: str, ticker: str, message: Optional[str] = None
+) -> dict:
+    """Send a stock-specific question to a connected trader."""
+    await _check_signal_access(investor_id)
+
+    engagement = (
+        supabase.table("trader_clients")
+        .select("id")
+        .eq("investor_id", investor_id)
+        .eq("trader_id", trader_id)
+        .eq("status", "active")
+        .execute()
+    )
+    if not engagement.data:
+        raise HTTPException(
+            status_code=403, detail="You are not connected with this trader."
+        )
+
+    result = (
+        supabase.table("stock_inquiries")
+        .insert({
+            "investor_id": investor_id,
+            "trader_id": trader_id,
+            "ticker": ticker.upper(),
+            "message": message,
+        })
+        .execute()
+    )
+    return {
+        "message": "Question sent to trader.",
+        "inquiry": result.data[0] if result.data else None,
+    }
+
+
+async def getOwnStockInquiries(investor_id: str) -> dict:
+    """Get the investor's own sent stock inquiries."""
+    result = (
+        supabase.table("stock_inquiries")
+        .select("*")
+        .eq("investor_id", investor_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return {"inquiries": result.data or []}
 
 
 async def endEngagement(investor_id: str, engagement_id: str) -> dict:
