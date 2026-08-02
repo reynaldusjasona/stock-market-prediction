@@ -1,0 +1,37 @@
+.locked-feature {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 48px 32px;
+    text-align: center;
+}
+
+.locked-feature-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+}
+
+.locked-feature h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.locked-feature p {
+    color: #888;
+    font-size: 14px;
+    max-width: 420px;
+    margin: 0 auto 24px;
+    line-height: 1.6;
+}
+
+.btn-unlock {
+    background: #00ff41;
+    color: #000000;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+}
