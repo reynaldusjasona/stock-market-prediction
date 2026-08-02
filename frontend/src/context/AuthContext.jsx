@@ -49,12 +49,20 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('user')
     }
 
-    const isSubscribed = subscription !== null
+    // gate #1: general investor features (Recommendations, Alerts, Prediction
+    // tab). Traders unlock this for free - they're service providers, not
+    // customers of these features.
+    const isSubscribed = user?.role === 'trader' || subscription !== null
+
+    // gate #2: trader-connection features (Browse Traders "Connect", future
+    // "Ask Trader"). Separate from the base Investor Plan - an investor with
+    // only the base plan and no Signal Access still sees this as locked.
+    const hasSignalAccess = user?.role === 'trader' || Boolean(subscription?.has_signal_access)
 
     return (
         <AuthContext.Provider value={{
             user, token, login, logout,
-            subscription, isSubscribed, subscriptionLoaded, refreshSubscription,
+            subscription, isSubscribed, hasSignalAccess, subscriptionLoaded, refreshSubscription,
         }}>
             {children}
         </AuthContext.Provider>
