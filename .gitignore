@@ -28,3 +28,5 @@ frontend/build/
 # Claude
 .claude/
 CLAUDE.md
+backend\.env.test
+.env.test
