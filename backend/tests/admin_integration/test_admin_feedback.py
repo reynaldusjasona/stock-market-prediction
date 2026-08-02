@@ -1,6 +1,3 @@
-from app.core.database import supabase
-
-
 def _create_feedback(db, user_id: str, **overrides) -> dict:
     data = {"user_id": user_id, "subject": "Test subject", "message": "Test message"}
     data.update(overrides)

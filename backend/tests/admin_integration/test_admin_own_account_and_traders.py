@@ -61,7 +61,6 @@ class TestViewAndApproveTrader:
         assert resp.status_code == 200, resp.text
         assert resp.json()["name"] == "License Review Trader"
         assert resp.json()["role"] == "trader"
-
         listing = client.get("/api/admin/users", headers=auth_headers(admin))
         assert listing.status_code == 200, listing.text
         matching = [u for u in listing.json() if u["id"] == trader["id"]]
@@ -100,7 +99,6 @@ class TestViewAndApproveTrader:
             .execute()
         )
         assert len(logs.data) == 1
-
         login = client.post(
             "/api/auth/login",
             json={"email": trader["email"], "password": "testing123"},

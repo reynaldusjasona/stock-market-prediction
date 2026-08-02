@@ -94,8 +94,6 @@ class TestAddApiSource:
 
     def test_create_without_name_returns_400(self, client, make_user, auth_headers):
         admin = make_user(role="admin")
-        # FastAPI's own Pydantic validation rejects a missing required
-        # field before the route body even runs.
         resp = client.post(
             "/api/admin/apis",
             json={"status": "active"},

@@ -133,6 +133,7 @@ class TestSuspendUserAccount:
 
         row = db.table("users").select("status").eq("id", target["id"]).execute()
         assert row.data[0]["status"] == "suspended"
+
         logs = (
             db.table("activity_logs")
             .select("*")

@@ -1,5 +1,3 @@
-import pytest
-import pytest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from app.main import app
@@ -10,7 +8,12 @@ client = TestClient(app)
 
 class TestUC4Dashboard:
     def test_A_4_BB_stats_display(self):
-        stats = {"total_users": 41, "model_accuracy": 0.76, "pending_feedback": 1, "total_alerts": 4}
+        stats = {
+            "total_users": 41,
+            "model_accuracy": 0.76,
+            "pending_feedback": 1,
+            "total_alerts": 4,
+        }
         with patch("app.routers.admin.getDashboardStats", return_value=stats):
             r = client.get("/api/admin/stats", headers=ADMIN_HEADERS)
         assert r.status_code == 200
