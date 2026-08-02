@@ -1,13 +1,25 @@
 import os
+from unittest.mock import MagicMock, patch
+
+# app.core.database calls create_client(SUPABASE_URL, SUPABASE_KEY) at
+# import time (when app.main is imported below) and raises immediately
+# if the URL/key are missing or don't look like real Supabase
+# credentials — before mock_supabase (below) ever gets a chance to
+# patch anything. Rather than trying to construct a fake key that
+# satisfies Supabase's internal validation (which checks more than
+# just string shape), patch create_client itself for the duration of
+# this import so it returns a harmless dummy instead of attempting to
+# validate or connect to anything. The object it returns here is
+# irrelevant — every real Supabase call is fully replaced by
+# mock_supabase for every test regardless.
 os.environ.setdefault("SUPABASE_URL", "https://placeholder.supabase.co")
 os.environ.setdefault("SUPABASE_KEY", "placeholder-key")
 
-import pytest  
-from fastapi.testclient import TestClient  
-from unittest.mock import patch, MagicMock  
-from app.main import app 
-from app.core.security import get_current_user  
-from app.core.security import get_current_user  
+with patch("supabase.create_client", return_value=MagicMock()):
+    import pytest  # noqa: E402
+    from fastapi.testclient import TestClient  # noqa: E402
+    from app.main import app  # noqa: E402
+    from app.core.security import get_current_user  # noqa: E402
 
 MOCK_ADMIN = {
     "id": "admin1",
