@@ -4,7 +4,6 @@ import { api } from '../api/api'
 import { formatPrice as fmt } from '../utils/format'
 import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
-import LockedFeature from '../components/LockedFeature'
 import CompleteProfileModal from '../components/CompleteProfileModal'
 import '../styles/Dashboard.css'
 import '../styles/Recommendations.css'
@@ -29,6 +28,11 @@ function Dashboard() {
 
     // get all data needed for dashboard
     async function getData() {
+        if (!isSubscribed) {
+            setLoading(false)
+            return
+        }
+
         try {
             const trendData = await api.get('/stocks/trending')
             setTrendList(trendData)
@@ -51,13 +55,11 @@ function Dashboard() {
             console.log('stocks failed:', err.message)
         }
 
-        if (isSubscribed) {
-            try {
-                const recData = await api.get('/recommendations/personalized?limit=3')
-                setRecommendations(recData.recommendations || [])
-            } catch (err) {
-                console.log('recommendations failed:', err.message)
-            }
+        try {
+            const recData = await api.get('/recommendations/personalized?limit=3')
+            setRecommendations(recData.recommendations || [])
+        } catch (err) {
+            console.log('recommendations failed:', err.message)
         }
 
         // opportunistically check price alerts here too, since dashboard is
@@ -76,9 +78,11 @@ function Dashboard() {
     // show the complete-profile nudge once per login session if the
     // investor hasn't picked any markets yet - risk_tolerance always has
     // a default value from registration, so it can't be used as the
-    // "incomplete" signal, sector_preferences being empty is the real one
+    // "incomplete" signal, sector_preferences being empty is the real one.
+    // Deferred until after subscribing - no point nudging someone to set up
+    // personalization for a feature they can't access yet.
     useEffect(() => {
-        if (!user?.id) return
+        if (!user?.id || !isSubscribed) return
         if (sessionStorage.getItem(PROFILE_MODAL_DISMISSED_KEY)) return
 
         api.get(`/auth/user/${user.id}/preferences`)
@@ -88,7 +92,7 @@ function Dashboard() {
                 }
             })
             .catch((err) => console.log('preferences check failed:', err.message))
-    }, [user?.id])
+    }, [user?.id, isSubscribed])
 
     function dismissProfileModal() {
         sessionStorage.setItem(PROFILE_MODAL_DISMISSED_KEY, 'true')
@@ -130,16 +134,11 @@ function Dashboard() {
                         View All Recommendations &rarr;
                     </span>
                 </div>
-                <LockedFeature
-                    title="Personalized Recommendations"
-                    description="Subscribe to unlock AI-powered stock picks tailored to your risk tolerance and portfolio."
-                >
-                    {recommendations.length === 0 ? (
-                        <p className="empty-state">No recommendations available yet.</p>
-                    ) : (
-                        <ViewStockRecommendation recommendations={recommendations} navigate={navigate} />
-                    )}
-                </LockedFeature>
+                {recommendations.length === 0 ? (
+                    <p className="empty-state">No recommendations available yet.</p>
+                ) : (
+                    <ViewStockRecommendation recommendations={recommendations} navigate={navigate} />
+                )}
             </div>
         </AppLayout>
     )
