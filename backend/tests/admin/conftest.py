@@ -5,15 +5,17 @@ from app.main import app
 from app.core.security import get_current_user
 
 MOCK_ADMIN = {
-    "id":    "admin1",
-    "sub":   "admin1",   
-    "name":  "Sennett Faria",
+    "id": "admin1",
+    "sub": "admin1",
+    "name": "Sennett Faria",
     "email": "sennett.faria@gmail.com",
-    "role":  "admin",
+    "role": "admin",
 }
+
 
 def _mock_get_current_user():
     return MOCK_ADMIN
+
 
 app.dependency_overrides[get_current_user] = _mock_get_current_user
 
@@ -33,6 +35,7 @@ class FakeSupabaseQuery:
     def __getattr__(self, name):
         def _chain(*args, **kwargs):
             return self
+
         return _chain
 
     def execute(self):
@@ -52,11 +55,13 @@ def mock_supabase():
     mock_client = MagicMock()
     mock_client.table.return_value = fake_query
 
-    with patch("app.core.database.supabase", mock_client), \
-         patch("app.services.admin_service.supabase", mock_client), \
-         patch("app.services.auth_service.supabase", mock_client), \
-         patch("app.services.feedback_service.supabase", mock_client), \
-         patch("app.routers.auth.supabase", mock_client):
+    with patch("app.core.database.supabase", mock_client), patch(
+        "app.services.admin_service.supabase", mock_client
+    ), patch("app.services.auth_service.supabase", mock_client), patch(
+        "app.services.feedback_service.supabase", mock_client
+    ), patch(
+        "app.routers.auth.supabase", mock_client
+    ):
         yield fake_query
 
 

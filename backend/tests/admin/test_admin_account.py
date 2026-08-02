@@ -1,5 +1,3 @@
-import pytest
-from unittest.mock import patch
 from fastapi.testclient import TestClient
 from app.main import app
 from tests.admin.conftest import ADMIN_HEADERS
