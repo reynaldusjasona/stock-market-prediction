@@ -1,6 +1,6 @@
 from datetime import datetime
 from app.core.database import supabase
-from ml.predict import getPrediction
+from ml.inference.predict import getPrediction
 
 
 def get_prediction(ticker: str) -> dict:

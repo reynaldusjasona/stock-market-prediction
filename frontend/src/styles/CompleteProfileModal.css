@@ -1,0 +1,113 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+}
+
+.modal-panel {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 12px;
+    padding: 40px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-panel h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.modal-subtitle {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.modal-panel .form-group {
+    margin-bottom: 20px;
+}
+
+.modal-panel .form-group label {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.markets-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.market-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #ccc;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.market-checkbox input {
+    width: auto;
+}
+
+.modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.btn-save-profile {
+    background: #00ff41;
+    color: #000000;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.btn-save-profile:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-later {
+    background: transparent;
+    color: #888;
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.btn-later:hover {
+    color: #ffffff;
+}
+
+.modal-panel .error-msg {
+    color: #ff4444;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
