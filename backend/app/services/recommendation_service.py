@@ -59,12 +59,15 @@ async def getGeneralRecommendations(limit: int = 10) -> list:
         result = (
             supabase.table("predictions")
             .select("*")
-            .in_("signal", ["Buy", "Sell"])
-            .order("confidence_score", desc=True)
-            .limit(limit)
+            .order("created_at", desc=True)
+            .limit(200)
             .execute()
         )
+        # rows are newest-first, so dedup keeps each ticker's most recent
+        # prediction rather than an arbitrary/older one
         predictions = _dedupe_by_ticker(result.data or [])
+        predictions.sort(key=lambda p: p.get("confidence_score") or 0, reverse=True)
+        predictions = predictions[:limit]
 
         if not predictions:
             stocksResult = (
@@ -168,11 +171,12 @@ async def getPersonalizedRecommendations(userId: str, limit: int = 10) -> list:
         predictionsResult = (
             supabase.table("predictions")
             .select("*")
-            .in_("signal", ["Buy", "Sell"])
-            .order("confidence_score", desc=True)
-            .limit(50)
+            .order("created_at", desc=True)
+            .limit(200)
             .execute()
         )
+        # rows are newest-first, so dedup keeps each ticker's most recent
+        # prediction rather than an arbitrary/older one
         predictions = _dedupe_by_ticker(predictionsResult.data or [])
         predictions = [
             p for p in predictions if p.get("ticker") not in heldTickers
@@ -184,6 +188,8 @@ async def getPersonalizedRecommendations(userId: str, limit: int = 10) -> list:
                 p for p in predictions
                 if _normalize_risk_level(p.get("risk_level")) in allowedRisk
             ]
+
+        predictions.sort(key=lambda p: p.get("confidence_score") or 0, reverse=True)
 
         tickers = [p["ticker"] for p in predictions]
         stockMap = await _lookup_stocks(tickers)
