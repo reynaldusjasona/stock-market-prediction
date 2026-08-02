@@ -47,6 +47,10 @@ class RegisterRequest(BaseModel):
     level: Optional[str] = "moderate"
     role: Optional[str] = "investor"
     license_number: Optional[str] = None
+    phone: Optional[str] = None
+    specialization: Optional[str] = None
+    years_experience: Optional[int] = None
+    bio: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -66,6 +70,10 @@ class VerifyTwoFactorRequest(BaseModel):
 class UpdateAccountRequest(BaseModel):
     name: Optional[str] = None
     password: Optional[str] = None
+    phone: Optional[str] = None
+    specialization: Optional[str] = None
+    years_experience: Optional[int] = None
+    bio: Optional[str] = None
 
 
 class RiskToleranceRequest(BaseModel):
@@ -115,6 +123,15 @@ async def register(body: RegisterRequest):
         "role": role,
         "status": "active",
     }
+
+    if body.phone is not None:
+        insert_data["phone"] = body.phone
+    if body.specialization is not None:
+        insert_data["specialization"] = body.specialization
+    if body.years_experience is not None:
+        insert_data["years_experience"] = body.years_experience
+    if body.bio is not None:
+        insert_data["bio"] = body.bio
 
     if role == "trader":
         if not body.license_number or not body.license_number.strip():
@@ -216,7 +233,13 @@ async def getInvestorRecordForEdit(investorID: str):
 
 
 @router.put("/auth/user/{investorID}", tags=["Auth"])
-async def updateAccount(investorID: str, body: UpdateAccountRequest):
+async def updateAccount(
+    investorID: str,
+    body: UpdateAccountRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    if investorID != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
     form_data: dict = {}
     if body.name is not None:
         form_data["name"] = body.name
@@ -228,12 +251,23 @@ async def updateAccount(investorID: str, body: UpdateAccountRequest):
         raise HTTPException(status_code=400, detail=validation["error"])
 
     return await svcUpdateAccount(
-        investorID, body.name or "", body.password or ""
+        investorID,
+        body.name or "",
+        body.password or "",
+        phone=body.phone,
+        specialization=body.specialization,
+        years_experience=body.years_experience,
+        bio=body.bio,
     )
 
 
 @router.delete("/auth/user/{userID}", tags=["Auth"])
-async def deleteAccount(userID: str):
+async def deleteAccount(
+    userID: str,
+    current_user: dict = Depends(get_current_user),
+):
+    if userID != current_user["sub"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
     user = await getDeleteConfirm(userID)
     session_token = user.get("session_token")
     await deleteAccountAndData(userID)
@@ -243,24 +277,46 @@ async def deleteAccount(userID: str):
 
 
 @router.get("/auth/user/{userID}/risk-tolerance", tags=["Auth"])
-async def getRiskTolerance(userID: str):
+async def getRiskTolerance(
+    userID: str,
+    current_user: dict = Depends(get_current_user),
+):
+    if userID != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
     return await svcGetRiskTolerance(userID)
 
 
 @router.put("/auth/user/{userID}/risk-tolerance", tags=["Auth"])
-async def updateRiskTolerance(userID: str, body: RiskToleranceRequest):
+async def updateRiskTolerance(
+    userID: str,
+    body: RiskToleranceRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    if userID != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
     updated = await svcUpdateRiskTolerance(userID, body.level)
     await updateRecommendations(userID)
     return updated
 
 
 @router.get("/auth/user/{userID}/preferences", tags=["Auth"])
-async def getPreferences(userID: str):
+async def getPreferences(
+    userID: str,
+    current_user: dict = Depends(get_current_user),
+):
+    if userID != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
     return await svcGetPreferences(userID)
 
 
 @router.put("/auth/user/{userID}/preferences", tags=["Auth"])
-async def updatePreferences(userID: str, body: PreferencesRequest):
+async def updatePreferences(
+    userID: str,
+    body: PreferencesRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    if userID != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
     updated = await svcUpdatePreferences(userID, body.preferences)
     await updateRecommendations(userID)
     return updated

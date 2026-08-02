@@ -15,6 +15,9 @@ from app.routers import (
     feedback,
     recommendations,
     trader,
+    faq,
+    traders,
+    investor,
 )
 
 app = FastAPI(
@@ -25,7 +28,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://stock-market-prediction-lemon.vercel.app",
+        "http://localhost:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,6 +53,9 @@ app.include_router(
     recommendations.router, prefix="/api", tags=["Recommendations"]
 )
 app.include_router(trader.router, prefix="/api", tags=["Trader"])
+app.include_router(faq.router, prefix="/api", tags=["FAQ"])
+app.include_router(traders.router, prefix="/api", tags=["Traders"])
+app.include_router(investor.router, prefix="/api", tags=["Investor"])
 
 
 @app.get("/")
