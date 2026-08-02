@@ -8,7 +8,6 @@ import yfinance as yf
 
 from app.core.api_clients import finnhubGet
 from app.core.database import supabase
-from fastapi import HTTPException
 
 
 _executor = ThreadPoolExecutor(max_workers=10)
@@ -428,23 +427,6 @@ async def getLivePrice(stock: str) -> dict:
         "low": _round(data.get("l")),
         "open": _round(data.get("o")),
         "prev_close": _round(data.get("pc")),
-    }
-
-
-async def getOrderBook(stock: str) -> dict:
-    data = await finnhubGet("stock/bidask", {"symbol": stock.upper()})
-    if not data or "error" in data:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Order book unavailable for {stock}",
-        )
-    return {
-        "ticker": stock.upper(),
-        "ask": data.get("a"),
-        "bid": data.get("b"),
-        "ask_volume": data.get("av"),
-        "bid_volume": data.get("bv"),
-        "timestamp": data.get("t"),
     }
 
 
