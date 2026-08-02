@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
 from app.services.stock_service import getLiveStockData
-from ml.predict import getPrediction
+from ml.inference.predict import getPrediction
 
 
 async def getRecommendationDetails(stock: str) -> dict:

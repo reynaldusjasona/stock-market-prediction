@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import time
 
 import pandas as pd
+import requests
 
 _MARKET_TZ = ZoneInfo("America/New_York")
 _MARKET_OPEN = time(9, 30)
@@ -13,6 +14,7 @@ _HISTORICAL_SENTIMENT_FILE = (
     / "historical_sentiment_data"
     / "historical_daily_sentiment.csv"
 )
+
 
 def assign_to_trading_session(published_at: pd.Timestamp) -> pd.Timestamp:
     """
@@ -85,7 +87,6 @@ def fetch_news(
         return pd.DataFrame(columns=["published_at", "headline"])
 
     return pd.DataFrame(rows)
-
 
 
 def get_historical_daily_sentiment(
@@ -204,6 +205,7 @@ def get_historical_daily_sentiment(
         ]
     ]
 
+
 def add_sentiment_features(
     out: pd.DataFrame,
     ticker: str,
@@ -303,6 +305,7 @@ def add_sentiment_features(
 
     return out
 
+
 if __name__ == "__main__":
     # test assign_to_trading_session() with edge case
     cases = [
@@ -315,5 +318,3 @@ if __name__ == "__main__":
     for ts_str, desc in cases:
         result = assign_to_trading_session(pd.Timestamp(ts_str))
         print(f"{desc:35s} {ts_str} is considered as {result.date()}")
-    
-
