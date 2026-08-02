@@ -23,7 +23,7 @@ function ManageFeedbacksPage(){
     setLoading(true)
     try{
       const d= await adminApi.getAllFeedback(q ? { q } : {})
-      setFeedback(Array.isArray(d) ? d : (d?.feedback || []))
+      setFeedback(Array.isArray(d) ? d : (d?.data || d?.feedback || []))
     } 
 	catch (err){
       showToast(err.message||'Failed to load feedback', 'error')

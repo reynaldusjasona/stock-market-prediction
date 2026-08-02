@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from fastapi import HTTPException
@@ -10,36 +11,26 @@ _VALID_ENDORSEMENTS = {"agree", "disagree"}
 async def getTraderSignals(
     trader_id: str, ticker: Optional[str] = None, limit: int = 20
 ) -> list:
-    query = supabase.table("predictions").select(
-        "id, ticker, signal, confidence_score, prediction_date"
+    query = (
+        supabase.table("trader_signal")
+        .select(
+            "id, trader_id, investor_id, ticker, signal, confidence_score, "
+            "reasoning, verdict, note, endorsed_at, created_at, "
+            "investor:users!investor_id(name)"
+        )
+        .eq("trader_id", trader_id)
     )
     if ticker:
         query = query.eq("ticker", ticker.upper())
-    result = query.order("prediction_date", desc=True).limit(limit).execute()
-    predictions = result.data or []
+    result = query.order("created_at", desc=True).limit(limit).execute()
+    rows = result.data or []
 
-    tickers = list({p["ticker"] for p in predictions if p.get("ticker")})
-    stockMap = {}
-    if tickers:
-        stocksResult = (
-            supabase.table("stocks")
-            .select("ticker, company_name")
-            .in_("ticker", tickers)
-            .execute()
-        )
-        stockMap = {s["ticker"]: s for s in (stocksResult.data or [])}
-
-    return [
-        {
-            "id": p["id"],
-            "ticker": p["ticker"],
-            "company_name": stockMap.get(p["ticker"], {}).get("company_name"),
-            "predicted_action": p.get("signal"),
-            "confidence_score": p.get("confidence_score"),
-            "prediction_date": p.get("prediction_date"),
-        }
-        for p in predictions
-    ]
+    signals = []
+    for row in rows:
+        investor = row.pop("investor", None) or {}
+        row["investor_name"] = investor.get("name")
+        signals.append(row)
+    return signals
 
 
 async def getTraderClients(trader_id: str) -> list:
@@ -78,9 +69,22 @@ async def getTraderClients(trader_id: str) -> list:
     return clients
 
 
+async def getApprovedTraders() -> list:
+    result = (
+        supabase.table("users")
+        .select("id, name, license_number, specialization, bio, years_experience")
+        .eq("role", "trader")
+        .eq("trader_status", "approved")
+        .eq("status", "active")
+        .order("name")
+        .execute()
+    )
+    return result.data or []
+
+
 async def endorseSignal(
     trader_id: str,
-    prediction_id: str,
+    signal_id: str,
     endorsement: str,
     notes: Optional[str] = None,
 ) -> dict:
@@ -90,26 +94,25 @@ async def endorseSignal(
             detail="Endorsement must be 'agree' or 'disagree'",
         )
 
-    predictionResult = (
-        supabase.table("predictions")
+    signalResult = (
+        supabase.table("trader_signal")
         .select("id")
-        .eq("id", prediction_id)
+        .eq("id", signal_id)
+        .eq("trader_id", trader_id)
         .execute()
     )
-    if not predictionResult.data:
-        raise HTTPException(status_code=404, detail="Prediction not found")
+    if not signalResult.data:
+        raise HTTPException(status_code=404, detail="Signal not found")
 
     result = (
-        supabase.table("signal_endorsements")
-        .upsert(
-            {
-                "trader_id": trader_id,
-                "prediction_id": prediction_id,
-                "endorsement": endorsement,
-                "notes": notes,
-            },
-            on_conflict="trader_id,prediction_id",
-        )
+        supabase.table("trader_signal")
+        .update({
+            "verdict": endorsement,
+            "note": notes,
+            "endorsed_at": datetime.utcnow().isoformat(),
+        })
+        .eq("id", signal_id)
+        .eq("trader_id", trader_id)
         .execute()
     )
     if not result.data:

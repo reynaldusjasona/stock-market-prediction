@@ -3,7 +3,6 @@ from pathlib import Path
 import joblib
 import pandas as pd
 import xgboost as xgb
-import numpy as np
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -92,7 +91,7 @@ def evaluate_model(
         raise ValueError(
             f"Expected binary class probabilities with shape (n, 2), "
             f"but received {y_proba.shape}."
-        ) 
+        )
 
     roc_auc = round(
         roc_auc_score(y_test_enc, y_proba[:, 1]),
@@ -154,7 +153,6 @@ def run_evaluation() -> dict:
         binary_only=True,
     )
 
-
     excluded_columns = [
         "Date",
         "Ticker",
@@ -171,7 +169,6 @@ def run_evaluation() -> dict:
         "Lower_Touched",
         "Barrier_Type",
     ]
-
 
     feature_columns = [
         col
