@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/api'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
-import LockedFeature from '../components/LockedFeature'
 import '../styles/Alerts.css'
 
 function Alerts() {
     const [alerts, setAlerts] = useState([])
     const [loading, setLoading] = useState(false)
+    const { isSubscribed } = useAuth()
     const [showForm, setShowForm] = useState(false)
     const [ticker, setTicker] = useState('')
     const [targetPrice, setTargetPrice] = useState('')
@@ -47,10 +48,11 @@ function Alerts() {
     // prices whenever they visit this page, since there's no background
     // job doing this - then load the (possibly just-updated) alert list
     useEffect(() => {
+        if (!isSubscribed) return
         api.post('/alerts/check-all')
             .catch((err) => console.log('alert check failed:', err.message))
             .finally(() => loadAlerts())
-    }, [])
+    }, [isSubscribed])
 
     // search function - same pattern as watchlist
     async function searchTickers(query) {
@@ -125,10 +127,7 @@ function Alerts() {
                     </div>
                 </div>
 
-                <LockedFeature
-                    title="Price Alerts"
-                    description="Subscribe to unlock price alerts and get notified the moment a stock crosses your target."
-                >
+                <>
                     <button className="btn-create-alert" onClick={() => setShowForm(!showForm)} style={{ marginBottom: '20px' }}>
                         + Create Alert
                     </button>
@@ -208,7 +207,7 @@ function Alerts() {
                             </tbody>
                         </table>
                     </div>
-                </LockedFeature>
+                </>
             </div>
         </AppLayout>
     )
