@@ -125,7 +125,6 @@ class TestViewActivityLogs:
         admin = make_user(role="admin", name="Loggable Admin")
         target = make_user(role="investor")
 
-        # Generate a real, attributable activity log entry.
         suspend = client.patch(
             f"/api/admin/users/{target['id']}/suspend", headers=auth_headers(admin)
         )
@@ -141,8 +140,6 @@ class TestViewActivityLogs:
             log for log in resp.json()["logs"] if log["target_id"] == target["id"]
         ]
         assert len(matching) == 1
-        # This is the join a mock can't verify: admin_name comes from a
-        # second real query against users, keyed on the log's user_id.
         assert matching[0]["admin_name"] == "Loggable Admin"
 
     def test_non_admin_cannot_view_activity_log(self, client, make_user, auth_headers):
