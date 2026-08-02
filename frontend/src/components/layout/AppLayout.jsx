@@ -5,15 +5,15 @@ import { api } from '../../api/api'
 import '../../styles/AppLayout.css'
 
 const NAV_LINKS = [
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'All Stocks', path: '/allstocks' },
+    { label: 'Dashboard', path: '/dashboard', trader: true },
+    { label: 'All Stocks', path: '/allstocks', trader: true },
     { label: 'Recommendations', path: '/recommendations' },
     { label: 'Browse Traders', path: '/browse-traders' },
     { label: 'Watchlist', path: '/watchlist' },
     { label: 'Portfolio', path: '/portfolio' },
     { label: 'Alerts', path: '/alerts' },
-    { label: 'Notifications', path: '/notifications' },
-    { label: 'Feedback', path: '/feedback' },
+    { label: 'Notifications', path: '/notifications', trader: true },
+    { label: 'Feedback', path: '/feedback', trader: true },
 ]
 
 // pages an unsubscribed investor must still be able to reach - otherwise
@@ -63,12 +63,14 @@ function AppLayout({ children }) {
     }
 
     const initial = user?.name ? user.name.charAt(0).toUpperCase() : '?'
+    const isTrader = user?.role === 'trader'
+    const navLinks = isTrader ? NAV_LINKS.filter((link) => link.trader) : NAV_LINKS
 
     return (
         <div className="app-shell">
-            <aside className="sidebar">
+            <aside className="sidebar" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div className="sidebar-logo">StockWise <span>AI</span></div>
-                {NAV_LINKS.map((link) => (
+                {navLinks.map((link) => (
                     <span
                         key={link.path}
                         className={location.pathname === link.path ? 'sidebar-link active' : 'sidebar-link'}
@@ -77,9 +79,20 @@ function AppLayout({ children }) {
                         {link.label}
                     </span>
                 ))}
-                <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
-            </aside>
 
+                {!isTrader && (
+                    <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
+                )}
+
+                {isTrader && (
+                    <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.5rem' }}>
+                        <span className="sidebar-link" onClick={() => navigate('/trader/dashboard')}>
+                            &#8592; Back to Trader Portal
+                        </span>
+                        <span className="sidebar-logout" onClick={handleLogout}>Logout</span>
+                    </div>
+                )}
+            </aside>
             <div className="app-main">
                 <div className="topbar">
                     <div className="topbar-search">
@@ -107,7 +120,6 @@ function AppLayout({ children }) {
                             </div>
                         )}
                     </div>
-
                     <div className="topbar-actions">
                         <span
                             className="topbar-bell"
@@ -116,7 +128,6 @@ function AppLayout({ children }) {
                         >
                             &#128276;
                         </span>
-
                         <div className="topbar-profile">
                             <div
                                 className="topbar-profile-trigger"
