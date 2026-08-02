@@ -227,7 +227,7 @@ async def queryStockDB(query: str) -> list:
         supabase.table("stocks")
         .select("ticker, company_name, sector, exchange")
         .or_(f"ticker.ilike.%{query}%,company_name.ilike.%{query}%")
-        .limit(20)
+        .limit(100)
         .execute()
     )
     return result.data or []

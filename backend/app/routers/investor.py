@@ -20,6 +20,12 @@ class EngageTraderRequest(BaseModel):
     trader_id: str
 
 
+class StockInquiryRequest(BaseModel):
+    trader_id: str
+    ticker: str
+    message: Optional[str] = None
+
+
 @router.get("/traders")
 async def listTraders(current_user: dict = Depends(_require_investor)):
     return await investor_service.listApprovedTraders(current_user["sub"])
@@ -60,3 +66,20 @@ async def endEngagement(
     return await investor_service.endEngagement(
         current_user["sub"], engagement_id
     )
+
+
+@router.post("/stock-inquiries")
+async def createStockInquiry(
+    body: StockInquiryRequest,
+    current_user: dict = Depends(_require_investor),
+):
+    return await investor_service.createStockInquiry(
+        current_user["sub"], body.trader_id, body.ticker, body.message
+    )
+
+
+@router.get("/stock-inquiries")
+async def getOwnStockInquiries(
+    current_user: dict = Depends(_require_investor),
+):
+    return await investor_service.getOwnStockInquiries(current_user["sub"])
