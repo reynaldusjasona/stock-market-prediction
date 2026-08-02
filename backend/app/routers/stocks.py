@@ -7,7 +7,6 @@ from app.services.stock_service import (
     fetchPriceData,
     fetchStockList,
     fetchTrendingTickers,
-    getOrderBook as svcGetOrderBook,
     getPriceHistory as svcGetPriceHistory,
     getLivePrice as svcGetLivePrice,
     getTopGainersandLosers as svcGetTopGainersandLosers,
@@ -78,14 +77,6 @@ async def getPriceHistory(
 @router.get("/stocks/{ticker}/price", tags=["Stocks"])
 async def getLivePrice(ticker: str):
     return await svcGetLivePrice(ticker)
-
-
-@router.get("/stocks/{ticker}/orderbook", tags=["Stocks"])
-async def getOrderBook(
-    ticker: str,
-    _user: dict = Depends(get_current_user),
-):
-    return await svcGetOrderBook(ticker)
 
 
 @router.get("/stocks/{ticker}/fundamentals", tags=["Stocks"])
