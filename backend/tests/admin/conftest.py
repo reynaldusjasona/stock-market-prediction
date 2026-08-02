@@ -1,8 +1,13 @@
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
-from app.main import app
-from app.core.security import get_current_user
+import os
+os.environ.setdefault("SUPABASE_URL", "https://placeholder.supabase.co")
+os.environ.setdefault("SUPABASE_KEY", "placeholder-key")
+
+import pytest  
+from fastapi.testclient import TestClient  
+from unittest.mock import patch, MagicMock  
+from app.main import app 
+from app.core.security import get_current_user  
+from app.core.security import get_current_user  
 
 MOCK_ADMIN = {
     "id": "admin1",
