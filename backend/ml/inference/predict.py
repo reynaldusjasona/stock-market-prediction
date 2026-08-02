@@ -13,19 +13,15 @@ def get_latest_features(
     Fetch the most recent feature row for a ticker.
 
     Downloads OHLCV data via fetch_stock_data, computes all technical
-    indicators via calculate_indicators, drops the Label column (not needed
-    for inference), and returns only the final row as a single-row DataFrame
-    with the 13 feature columns.
+    indicators via calculate_indicators (the same function and column set
+    used by the training pipeline), and returns only the final row as a
+    single-row DataFrame with the _FEATURE_COLS columns.
 
     Raises ValueError if the processed DataFrame is empty (e.g. insufficient
     historical data to compute rolling windows).
     """
     raw = fetch_stock_data(ticker)
-    processed = calculate_indicators(
-        raw, ticker=ticker, start=start, end=end, sentiment_source="live"
-    )
-
-    processed = processed.drop(columns=["Label"])
+    processed = calculate_indicators(raw, ticker=ticker, start=start, end=end)
 
     if processed.empty:
         raise ValueError(
@@ -78,7 +74,6 @@ def getPrediction(ticker: str) -> dict:
     reasoning = (
         f"RSI14 is {row['RSI14']:.1f}. "
         f"MACD is {row['MACD']:.4f}. "
-        f"SMA20 is {row['SMA20']:.2f}. "
         f"Model confidence is {confidence:.1f}%."
     )
 
