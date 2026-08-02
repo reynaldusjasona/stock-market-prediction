@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/api'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/Notifications.css'
 import ViewNotifications from '../components/notifications/ViewNotifications'
@@ -17,6 +18,7 @@ function timeAgo(dateString) {
 function Notifications() {
     const [notifications, setNotifications] = useState([])
     const [loading, setLoading] = useState(true)
+    const { isSubscribed } = useAuth()
 
     // get all notifications for the user
     async function loadNotifications() {
@@ -40,8 +42,12 @@ function Notifications() {
     }
 
     useEffect(() => {
+        if (!isSubscribed) {
+            setLoading(false)
+            return
+        }
         loadNotifications()
-    }, [])
+    }, [isSubscribed])
 
     if (loading) return <p>Loading...</p>
 

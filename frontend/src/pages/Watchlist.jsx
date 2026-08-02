@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
 import { formatPrice } from '../utils/format'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/Watchlist.css'
 import AddStock from '../components/watchlist/AddStock'
@@ -16,10 +17,15 @@ function Watchlist() {
     const [showDropdown, setShowDropdown] = useState(false)
     const [selectedFromSearch, setSelectedFromSearch] = useState(false)
     const navigate = useNavigate()
+    const { isSubscribed } = useAuth()
 
     useEffect(() => {
+        if (!isSubscribed) {
+            setLoading(false)
+            return
+        }
         getMyStocks()
-    }, [])
+    }, [isSubscribed])
 
     // load stocks in watchlist
     async function getMyStocks() {

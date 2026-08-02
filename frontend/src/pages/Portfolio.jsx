@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/Portfolio.css'
 import ViewHoldingsDetails from '../components/portfolio/ViewHoldingsDetails'
@@ -17,10 +18,15 @@ function Portfolio() {
     const [totalValue, setTotalValue] = useState(0)
     const [totalGainLoss, setTotalGainLoss] = useState(0)
     const navigate = useNavigate()
+    const { isSubscribed } = useAuth()
 
     useEffect(() => {
+        if (!isSubscribed) {
+            setLoading(false)
+            return
+        }
         loadPortfolio()
-    }, [])
+    }, [isSubscribed])
 
     // get all holdings
     async function loadPortfolio() {
