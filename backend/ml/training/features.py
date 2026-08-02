@@ -2,10 +2,6 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
-from ml.training.build_sentiment_features import add_sentiment_features
-
-
-
 def fetch_stock_data(
     ticker: str, start: str = "2020-01-01", end: str = "2025-12-31"
 ) -> pd.DataFrame:
@@ -51,18 +47,10 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
         - Candlestick body size
         - Upper and lower shadow
 
-    - News sentiment features (Added via add_sentiment_features()):
-          - has_news
-          - sentiment_mean
-          - sentiment_std
-          - news_count
-          - sentiment_3d_avg
-          - sentiment_momentum
-
     Prediction labels are generated using the next trading day's return.
     Future returns are divided into :
-      Buy  - 
-      Sell - 
+      Buy: 
+      Sell:
 
     Returns:
         A DataFrame containing all features and the
@@ -111,9 +99,23 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
         ]
     ]
 
-    # ===========================
+    # oil returns 
+    oil = fetch_stock_data("CL=F", start=start, end=end)
+ 
+    oil["Oil_Close"] = oil["Close"]
+    oil["Oil_Return_1D"] = oil["Close"].pct_change()
+    oil["Oil_Return_5D"] = oil["Close"].pct_change(5)
+    
+    oil = oil[
+        [
+            "Oil_Close",
+            "Oil_Return_1D",
+            "Oil_Return_5D",
+        ]
+    ]
+ 
     # NASDAQ (^IXIC)
-    # ===========================
+
     nasdaq = fetch_stock_data("^IXIC", start=start, end=end)
 
     nasdaq["NASDAQ_Return_1D"] = nasdaq["Close"].pct_change(1)
@@ -220,6 +222,9 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
     out = out.join(treasury, how="left")
     out = out.join(dxy, how="left")
 
+    # oil returns 
+    out = out.join(oil, how="left")
+
     # join nasdaq features 
     out = out.join(nasdaq, how="left")
 
@@ -304,54 +309,58 @@ def calculate_indicators(df: pd.DataFrame, ticker: str, start: str = "2020-01-01
         - out["Low"]
     ) / out["Open"]
 
+
     # Sentiment features
-    out = add_sentiment_features(
-        out=out,
-        ticker=ticker,
-        start=start,
-        end=end,
-    )
+    # out = add_sentiment_features(
+    #     out=out,
+    #     ticker=ticker,
+    #     start=start,
+    #     end=end,
+    # )
 
 
     column_order = [
-        "Open", "High", "Low", "Close", "Volume",
+        "High", "Low", "Close", "Volume",
         "RSI14", "MACD", "MACD_Signal",
         "Distance_SMA20", "Distance_EMA20",
-        "BB_Upper", "BB_Lower", "BB_Width",
+        "BB_Width",
         "Return_1D", "Return_5D", "Return_10D",
-        "Volume_MA20", "Volume_Ratio_20", "Volume_Ratio",
-        "SPY_Return_1D", "SPY_Return_5D", "SPY_Return_10D", "SPY_Distance_SMA20",
+        "Volume_Ratio_20",
+        "SPY_Return_1D", "SPY_Return_5D", "SPY_Distance_SMA20",
         "Relative_Return_1D", "Relative_Return_5D", "Relative_Return_10D",
-        "Volatility_5", "Volatility_10D", "Volatility_20",
+        "Volatility_5", "Volatility_20",
         "Intraday_Range", "Gap_Return",
         "Body_Size", "Upper_Shadow", "Lower_Shadow",
         "VIX_Close", "VIX_Return_1D", "VIX_Return_5D",
         "Treasury_10Y", "Treasury_Return_1D",
         "DXY_Close", "DXY_Return_1D",
-        "has_news", "sentiment_mean", "sentiment_std", "sentiment_3d_avg", "sentiment_momentum",
+        "Oil_Close", "Oil_Return_1D", "Oil_Return_5D",
+        "NASDAQ_Return_1D", "NASDAQ_Return_5D",
     ]
 
     out = out[column_order]
-    out = out.ffill().bfill()
+    out = out.ffill()
+    out.dropna(inplace=True)
 
     return out
 
 _FEATURE_COLS = [
-    "Open", "High", "Low", "Close", "Volume",
+    "Close", "Volume",
     "RSI14", "MACD", "MACD_Signal",
     "Distance_SMA20", "Distance_EMA20",
-    "BB_Upper", "BB_Lower", "BB_Width",
+    "BB_Width",
     "Return_1D", "Return_5D", "Return_10D",
-    "Volume_MA20", "Volume_Ratio_20", "Volume_Ratio",
-    "SPY_Return_1D", "SPY_Return_5D", "SPY_Return_10D", "SPY_Distance_SMA20",
+    "Volume_Ratio_20",
+    "SPY_Return_1D", "SPY_Return_5D", "SPY_Distance_SMA20",
     "Relative_Return_1D", "Relative_Return_5D", "Relative_Return_10D",
-    "Volatility_5", "Volatility_10D", "Volatility_20",
+    "Volatility_5", "Volatility_20",
     "Intraday_Range", "Gap_Return",
     "Body_Size", "Upper_Shadow", "Lower_Shadow",
     "VIX_Close", "VIX_Return_1D", "VIX_Return_5D",
     "Treasury_10Y", "Treasury_Return_1D",
     "DXY_Close", "DXY_Return_1D",
-    "has_news", "sentiment_mean", "sentiment_std", "sentiment_3d_avg", "sentiment_momentum",
+    "Oil_Close", "Oil_Return_1D", "Oil_Return_5D",
+    "NASDAQ_Return_1D", "NASDAQ_Return_5D",
 ]
 
 
@@ -421,26 +430,6 @@ def get_multiple_tickers(tickers: list[str], start: str = "2020-01-01", end: str
         ["Date", "Ticker"]
     ).reset_index(drop=True)
 
-    sentiment_cols = [
-        "has_news", 
-        "sentiment_mean", 
-        "sentiment_std",
-        "sentiment_momentum",
-        "sentiment_3d_avg",
-    ]
-
-    for col in sentiment_cols:
-        combined[col] = pd.to_numeric(
-            combined[col],
-            errors="coerce",
-        )
-    combined["has_news"] = combined["has_news"].fillna(0.0)
-    combined["sentiment_mean"] = combined["sentiment_mean"].fillna(0.0)
-    combined["sentiment_std"] = combined["sentiment_std"].fillna(0.0)
-    combined["sentiment_momentum"] = combined["sentiment_momentum"].fillna(0.0)
-    combined["sentiment_3d_avg"] = combined["sentiment_3d_avg"].fillna(0.0)
-
-
     return combined 
 
 if __name__ == "__main__":
@@ -448,4 +437,5 @@ if __name__ == "__main__":
     data = get_feature_matrix("AAPL")
     print(f"Data shape: {data.shape}")
     print(data.head())
+
 
