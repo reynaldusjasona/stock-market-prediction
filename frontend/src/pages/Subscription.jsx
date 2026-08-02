@@ -5,12 +5,22 @@ import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/Subscription.css'
 
+const SIGNAL_ACCESS_PRICE = 19.99
+const SIGNAL_ACCESS_FEATURES = [
+    'Connect with licensed traders',
+    'Ask a trader for stock analysis',
+    'View trader-endorsed Buy/Sell signals',
+]
+
 function Subscription() {
     const [plans, setPlans] = useState([])
     const [currentSub, setCurrentSub] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [success, setSuccess] = useState(null)
+    const [addonError, setAddonError] = useState(null)
+    const [addonSuccess, setAddonSuccess] = useState(null)
+    const [addonLoading, setAddonLoading] = useState(false)
     const [searchParams, setSearchParams] = useSearchParams()
     const { refreshSubscription } = useAuth()
 
@@ -74,6 +84,18 @@ function Subscription() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
+    // handle redirect back from Stripe Checkout for the signal access add-on
+    useEffect(() => {
+        const status = searchParams.get('status')
+        const addon = searchParams.get('addon')
+        if (status === 'success' && addon === 'signal') {
+            setAddonSuccess('Payment successful! Confirming your signal access...')
+            loadSubscription()
+            setSearchParams({}, { replace: true })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     async function startCheckout() {
         setError(null)
         setSuccess(null)
@@ -82,6 +104,26 @@ function Subscription() {
             window.location.href = data.checkout_url
         } catch (err) {
             setError(err.message)
+        }
+    }
+
+    async function startSignalAccessCheckout() {
+        setAddonError(null)
+        setAddonSuccess(null)
+        setAddonLoading(true)
+        try {
+            const data = await api.post('/subscription/signal-access/checkout')
+            if (data.checkout_url) {
+                window.location.href = data.checkout_url
+                return
+            }
+            // mock mode (no Stripe configured) activates instantly, no redirect
+            setAddonSuccess(data.message || 'Signal access activated.')
+            await loadSubscription()
+        } catch (err) {
+            setAddonError(err.message)
+        } finally {
+            setAddonLoading(false)
         }
     }
 
@@ -143,6 +185,42 @@ function Subscription() {
                             )}
                         </div>
                     ))}
+                </div>
+
+                <div className="addon-section">
+                    <h2 className="addon-section-title">Add-ons</h2>
+                    {addonError && <p className="error-msg">{addonError}</p>}
+                    {addonSuccess && <p className="success-msg">{addonSuccess}</p>}
+
+                    <div className="plans-grid">
+                        {(() => {
+                            const hasBasePlan = currentSub && currentSub.status === 'active'
+                            const hasSignalAccess = Boolean(currentSub?.has_signal_access)
+                            return (
+                                <div className={hasBasePlan ? 'plan-card-sub' : 'plan-card-sub plan-card-locked'}>
+                                    <p className="plan-card-name">Trader Access</p>
+                                    <p className="plan-card-price">${SIGNAL_ACCESS_PRICE}<span>/month</span></p>
+                                    <ul>
+                                        {SIGNAL_ACCESS_FEATURES.map((f) => (
+                                            <li key={f}>✓ {f}</li>
+                                        ))}
+                                    </ul>
+                                    {!hasBasePlan ? (
+                                        <>
+                                            <button className="btn-subscribed" disabled>Locked</button>
+                                            <p className="addon-locked-msg">Subscribe to the Investor Plan first.</p>
+                                        </>
+                                    ) : hasSignalAccess ? (
+                                        <button className="btn-subscribed" disabled>Active</button>
+                                    ) : (
+                                        <button className="btn-subscribe" onClick={startSignalAccessCheckout} disabled={addonLoading}>
+                                            {addonLoading ? 'Processing...' : 'Subscribe'}
+                                        </button>
+                                    )}
+                                </div>
+                            )
+                        })()}
+                    </div>
                 </div>
             </div>
         </AppLayout>
