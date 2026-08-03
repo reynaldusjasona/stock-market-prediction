@@ -4,7 +4,7 @@ import EndorseSignalModal from './EndorseSignalModal'
 import '../../styles/admin/adminShared.css'
 import '../../styles/trader/traderShared.css'
 
-const SIGNAL_COLOR = { Buy:'#00ff41', Hold:'#60a5fa', Sell:'#ff4444' }
+const SIGNAL_COLOR = { Buy:'#00ff41', Sell:'#ff4444' }
 
 function ViewSignalReviewsPage() {
   const[signals,setSignals]= useState([])
@@ -30,6 +30,7 @@ function ViewSignalReviewsPage() {
 
   const handleEndorsed = ()=> {setSelected(null); load()}
 
+  // A signal is "reviewed" if it has a verdict/endorsement already set
   const pending  = signals.filter(s => !s.verdict && !s.endorsement)
   const reviewed = signals.filter(s => s.verdict || s.endorsement)
 
