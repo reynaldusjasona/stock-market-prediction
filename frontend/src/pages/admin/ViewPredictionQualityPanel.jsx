@@ -6,8 +6,8 @@ import {
 import adminApi from '../../js/adminApi'
 import '../../styles/admin/adminShared.css'
 
-const CLASS_ORDER = ['Buy', 'Hold', 'Sell']
-const CLASS_COLOR = { Buy:'#00ff41', Hold:'#60a5fa', Sell:'#ff4444' }
+const CLASS_ORDER = ['Buy', 'Sell']
+const CLASS_COLOR = { Buy:'#00ff41', Sell:'#ff4444' }
 
 const pct = v => v != null ? (v * (v <= 1 ? 100 : 1)).toFixed(1) + '%' : '—'
 const f1Color = v => {

@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react'
 import adminApi from '../../js/adminApi'
 import {showToast} from '../../js/adminUi'
 import ViewPredictionQualityPanel from './ViewPredictionQualityPanel'
-import RetrainModelPanel         from './RetrainModelPanel'
+import RetrainModelPanel from './RetrainModelPanel'
 import '../../styles/admin/adminShared.css'
 
 const pct=v=>v != null ? (v*(v<=1?100:1)).toFixed(1)+'%' : '—'
@@ -46,8 +46,8 @@ function ViewModelPerformancePage(){
     adminApi.getModelPerformance().then(setPerf).finally(()=>setLoading(false))
   }
 
-  const avgPrecision = (perf?.buy_precision!=null && perf?.sell_precision!=null && perf?.hold_precision!=null)
-    ? (perf.buy_precision + perf.sell_precision + perf.hold_precision) / 3
+  const avgPrecision = (perf?.buy_precision!=null && perf?.sell_precision!=null)
+    ? (perf.buy_precision + perf.sell_precision) / 2
     : null
 
   const metrics=[
