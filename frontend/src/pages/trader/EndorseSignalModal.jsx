@@ -4,7 +4,7 @@ import {showToast} from '../../js/adminUi'
 import '../../styles/admin/adminShared.css'
 import '../../styles/trader/traderShared.css'
 
-const SIGNAL_COLOR = { Buy:'#00ff41', Hold:'#60a5fa', Sell:'#ff4444' }
+const SIGNAL_COLOR = { Buy:'#00ff41', Sell:'#ff4444' }
 
 function EndorseSignalModal({ signal, onClose, onEndorsed }) {
   const[note, setNote] = useState('')
@@ -16,6 +16,8 @@ function EndorseSignalModal({ signal, onClose, onEndorsed }) {
   const handleEndorse= async (verdict) => {
     setBusy(true)
     try{
+      // signal.id is the trader_signal row's own UUID — backend
+      // looks it up directly and verifies it belongs to this trader.
       await traderApi.endorseSignal({
         signal_id: signal.id,
         verdict,
