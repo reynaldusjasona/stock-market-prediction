@@ -15,7 +15,7 @@ from sklearn.metrics import (
 from sklearn.preprocessing import LabelEncoder
 
 from ml.training.features import get_multiple_tickers
-from ml.training.train import TRAIN_TICKERS, split_data
+from ml.training.train_common import TRAIN_TICKERS, split_data
 from ml.training.label_triple_barrier import apply_triple_barrier_by_ticker
 
 _MODEL_FILE = "xgboost_model_20260729_214646.joblib"
