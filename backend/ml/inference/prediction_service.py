@@ -1,10 +1,18 @@
 from datetime import datetime
 from app.core.database import supabase
-from ml.inference.predict import getPrediction
+from ml.inference.predict import getMultiTimeframePredictions
 
 
 def get_prediction(ticker: str) -> dict:
-    result = getPrediction(ticker.upper())
+    result = getMultiTimeframePredictions(ticker.upper())
+    if "error" in result:
+        return result
+
+    # Only the 1d (base model) prediction is persisted as the
+    # canonical row for this ticker/date - 3d/5d are derived from it
+    # on the fly (see buildTimeframePredictions) and not stored as
+    # separate rows, so history/recommendations keep one row per
+    # ticker per day.
     supabase.table("predictions").upsert({
         "ticker": result["ticker"],
         "signal": result["signal"],
@@ -12,7 +20,10 @@ def get_prediction(ticker: str) -> dict:
         "risk_level": result["risk_level"],
         "reasoning": result["reasoning"],
         "prediction_date": datetime.utcnow().date().isoformat(),
+        "timeframe": "1d",
     }, on_conflict="ticker,prediction_date").execute()
+
+    result["generated_at"] = datetime.utcnow().isoformat()
     return result
 
 
