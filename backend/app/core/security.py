@@ -45,6 +45,9 @@ def decodeAccessToken(token: str) -> Optional[dict]:
 
 
 _oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+_oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl="/api/auth/login", auto_error=False
+)
 
 
 def get_current_user(token: str = Depends(_oauth2_scheme)) -> dict:
@@ -56,3 +59,17 @@ def get_current_user(token: str = Depends(_oauth2_scheme)) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
     return payload
+
+
+def get_optional_user(
+    token: Optional[str] = Depends(_oauth2_scheme_optional),
+) -> Optional[dict]:
+    """
+    Like get_current_user, but returns None instead of raising when no
+    token is presented or the token is invalid/expired. For endpoints
+    that stay public but personalize their response when the caller
+    happens to be logged in (e.g. GET /stocks).
+    """
+    if token is None:
+        return None
+    return decodeAccessToken(token)
