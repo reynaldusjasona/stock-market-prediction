@@ -1,4 +1,5 @@
 import os
+import time
 
 import httpx
 from dotenv import load_dotenv
@@ -13,15 +14,30 @@ _FINNHUB_BASE = "https://finnhub.io/api/v1"
 _TWELVE_BASE = "https://api.twelvedata.com"
 _AV_BASE = "https://www.alphavantage.co/query"
 
+# Simple in-memory TTL cache for Finnhub responses, keyed by
+# (endpoint, sorted params). Avoids hitting the live API again for
+# repeat requests (e.g. quote polling) within the TTL window.
+_FINNHUB_CACHE_TTL = 60
+_finnhubCache: dict = {}
+
 
 async def finnhubGet(endpoint: str, params: dict) -> dict:
+    cacheKey = (endpoint, tuple(sorted(params.items())))
+    cached = _finnhubCache.get(cacheKey)
+    if cached is not None:
+        cachedAt, cachedData = cached
+        if time.monotonic() - cachedAt < _FINNHUB_CACHE_TTL:
+            return cachedData
+
     url = f"{_FINNHUB_BASE}/{endpoint}"
     merged = {**params, "token": _FINNHUB_KEY}
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(url, params=merged)
             resp.raise_for_status()
-            return resp.json()
+            data = resp.json()
+            _finnhubCache[cacheKey] = (time.monotonic(), data)
+            return data
     except httpx.HTTPStatusError as exc:
         return {
             "error": exc.response.text,
