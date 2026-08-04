@@ -157,3 +157,78 @@ async def getTraderEndorsements(trader_id: str, limit: int = 20) -> list:
             }
         )
     return items
+
+
+async def getTraderStockInquiries(trader_id: str) -> list:
+    """Get investor questions sent to this trader (from stock_inquiries,
+    distinct from the AI-signal review flow in trader_signal)."""
+    result = (
+        supabase.table("stock_inquiries")
+        .select(
+            "id, investor_id, ticker, message, status, response, "
+            "responded_at, created_at, investor:users!investor_id(name)"
+        )
+        .eq("trader_id", trader_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    rows = result.data or []
+
+    inquiries = []
+    for row in rows:
+        investor = row.pop("investor", None) or {}
+        row["investor_name"] = investor.get("name")
+        inquiries.append(row)
+    return inquiries
+
+
+async def respondToStockInquiry(
+    trader_id: str, inquiry_id: str, response: str
+) -> dict:
+    """Trader answers an investor's stock inquiry, notifying the investor."""
+    existing = (
+        supabase.table("stock_inquiries")
+        .select("id, investor_id, ticker")
+        .eq("id", inquiry_id)
+        .eq("trader_id", trader_id)
+        .execute()
+    )
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Inquiry not found.")
+
+    inquiry = existing.data[0]
+    now = datetime.utcnow().isoformat()
+
+    result = (
+        supabase.table("stock_inquiries")
+        .update({
+            "response": response,
+            "status": "answered",
+            "responded_at": now,
+        })
+        .eq("id", inquiry_id)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to save response")
+
+    trader = (
+        supabase.table("users").select("name").eq("id", trader_id).execute()
+    )
+    trader_name = trader.data[0].get("name") if trader.data else "Your trader"
+
+    # same direct-insert pattern as alert_service.py - there's no shared
+    # notification-creation helper in this codebase
+    supabase.table("notifications").insert({
+        "user_id": inquiry["investor_id"],
+        "title": "Trader responded to your question",
+        "message": (
+            f"{trader_name} responded to your question about "
+            f"{inquiry['ticker']}."
+        ),
+        "type": "stock_inquiry_response",
+        "is_read": False,
+        "email_sent": False,
+    }).execute()
+
+    return result.data[0]
