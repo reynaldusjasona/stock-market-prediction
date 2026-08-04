@@ -7,6 +7,7 @@ from app.core.security import get_current_user
 from app.services.activity_service import logActivity
 from app.services.admin_service import (
     approveTrader,
+    buildPublicLandingSections,
     createApiSource,
     deleteApiSource,
     dismissAlert,
@@ -419,5 +420,5 @@ async def deleteApiSourceRoute(
 # fallback rule for routes that don't fit either existing router.
 @router.get("/landing", tags=["Public"])
 async def getPublicLandingContent():
-    result = await getLandingContent()
-    return result
+    content = await getLandingContent()
+    return {"sections": buildPublicLandingSections(content)}
