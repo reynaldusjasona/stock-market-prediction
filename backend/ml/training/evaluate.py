@@ -1,3 +1,4 @@
+import functools
 from pathlib import Path
 
 import joblib
@@ -22,6 +23,7 @@ _MODEL_FILE = "xgboost_model_20260729_214646.joblib"
 _ENCODER_FILE = "label_encoder_3class.pkl"
 
 
+@functools.lru_cache(maxsize=1)
 def load_model(
     model_dir: str = "ml/saved_models",
 ) -> tuple[xgb.XGBClassifier, LabelEncoder]:
@@ -31,6 +33,10 @@ def load_model(
     Expects both xgboost_model.pkl and label_encoder_3class.pkl to exist inside
     model_dir. Raises FileNotFoundError with a descriptive message if either
     file is missing.
+
+    Cached in memory after the first successful load (per model_dir), so
+    repeated predictions don't re-read and re-deserialize the .joblib files
+    from disk on every request.
 
     Returns (model, label_encoder).
     """
