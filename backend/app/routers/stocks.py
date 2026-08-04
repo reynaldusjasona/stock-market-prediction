@@ -1,6 +1,8 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_optional_user
 from app.services.stock_service import (
     calculateIndicators,
     fetchFundamentals,
@@ -39,8 +41,11 @@ async def getTopGainersandLosers():
 
 
 @router.get("/stocks", tags=["Stocks"])
-async def getStocks():
-    return await fetchStockList()
+async def getStocks(
+    current_user: Optional[dict] = Depends(get_optional_user),
+):
+    userId = current_user.get("sub") if current_user else None
+    return await fetchStockList(userId)
 
 
 # ---- DYNAMIC ROUTES (ticker param) ----
