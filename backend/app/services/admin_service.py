@@ -452,6 +452,73 @@ def _apply_landing_defaults(content: dict) -> dict:
     return merged
 
 
+def buildPublicLandingSections(content: dict) -> list:
+    """
+    Adapt the admin-editor content shape ({hero, about, features, ...})
+    into the flat {section_key, title, subtitle, content, image_url,
+    is_visible, display_order} list the public landing page (Landing.jsx)
+    reads from GET /api/landing. Sections with no content are omitted.
+
+    ViewLandingSection.jsx only renders a single title/subtitle/content
+    per section, so multi-card sections (about, features) are condensed
+    into one paragraph per card ("Title: body"), joined together.
+    """
+    hero = content.get("hero") or {}
+    about = content.get("about") or {}
+    features = content.get("features") or {}
+
+    sections = []
+
+    if hero.get("headline"):
+        sections.append({
+            "section_key": "hero",
+            "title": hero.get("headline"),
+            "subtitle": None,
+            "content": hero.get("subline") or None,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 0,
+        })
+
+    aboutCards = about.get("cards") or []
+    aboutText = " • ".join(
+        f"{card.get('title')}: {card.get('body')}"
+        if card.get("title") else card.get("body", "")
+        for card in aboutCards
+        if card.get("body")
+    )
+    if aboutText:
+        sections.append({
+            "section_key": "about",
+            "title": "About StockWise AI",
+            "subtitle": about.get("subtitle") or None,
+            "content": aboutText,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 1,
+        })
+
+    featureItems = features.get("items") or []
+    featuresText = " • ".join(
+        f"{item.get('title')}: {item.get('body')}"
+        if item.get("title") else item.get("body", "")
+        for item in featureItems
+        if item.get("body")
+    )
+    if featuresText:
+        sections.append({
+            "section_key": "features",
+            "title": "Platform Features",
+            "subtitle": features.get("subtitle") or None,
+            "content": featuresText,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 2,
+        })
+
+    return sections
+
+
 async def getLandingContent() -> dict:
     try:
         result = (
