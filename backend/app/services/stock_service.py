@@ -365,16 +365,18 @@ async def getStockData() -> list:
 
 
 async def getLiveUpdates(tickers: list) -> list:
+    items = tickers[:10]
+    quotes = await asyncio.gather(
+        *[finnhubGet("quote", {"symbol": item["ticker"]}) for item in items],
+        return_exceptions=True,
+    )
     output = []
-    for item in tickers[:10]:
-        ticker = item["ticker"]
-        name = item.get("name", "")
-        data = await finnhubGet("quote", {"symbol": ticker})
-        if not data or "error" in data:
+    for item, data in zip(items, quotes):
+        if isinstance(data, Exception) or not data or "error" in data:
             continue
         output.append({
-            "ticker": ticker,
-            "name": name,
+            "ticker": item["ticker"],
+            "name": item.get("name", ""),
             "price": data.get("c"),
             "change": data.get("d"),
             "change_percent": data.get("dp"),
