@@ -8,6 +8,7 @@ import yfinance as yf
 
 from app.core.api_clients import finnhubGet
 from app.core.database import supabase
+from app.services.recommendation_service import _parse_sector_preferences
 
 
 _executor = ThreadPoolExecutor(max_workers=10)
@@ -163,7 +164,53 @@ def _stddev(values: list) -> float:
 
 
 # ---- service functions ----
-async def fetchStockList() -> list:
+async def _personalize_stock_order(
+    stocks: list, userId: Optional[str]
+) -> list:
+    """
+    Reorder stocks so ones in the investor's preferred sectors come
+    first. No-op (returns stocks unchanged) when the caller is
+    anonymous or hasn't set any sector preferences yet.
+    """
+    if not userId or not stocks:
+        return stocks
+
+    profile = (
+        supabase.table("users")
+        .select("sector_preferences")
+        .eq("id", userId)
+        .execute()
+    )
+    if not profile.data:
+        return stocks
+
+    sectorPreferences = _parse_sector_preferences(
+        profile.data[0].get("sector_preferences")
+    )
+    if not sectorPreferences:
+        return stocks
+
+    tickers = [s["ticker"] for s in stocks]
+    sectorResult = (
+        supabase.table("stocks")
+        .select("ticker, sector")
+        .in_("ticker", tickers)
+        .execute()
+    )
+    sectorByTicker = {
+        r["ticker"]: r.get("sector") for r in (sectorResult.data or [])
+    }
+
+    preferred = [
+        s for s in stocks
+        if sectorByTicker.get(s["ticker"]) in sectorPreferences
+    ]
+    preferredTickers = {s["ticker"] for s in preferred}
+    others = [s for s in stocks if s["ticker"] not in preferredTickers]
+    return preferred + others
+
+
+async def fetchStockList(userId: Optional[str] = None) -> list:
     raw = await finnhubGet("stock/symbol", {"exchange": "US"})
     if "error" in raw or not isinstance(raw, list):
         cached = (
@@ -172,7 +219,7 @@ async def fetchStockList() -> list:
             .limit(100)
             .execute()
         )
-        return cached.data or []
+        return await _personalize_stock_order(cached.data or [], userId)
     stocks = [s for s in raw if s.get("type") == "CS"][:500]
     rows = [
         {
@@ -191,7 +238,7 @@ async def fetchStockList() -> list:
             ).execute()
         except Exception:
             pass
-    return [
+    result = [
         {
             "ticker": r["ticker"],
             "company_name": r["company_name"],
@@ -199,6 +246,7 @@ async def fetchStockList() -> list:
         }
         for r in rows
     ]
+    return await _personalize_stock_order(result, userId)
 
 
 async def fetchPriceData(ticker: str) -> dict:
