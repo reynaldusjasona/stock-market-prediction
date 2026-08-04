@@ -228,9 +228,6 @@ function StockDetail() {
                     <ViewFundamentalAnalysis fundData={fundData} formatNum={formatNum} formatLarge={formatLarge} />
                 )}
 
-                {/* order book tab */}
-                {activeTab === 'OrderBook' && <ViewOrderBook orderBook={orderBookData} />}
-
                 {showAskModal && (
                     <div className="ask-trader-overlay" onClick={() => setShowAskModal(false)}>
                         <div className="ask-trader-modal" onClick={(e) => e.stopPropagation()}>
