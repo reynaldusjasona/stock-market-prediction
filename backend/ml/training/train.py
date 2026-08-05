@@ -23,6 +23,7 @@ EXCLUDED_COLUMNS = [
     "dynamic_target", "next_high", "next_low", "next_close",
     "upper_barrier_price", "lower_barrier_price",
     "Upper_Touched", "Lower_Touched", "Barrier_Type",
+    "High", "Low",
 ]
 
 
