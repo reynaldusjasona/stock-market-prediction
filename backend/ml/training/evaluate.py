@@ -168,6 +168,7 @@ def run_evaluation() -> dict:
         "Upper_Touched",
         "Lower_Touched",
         "Barrier_Type",
+        "High", "Low", 
     ]
 
     feature_columns = [
