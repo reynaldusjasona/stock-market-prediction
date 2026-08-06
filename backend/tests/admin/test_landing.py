@@ -22,7 +22,6 @@ class TestUC11LandingPage:
             "features": {},
             "testimonials": [],
             "subscription": {},
-            "faqs": [],
         }
         with patch(
             "app.routers.admin.updateLandingContent", return_value=payload
@@ -32,14 +31,13 @@ class TestUC11LandingPage:
         called_body = mock_upd.call_args[0][0]
         assert called_body == payload
 
-    def test_A_11_FN_all_six_sections_saved(self):
+    def test_A_11_FN_all_five_sections_saved(self):
         full_content = {
             "hero": {},
             "about": {},
             "features": {},
             "testimonials": [],
             "subscription": {},
-            "faqs": [],
         }
         with patch("app.routers.admin.updateLandingContent", return_value=full_content), patch(
             "app.routers.admin.logActivity", return_value=None
@@ -48,5 +46,5 @@ class TestUC11LandingPage:
             r = client.get("/api/admin/landing", headers=ADMIN_HEADERS)
         assert all(
             k in r.json()
-            for k in ["hero", "about", "features", "testimonials", "subscription", "faqs"]
+            for k in ["hero", "about", "features", "testimonials", "subscription"]
         )
