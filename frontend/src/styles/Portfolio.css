@@ -58,6 +58,47 @@
     width: 180px;
 }
 
+.search-wrap {
+    position: relative;
+    width: 220px;
+}
+
+.search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 6px;
+    margin-top: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+}
+
+.search-item {
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.search-item:hover {
+    background: #1a1b20;
+}
+
+.search-ticker {
+    color: #00ff41;
+    font-weight: 600;
+}
+
+.search-name {
+    color: #888;
+}
+
 .btn-add-holding {
     background: #00ff41;
     color: #000000;
