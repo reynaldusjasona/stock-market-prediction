@@ -294,6 +294,65 @@
     text-align: left;
 }
 
+/* prediction timeframes */
+.pred-section-heading {
+    color: #ccc;
+    font-size: 14px;
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+
+.pred-timeframe-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.pred-timeframe-card {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pred-timeframe-label {
+    color: #888;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pred-signal {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.pred-signal-buy {
+    color: #00ff41;
+}
+
+.pred-signal-sell {
+    color: #ff4444;
+}
+
+.pred-signal-hold {
+    color: #888;
+}
+
+.pred-confidence {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.pred-risk {
+    color: #ccc;
+    font-size: 13px;
+}
+
 /* fundamentals */
 .fund-grid {
     display: grid;
