@@ -434,7 +434,6 @@ def _default_landing_content() -> dict:
             "cta_label": "",
             "footnote": "",
         },
-        "faqs": [],
     }
 
 
@@ -446,7 +445,7 @@ def _apply_landing_defaults(content: dict) -> dict:
         merged[key] = (
             {**defaults[key], **section} if isinstance(section, dict) else defaults[key]
         )
-    for key in ("testimonials", "faqs"):
+    for key in ("testimonials",):
         section = content.get(key)
         merged[key] = section if isinstance(section, list) else defaults[key]
     return merged
