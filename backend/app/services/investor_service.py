@@ -61,6 +61,24 @@ async def engageTrader(investor_id: str, trader_id: str) -> dict:
     if not trader.data:
         raise HTTPException(status_code=404, detail="Trader not found.")
 
+    # an investor may only be connected to one trader at a time - block
+    # engaging a different trader while an existing active engagement
+    # is still open, before the same-trader-specific check below
+    otherActive = (
+        supabase.table("trader_clients")
+        .select("id")
+        .eq("investor_id", investor_id)
+        .eq("status", "active")
+        .neq("trader_id", trader_id)
+        .execute()
+    )
+    if otherActive.data:
+        raise HTTPException(
+            status_code=409,
+            detail="You're already connected to a trader — disconnect "
+            "first to connect with someone else.",
+        )
+
     # trader_clients has a unique constraint on (trader_id, investor_id), so
     # a prior ended engagement leaves a row behind - reactivate it instead
     # of inserting a duplicate, which would violate that constraint.
@@ -107,6 +125,7 @@ async def getOwnEngagement(investor_id: str) -> dict:
         .select("*")
         .eq("investor_id", investor_id)
         .eq("status", "active")
+        .order("created_at", desc=True)
         .execute()
     )
     links = result.data or []

@@ -70,7 +70,7 @@ function Register() {
                 <div className="auth-right">
                     <p className="auth-logo">StockWise <span>AI</span></p>
                     <h1>Create your account</h1>
-                    <p className="subtitle">Enter your details to start your 14-day premium trial.</p>
+                    <p className="subtitle">Enter your details to create your account.</p>
                     {error && <p className="error-msg">{error}</p>}
                     <div className="form-group">
                         <label>Full Name</label>
