@@ -40,10 +40,18 @@ async def listApprovedTraders(user_id: str) -> dict:
 async def getTraderSignals(user_id: str, trader_id: Optional[str] = None) -> dict:
     """Get endorsed signals from traders."""
     await _check_signal_access(user_id)
-    query = supabase.table("signal_endorsements").select("*")
+    query = (
+        supabase.table("trader_signal")
+        .select(
+            "id, ticker, signal, confidence_score, verdict, note, "
+            "endorsed_at, trader_id, created_at"
+        )
+        .eq("investor_id", user_id)
+        .not_.is_("verdict", "null")
+    )
     if trader_id:
         query = query.eq("trader_id", trader_id)
-    result = query.order("created_at", desc=True).limit(50).execute()
+    result = query.order("endorsed_at", desc=True).limit(50).execute()
     return {"signals": result.data or []}
 
 
