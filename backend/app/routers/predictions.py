@@ -30,7 +30,9 @@ async def getStockRecommendations(
 ):
     # Return a simplified signal summary without reasoning or extra metadata
     try:
-        result = get_prediction(ticker.upper())
+        result = get_prediction(
+            ticker.upper(), user_id=_user.get("sub"), user_role=_user.get("role")
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
@@ -65,7 +67,9 @@ async def predict(
 ):
     # Run the ML model and return the full prediction result, persisted to DB
     try:
-        return get_prediction(ticker.upper())
+        return get_prediction(
+            ticker.upper(), user_id=_user.get("sub"), user_role=_user.get("role")
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
