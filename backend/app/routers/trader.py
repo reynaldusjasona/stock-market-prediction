@@ -10,6 +10,8 @@ from app.services.trader_service import (
     getTraderClients,
     getTraderEndorsements,
     getTraderSignals,
+    getTraderStockInquiries,
+    respondToStockInquiry,
 )
 
 router = APIRouter(prefix="/trader", tags=["Trader"])
@@ -19,6 +21,10 @@ class EndorseSignalRequest(BaseModel):
     signal_id: str
     endorsement: str
     notes: Optional[str] = None
+
+
+class RespondToInquiryRequest(BaseModel):
+    response: str
 
 
 async def require_approved_trader(
@@ -75,3 +81,23 @@ async def getEndorsements(
 ):
     result = await getTraderEndorsements(current_user["sub"], limit)
     return {"endorsements": result}
+
+
+@router.get("/stock-inquiries")
+async def getStockInquiries(
+    current_user: dict = Depends(require_approved_trader),
+):
+    result = await getTraderStockInquiries(current_user["sub"])
+    return {"inquiries": result}
+
+
+@router.patch("/stock-inquiries/{inquiry_id}")
+async def respondToStockInquiryRoute(
+    inquiry_id: str,
+    body: RespondToInquiryRequest,
+    current_user: dict = Depends(require_approved_trader),
+):
+    result = await respondToStockInquiry(
+        current_user["sub"], inquiry_id, body.response
+    )
+    return {"inquiry": result}
