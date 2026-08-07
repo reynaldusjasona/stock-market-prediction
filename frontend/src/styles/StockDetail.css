@@ -164,8 +164,29 @@
 /* chart timeframe buttons */
 .chart-timeframes {
     display: flex;
+    align-items: center;
     gap: 8px;
     margin-bottom: 16px;
+}
+
+.chart-indicator-controls {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.indicator-select,
+.indicator-period-input {
+    background: #0d0e12;
+    border: 1px solid #2a2b30;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 13px;
+    padding: 6px 10px;
+}
+
+.indicator-period-input {
+    width: 64px;
 }
 
 .timeframe-btn {

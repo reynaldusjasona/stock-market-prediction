@@ -2,25 +2,29 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
 import '../styles/Landing.css'
-import ViewLandingSection from '../components/landing/ViewLandingSection'
 import ViewTestimonials from '../components/landing/ViewTestimonials'
 import ViewFAQ from '../components/landing/ViewFAQ'
 
+// landing_page_config is currently a single empty-content row - these are
+// the same defaults shown to an admin who hasn't filled anything in yet,
+// used here so the public page never looks broken/empty in the meantime
 const HERO_FALLBACK = {
-    section_key: 'hero',
-    title: 'Predict the Market with AI Precision',
-    subtitle: null,
+    tag: '# RETAIL INVESTOR',
+    headline: 'Predict the Market with AI Precision',
+    subline: null,
     content: 'Harness the power of neural-driven analysis. StockWise AI processes millions of data points across US equity markets.',
+    cta_label: 'Register an Account',
+    secondary_label: 'Learn more →',
 }
 
 function Landing() {
     const navigate = useNavigate()
-    const [sections, setSections] = useState([])
+    const [landing, setLanding] = useState(null)
     const [plans, setPlans] = useState([])
 
     useEffect(() => {
         api.get('/landing')
-            .then((data) => setSections(data.sections || []))
+            .then((data) => setLanding(data || null))
             .catch((err) => console.log('landing content failed:', err.message))
 
         api.get('/subscription/plans')
@@ -28,17 +32,27 @@ function Landing() {
             .catch((err) => console.log('plans failed:', err.message))
     }, [])
 
-    function sectionByKey(key) {
-        return sections.find((s) => s.section_key === key && s.is_visible !== false)
+    const hero = {
+        tag: landing?.hero?.tag || HERO_FALLBACK.tag,
+        headline: landing?.hero?.headline || HERO_FALLBACK.headline,
+        subline: landing?.hero?.subline || HERO_FALLBACK.subline,
+        content: landing?.hero?.content || HERO_FALLBACK.content,
+        cta_label: landing?.hero?.cta_label || HERO_FALLBACK.cta_label,
+        secondary_label: landing?.hero?.secondary_label || HERO_FALLBACK.secondary_label,
     }
 
-    const hero = sectionByKey('hero') || HERO_FALLBACK
-    // hero/cta get dedicated placement (banner-top, closer-bottom); the rest
-    // render as a block in the order the CMS gives us
-    const middleSections = sections
-        .filter((s) => s.is_visible !== false && !['hero', 'cta'].includes(s.section_key))
-        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
-    const cta = sectionByKey('cta')
+    // about/features are admin-editable but currently empty - skip the
+    // whole section rather than render an empty header/grid until real
+    // content exists
+    const about = landing?.about
+    const hasAbout = about && (about.subtitle || (about.cards || []).length > 0)
+
+    const features = landing?.features
+    const hasFeatures = features && (features.subtitle || (features.items || []).length > 0)
+
+    // CMS text for the pricing section header - the actual plan card below
+    // is always driven live by /subscription/plans, never by this content
+    const subscriptionCopy = landing?.subscription || {}
 
     return (
         <div>
@@ -60,26 +74,59 @@ function Landing() {
 
             {/* hero */}
             <section className="hero">
-                <p className="hero-tag"># RETAIL INVESTOR</p>
-                <h1>{hero.title}</h1>
-                {hero.subtitle && <p className="hero-subtitle">{hero.subtitle}</p>}
+                <p className="hero-tag">{hero.tag}</p>
+                <h1>{hero.headline}</h1>
+                {hero.subline && <p className="hero-subtitle">{hero.subline}</p>}
                 <p>{hero.content}</p>
                 <div className="hero-buttons">
-                    <button className="btn-primary" onClick={() => navigate('/register')}>Register an Account</button>
-                    <button className="btn-secondary" onClick={() => navigate('/login')}>Learn more &rarr;</button>
+                    <button className="btn-primary" onClick={() => navigate('/register')}>{hero.cta_label}</button>
+                    <button className="btn-secondary" onClick={() => navigate('/login')}>{hero.secondary_label}</button>
                 </div>
             </section>
 
-            {middleSections.map((section) => (
-                <ViewLandingSection key={section.section_key} section={section} />
-            ))}
+            {hasAbout && (
+                <section className="section" id="about">
+                    <h2 className="section-title">About</h2>
+                    {about.subtitle && <p className="section-sub">{about.subtitle}</p>}
+                    {(about.cards || []).length > 0 && (
+                        <div className="cards-grid">
+                            {about.cards.map((card, i) => (
+                                <div className="card" key={card.title || i}>
+                                    {card.title && <h3>{card.title}</h3>}
+                                    {card.description && <p>{card.description}</p>}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </section>
+            )}
+
+            {hasFeatures && (
+                <section className="section" id="features">
+                    <h2 className="section-title">Features</h2>
+                    {features.subtitle && <p className="section-sub">{features.subtitle}</p>}
+                    {(features.items || []).length > 0 && (
+                        <div className="cards-grid">
+                            {features.items.map((item, i) => (
+                                <div className="card" key={item.title || i}>
+                                    {item.title && <h3>{item.title}</h3>}
+                                    {item.description && <p>{item.description}</p>}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </section>
+            )}
 
             <ViewTestimonials />
 
-            {/* pricing - sourced from /subscription/plans, not landing_content */}
+            {/* pricing - plan card is always sourced live from /subscription/plans;
+                title/subtitle text above it is admin-editable via landing_page_config */}
             <section className="section" id="subscription">
-                <h2 className="section-title" style={{ textAlign: 'center' }}>Get Started</h2>
-                <p className="section-sub" style={{ textAlign: 'center' }}>Everything StockWise AI offers, built for how you invest.</p>
+                <h2 className="section-title" style={{ textAlign: 'center' }}>{subscriptionCopy.title || 'Get Started'}</h2>
+                <p className="section-sub" style={{ textAlign: 'center' }}>
+                    {subscriptionCopy.subtitle || 'Everything StockWise AI offers, built for how you invest.'}
+                </p>
                 <div className="landing-plans-grid">
                     {plans.filter((p) => p.id === 'investor').map((p) => (
                         <div className="plan-card" key={p.id}>
@@ -91,15 +138,15 @@ function Landing() {
                                 ))}
                             </ul>
                             <button className="btn-primary" onClick={() => navigate('/register?intent=subscribe')}>Get started</button>
-                            <p style={{ textAlign: 'center', color: '#888', marginTop: '12px', fontSize: '14px' }}>Cancel anytime.</p>
+                            <p style={{ textAlign: 'center', color: '#888', marginTop: '12px', fontSize: '14px' }}>
+                                {subscriptionCopy.footnote || 'Cancel anytime.'}
+                            </p>
                         </div>
                     ))}
                 </div>
             </section>
 
             <ViewFAQ />
-
-            {cta && <ViewLandingSection section={cta} />}
         </div>
     )
 }
