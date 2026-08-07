@@ -36,10 +36,10 @@ function StockDetail() {
     const [historyData, setHistoryData] = useState([])
     const [activeInterval, setActiveInterval] = useState('1D')
 
-    // Ask Trader
-    const [engagements, setEngagements] = useState([])
+    // Ask Trader - an investor can only have one active engagement, so
+    // this is a single engagement (or null), never a list to pick from
+    const [engagement, setEngagement] = useState(null)
     const [showAskModal, setShowAskModal] = useState(false)
-    const [selectedTraderId, setSelectedTraderId] = useState('')
     const [askMessage, setAskMessage] = useState('')
     const [askError, setAskError] = useState(null)
     const [askSuccess, setAskSuccess] = useState(null)
@@ -108,12 +108,12 @@ function StockDetail() {
         loadHistory()
     }, [ticker, isSubscribed])
 
-    // pull the investor's connected traders so we know whether "Ask Trader"
-    // can go straight to a single trader or needs a picker
+    // pull the investor's current engagement (at most one) so we know
+    // whether "Ask Trader" can go straight to that trader
     useEffect(() => {
         if (user?.role !== 'investor' || !hasSignalAccess) return
         api.get('/investor/engagements/me')
-            .then((data) => setEngagements(data.engagements || []))
+            .then((data) => setEngagement((data.engagements || [])[0] || null))
             .catch((err) => console.log('engagements failed:', err.message))
     }, [user?.role, hasSignalAccess])
 
@@ -121,20 +121,19 @@ function StockDetail() {
         setAskError(null)
         setAskSuccess(null)
         setAskMessage('')
-        setSelectedTraderId(engagements[0]?.trader_id || '')
         setShowAskModal(true)
     }
 
     async function handleSendInquiry() {
-        if (!selectedTraderId) {
-            setAskError('Select a trader.')
+        if (!engagement) {
+            setAskError('Connect with a trader first.')
             return
         }
         setAsking(true)
         setAskError(null)
         try {
             await api.post('/investor/stock-inquiries', {
-                trader_id: selectedTraderId,
+                trader_id: engagement.trader_id,
                 ticker,
                 message: askMessage.trim() || undefined,
             })
@@ -162,7 +161,7 @@ function StockDetail() {
                                 <button className="btn-browse-traders" onClick={() => navigate('/subscription')}>
                                     Subscribe to Ask a Trader
                                 </button>
-                            ) : engagements.length === 0 ? (
+                            ) : !engagement ? (
                                 <button className="btn-browse-traders" onClick={() => navigate('/browse-traders')}>
                                     Connect with a Trader
                                 </button>
@@ -233,20 +232,8 @@ function StockDetail() {
                         <div className="ask-trader-modal" onClick={(e) => e.stopPropagation()}>
                             <h3>Ask about {ticker}</h3>
                             {askError && <p className="error-msg">{askError}</p>}
-                            {engagements.length > 1 && (
-                                <div className="form-group">
-                                    <label>Trader</label>
-                                    <select value={selectedTraderId} onChange={(e) => setSelectedTraderId(e.target.value)}>
-                                        {engagements.map((e) => (
-                                            <option key={e.trader_id} value={e.trader_id}>
-                                                {e.trader?.name || e.trader_id}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                            {engagements.length === 1 && (
-                                <p className="subtitle">To {engagements[0].trader?.name || 'your trader'}</p>
+                            {engagement && (
+                                <p className="subtitle">To {engagement.trader?.name || 'your trader'}</p>
                             )}
                             <div className="form-group">
                                 <label>Message (optional)</label>
