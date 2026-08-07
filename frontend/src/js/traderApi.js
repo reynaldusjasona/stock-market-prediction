@@ -17,6 +17,12 @@ const traderApi = {
     const q = new URLSearchParams(params).toString()
     return api.get(`/trader/endorsements${q ? '?' + q : ''}`)
   },
+  getStockInquiries() {
+    return api.get('/trader/stock-inquiries')
+  },
+  respondToInquiry({ id, response }) {
+    return api.patch(`/trader/stock-inquiries/${id}`, { response })
+  },
 }
 
 export default traderApi

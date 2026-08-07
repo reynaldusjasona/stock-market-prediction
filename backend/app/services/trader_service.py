@@ -226,7 +226,9 @@ async def respondToStockInquiry(
             f"{trader_name} responded to your question about "
             f"{inquiry['ticker']}."
         ),
-        "type": "stock_inquiry_response",
+        # notifications.type has a DB check constraint allowing only
+        # 'price_alert' and 'system' - confirmed live, no third value exists
+        "type": "system",
         "is_read": False,
         "email_sent": False,
     }).execute()
