@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import math
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -12,6 +13,7 @@ from app.services.recommendation_service import _parse_sector_preferences
 
 
 _executor = ThreadPoolExecutor(max_workers=10)
+logger = logging.getLogger(__name__)
 
 
 # ---- yfinance helpers (sync, run in executor) ----
@@ -487,36 +489,80 @@ async def getLiveStockData(ticker: Optional[str] = None):
     return await getLiveUpdates(stock_data)
 
 
-# ---- Fundamental Analysis (yfinance) ----
-def _yf_fundamentals_sync(ticker: str) -> dict:
-    def _s(key, default=None):
-        v = info.get(key)
+# ---- Fundamental Analysis (Finnhub) ----
+# yf.Ticker().info was dropped here — Yahoo blocks Render's datacenter IPs,
+# so it silently returned {} on every request. Finnhub's REST endpoints
+# (already used everywhere else in this file) are reliable from Render.
+async def _yf_fundamentals_sync(ticker: str) -> dict:
+    profile, metric = await asyncio.gather(
+        finnhubGet("stock/profile2", {"symbol": ticker}),
+        finnhubGet("stock/metric", {"symbol": ticker, "metric": "all"}),
+    )
+
+    profile_ok = isinstance(profile, dict) and "error" not in profile
+    if not profile_ok:
+        logger.warning(
+            "finnhub stock/profile2 fundamentals failed for %s: %s",
+            ticker, profile,
+        )
+        profile = {}
+
+    metric_ok = isinstance(metric, dict) and "error" not in metric
+    if not metric_ok:
+        logger.warning(
+            "finnhub stock/metric fundamentals failed for %s: %s",
+            ticker, metric,
+        )
+        metric_data = {}
+    else:
+        metric_data = metric.get("metric") or {}
+
+    if not profile_ok and not metric_ok:
+        return {}
+
+    def _s(source, key, default=None):
+        v = source.get(key)
         return v if v not in (None, "N/A", "None", "") else default
 
-    try:
-        info = yf.Ticker(ticker).info or {}
-        return {
-            "market_cap": _s("marketCap"),
-            "pe_ratio": _s("trailingPE"),
-            "forward_pe": _s("forwardPE"),
-            "eps": _s("trailingEps"),
-            "revenue": _s("totalRevenue"),
-            "profit_margin": _s("profitMargins"),
-            "dividend_yield": _s("dividendYield"),
-            "week52_high": _s("fiftyTwoWeekHigh"),
-            "week52_low": _s("fiftyTwoWeekLow"),
-            "beta": _s("beta"),
-            "sector": _s("sector"),
-            "industry": _s("industry"),
-            "description": _s("longBusinessSummary", ""),
-            "employees": _s("fullTimeEmployees"),
-            "roe": _s("returnOnEquity"),
-            "debt_to_equity": _s("debtToEquity"),
-        }
-    except Exception:
-        return {}
+    market_cap_millions = _s(profile, "marketCapitalization")
+    market_cap = (
+        market_cap_millions * 1_000_000
+        if isinstance(market_cap_millions, (int, float)) else None
+    )
+
+    share_outstanding_millions = _s(profile, "shareOutstanding")
+    revenue_per_share = _s(metric_data, "revenuePerShareTTM")
+    revenue = None
+    if (
+        isinstance(share_outstanding_millions, (int, float))
+        and isinstance(revenue_per_share, (int, float))
+    ):
+        revenue = share_outstanding_millions * 1_000_000 * revenue_per_share
+
+    industry = _s(profile, "finnhubIndustry")
+
+    return {
+        "market_cap": market_cap,
+        "pe_ratio": _s(metric_data, "peBasicExclExtraTTM"),
+        "forward_pe": _s(metric_data, "peNormalizedAnnual"),
+        "eps": _s(
+            metric_data, "epsInclExtraItemsTTM",
+            _s(metric_data, "epsBasicExclExtraItemsTTM"),
+        ),
+        "revenue": revenue,
+        "profit_margin": _s(metric_data, "netProfitMarginTTM"),
+        "dividend_yield": _s(metric_data, "dividendYieldIndicatedAnnual"),
+        "week52_high": _s(metric_data, "52WeekHigh"),
+        "week52_low": _s(metric_data, "52WeekLow"),
+        "beta": _s(metric_data, "beta"),
+        "sector": industry,
+        "industry": industry,
+        "description": None,
+        "employees": None,
+        "roe": None,
+        "debt_to_equity": None,
+    }
 
 
 async def fetchFundamentals(ticker: str) -> dict:
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(_executor, _yf_fundamentals_sync, ticker)
+    return await _yf_fundamentals_sync(ticker)
