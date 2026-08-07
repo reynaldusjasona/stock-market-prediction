@@ -11,3 +11,22 @@
 .btn-mark-read { background: transparent; border: 1px solid #00ff41; color: #00ff41; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; }
 .btn-mark-read:hover { background: #00ff41; color: #000; }
 .empty-state { text-align: center; color: #888; padding: 60px 20px; font-size: 16px; }
+
+/* Tabs */
+.notif-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+.notif-tab { background: transparent; border: 1px solid #1a1b20; color: #888; padding: 8px 20px; border-radius: 6px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+.notif-tab:hover { border-color: #333; color: #ccc; }
+.notif-tab.active { background: #00ff41; color: #000; border-color: #00ff41; font-weight: 600; }
+
+/* Inquiry cards */
+.inquiries-list { display: flex; flex-direction: column; gap: 12px; }
+.inquiry-card { background: #13141a; border: 1px solid #1a1b20; border-radius: 8px; padding: 20px; }
+.inquiry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.inquiry-ticker { font-weight: 700; font-size: 16px; color: #00ff41; }
+.inquiry-status { font-size: 12px; padding: 4px 10px; border-radius: 12px; }
+.inquiry-status.open { background: #332800; color: #ffaa00; }
+.inquiry-status.answered { background: #003300; color: #00ff41; }
+.inquiry-question { color: #ccc; font-size: 14px; margin-bottom: 8px; }
+.inquiry-response { color: #fff; font-size: 14px; background: #1a1b20; border-left: 3px solid #00ff41; padding: 12px; border-radius: 4px; margin-bottom: 8px; }
+.inquiry-label { color: #888; font-size: 12px; text-transform: uppercase; margin-right: 6px; }
+.inquiry-time { color: #555; font-size: 12px; }
