@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react'
 import traderApi from '../../js/traderApi'
 import EndorseSignalModal from './EndorseSignalModal'
+import RespondToInquiryModal from './RespondToInquiryModal'
 import '../../styles/admin/adminShared.css'
 import '../../styles/trader/traderShared.css'
 
@@ -12,26 +13,50 @@ function ViewSignalReviewsPage() {
   const[error,setError]= useState('')
   const[selected,setSelected]= useState(null)
 
+  const[inquiries,setInquiries]= useState([])
+  const[inquiriesLoading,setInquiriesLoading]= useState(true)
+  const[inquiriesError,setInquiriesError]= useState('')
+  const[selectedInquiry,setSelectedInquiry]= useState(null)
+
   const load = async()=> {
     setLoading(true); setError('')
     try{
       const s= await traderApi.getSignalsForReview()
       setSignals(Array.isArray(s) ? s : (s?.signals || s?.data || []))
-    } 
+    }
 	catch (err){
       setError(err.message || 'Failed to load signals')
-    } 
-	finally{ 
-	  setLoading(false) 
+    }
+	finally{
+	  setLoading(false)
+	}
+  }
+
+  const loadInquiries = async()=> {
+    setInquiriesLoading(true); setInquiriesError('')
+    try{
+      const r= await traderApi.getStockInquiries()
+      setInquiries(Array.isArray(r) ? r : (r?.inquiries || []))
+    }
+	catch (err){
+      setInquiriesError(err.message || 'Failed to load client questions')
+    }
+	finally{
+	  setInquiriesLoading(false)
 	}
   }
 
   useEffect(()=> { load() }, [])
+  useEffect(()=> { loadInquiries() }, [])
 
   const handleEndorsed = ()=> {setSelected(null); load()}
+  const handleResponded = ()=> {setSelectedInquiry(null); loadInquiries()}
 
   const pending  = signals.filter(s => !s.verdict && !s.endorsement)
   const reviewed = signals.filter(s => s.verdict || s.endorsement)
+
+  const openInquiries     = inquiries.filter(i => i.status !== 'answered')
+  const answeredInquiries = inquiries.filter(i => i.status === 'answered')
 
   return(
     <div>
@@ -111,11 +136,86 @@ function ViewSignalReviewsPage() {
         </>
       )}
 
+      <div style={{ marginTop:'2rem', marginBottom:'0.75rem' }}>
+        <h2 style={{ fontSize:'1.1rem', fontWeight:700, color:'var(--text)', margin:'0 0 0.3rem' }}>Client Questions</h2>
+        <p className="admin-page-sub">Investor questions about specific stocks, awaiting your response.</p>
+      </div>
+
+      {inquiriesError && <div className="admin-alert error">{inquiriesError}</div>}
+
+      {inquiriesLoading ? (
+        <div style={{ textAlign:'center', padding:'4rem' }}><span className="admin-spinner"/></div>
+      ) : (
+        <>
+          <div className="admin-card" style={{ marginBottom:'1.5rem' }}>
+            <div className="admin-card-header"><h2 className="admin-card-title">Open ({openInquiries.length})</h2></div>
+            <div className="admin-table-wrap">
+              <table className="admin-table" aria-label="Open client questions">
+                <thead><tr><th>Ticker</th><th>Question</th><th>Asked By</th><th>Actions</th></tr></thead>
+                <tbody>
+                  {!openInquiries.length ? (
+                    <tr><td colSpan="4"><div className="admin-empty"><p>No open questions. All caught up.</p></div></td></tr>
+                  ) : openInquiries.map(i => (
+                    <tr key={i.id} style={{ cursor:'pointer' }} onClick={() => setSelectedInquiry(i)}>
+                      <td style={{ fontFamily:'var(--font-mono)', fontWeight:700 }}>{i.ticker}</td>
+                      <td style={{ fontSize:'0.8rem', color:'var(--text-muted)', maxWidth:'260px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {i.message || '—'}
+                      </td>
+                      <td style={{ fontSize:'0.82rem', color:'var(--text-muted)' }}>{i.investor_name || (i.investor_id ? `Investor #${i.investor_id.slice(0,8)}` : '—')}</td>
+                      <td>
+                        <div className="action-cell" onClick={e => e.stopPropagation()}>
+                          <button className="btn-admin btn-primary" onClick={() => setSelectedInquiry(i)}>Respond</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="admin-card">
+            <div className="admin-card-header"><h2 className="admin-card-title">Answered ({answeredInquiries.length})</h2></div>
+            <div className="admin-table-wrap">
+              <table className="admin-table" aria-label="Answered client questions">
+                <thead><tr><th>Ticker</th><th>Question</th><th>Response</th><th>Responded At</th></tr></thead>
+                <tbody>
+                  {!answeredInquiries.length ? (
+                    <tr><td colSpan="4"><div className="admin-empty"><p>No questions answered yet.</p></div></td></tr>
+                  ) : answeredInquiries.map(i => (
+                    <tr key={i.id}>
+                      <td style={{ fontFamily:'var(--font-mono)', fontWeight:700 }}>{i.ticker}</td>
+                      <td style={{ fontSize:'0.8rem', color:'var(--text-muted)', maxWidth:'220px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {i.message || '—'}
+                      </td>
+                      <td style={{ fontSize:'0.8rem', color:'var(--text-muted)', maxWidth:'260px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {i.response || '—'}
+                      </td>
+                      <td style={{ fontSize:'0.78rem', color:'var(--text-muted)', whiteSpace:'nowrap' }}>
+                        {i.responded_at ? new Date(i.responded_at).toLocaleString('en-SG', { dateStyle:'short', timeStyle:'short' }) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
       {selected && (
         <EndorseSignalModal
           signal={selected}
           onClose={() => setSelected(null)}
           onEndorsed={handleEndorsed}
+        />
+      )}
+
+      {selectedInquiry && (
+        <RespondToInquiryModal
+          inquiry={selectedInquiry}
+          onClose={() => setSelectedInquiry(null)}
+          onResponded={handleResponded}
         />
       )}
     </div>
