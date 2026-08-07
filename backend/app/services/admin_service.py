@@ -120,7 +120,27 @@ async def searchUserByKeywords(keywords: str) -> list:
         .or_(f"name.ilike.{pattern},email.ilike.{pattern}")
         .execute()
     )
-    return result.data or []
+    users = result.data or []
+    if not users:
+        return []
+
+    userIDs = [u["id"] for u in users]
+    subsResult = (
+        supabase.table("subscriptions")
+        .select("user_id, status, expires_at")
+        .in_("user_id", userIDs)
+        .execute()
+    )
+    subsMap = {s["user_id"]: s for s in (subsResult.data or [])}
+
+    for user in users:
+        sub = subsMap.get(user["id"])
+        user["subscription_status"] = sub.get("status") if sub else None
+        user["subscription_expires_at"] = (
+            sub.get("expires_at") if sub else None
+        )
+
+    return users
 
 
 async def getAllUserAccount() -> list:
