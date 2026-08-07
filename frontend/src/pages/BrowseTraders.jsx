@@ -4,6 +4,9 @@
 // pending/approval step in the backend today, so "connect" is instant, not
 // a request the trader has to accept. Copy below is worded accordingly
 // rather than implying a pending state that doesn't exist.
+// Product rule: an investor may only be connected to one trader at a time -
+// enforced backend-side in engageTrader, mirrored here so the UI never
+// offers a second connection without disconnecting first.
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
@@ -16,8 +19,9 @@ function BrowseTraders() {
     const [connectError, setConnectError] = useState(null)
     const [traders, setTraders] = useState([])
     const [loading, setLoading] = useState(true)
-    const [engagedTraderIds, setEngagedTraderIds] = useState(new Set())
+    const [currentEngagement, setCurrentEngagement] = useState(null)
     const [connectingId, setConnectingId] = useState(null)
+    const [disconnecting, setDisconnecting] = useState(false)
     const { isSubscribed, hasSignalAccess } = useAuth()
     const navigate = useNavigate()
 
@@ -29,7 +33,12 @@ function BrowseTraders() {
         api.get('/traders')
             .then((data) => {
                 const real = (data.traders || [])
-                    .filter((t) => t.license_number && (t.specialization || t.bio))
+                    // license_number is the meaningful legitimacy signal -
+                    // it's collected and verified at registration.
+                    // specialization/bio are profile polish with no way for
+                    // a trader to fill them in later, so requiring them too
+                    // risks showing zero real traders in production.
+                    .filter((t) => t.license_number)
                     .map((t) => ({
                         id: t.id,
                         name: t.name,
@@ -43,14 +52,16 @@ function BrowseTraders() {
             .finally(() => setLoading(false))
     }, [isSubscribed])
 
-    // pull the investor's current engagements so cards reflect real state
-    // on load, not just after a click in this session
+    // pull the investor's current engagement so the page reflects real
+    // state on load, not just after a click in this session. The backend
+    // now enforces at most one active engagement, ordered most-recent-first,
+    // so the first entry (if any) is the current one.
     useEffect(() => {
         if (!hasSignalAccess) return
         api.get('/investor/engagements/me')
             .then((data) => {
-                const ids = (data.engagements || []).map((e) => e.trader_id)
-                setEngagedTraderIds(new Set(ids))
+                const engagements = data.engagements || []
+                setCurrentEngagement(engagements[0] || null)
             })
             .catch((err) => console.log('engagements failed:', err.message))
     }, [hasSignalAccess])
@@ -60,26 +71,39 @@ function BrowseTraders() {
             navigate('/subscription')
             return
         }
-        if (engagedTraderIds.has(trader.id)) return
+        if (currentEngagement) return
 
         setNotice(null)
         setConnectError(null)
         setConnectingId(trader.id)
         try {
-            await api.post('/investor/engagements', { trader_id: trader.id })
-            setEngagedTraderIds((prev) => new Set(prev).add(trader.id))
+            const data = await api.post('/investor/engagements', { trader_id: trader.id })
+            setCurrentEngagement({ ...data.engagement, trader: { name: trader.name } })
             setNotice(`Connected with ${trader.name}.`)
         } catch (err) {
-            if (err.status === 409) {
-                // backend already considers this pair engaged - reflect that
-                // instead of surfacing it as a failure
-                setEngagedTraderIds((prev) => new Set(prev).add(trader.id))
-                setNotice(`You're already connected with ${trader.name}.`)
-            } else {
-                setConnectError(err.message)
-            }
+            // a 409 here means the backend rejected a duplicate/second
+            // engagement (e.g. a race with another tab) - surface it the
+            // same as any other error rather than silently self-healing,
+            // since the UI no longer assumes multiple engagements are valid
+            setConnectError(err.message)
         } finally {
             setConnectingId(null)
+        }
+    }
+
+    async function handleDisconnect() {
+        if (!currentEngagement) return
+        setNotice(null)
+        setConnectError(null)
+        setDisconnecting(true)
+        try {
+            await api.delete(`/investor/engagements/${currentEngagement.id}`)
+            setNotice(`Disconnected from ${currentEngagement.trader?.name || 'your trader'}.`)
+            setCurrentEngagement(null)
+        } catch (err) {
+            setConnectError(err.message)
+        } finally {
+            setDisconnecting(false)
         }
     }
 
@@ -99,6 +123,16 @@ function BrowseTraders() {
                         <span onClick={() => navigate('/subscription')}>Subscribe now</span>
                     </p>
                 )}
+                {currentEngagement && (
+                    <div className="current-trader-banner">
+                        <span>
+                            Currently connected to <strong>{currentEngagement.trader?.name || 'your trader'}</strong>.
+                        </span>
+                        <button className="btn-disconnect" onClick={handleDisconnect} disabled={disconnecting}>
+                            {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+                        </button>
+                    </div>
+                )}
 
                 {loading ? (
                     <p>Loading traders...</p>
@@ -107,7 +141,8 @@ function BrowseTraders() {
                 ) : (
                     <div className="traders-grid">
                         {traders.map((trader) => {
-                            const isConnected = engagedTraderIds.has(trader.id)
+                            const isCurrentTrader = currentEngagement?.trader_id === trader.id
+                            const hasOtherEngagement = Boolean(currentEngagement) && !isCurrentTrader
                             const isConnecting = connectingId === trader.id
                             return (
                                 <div className="trader-card" key={trader.id}>
@@ -116,16 +151,18 @@ function BrowseTraders() {
                                     <p className="trader-license">{trader.license_number}</p>
                                     <p className="trader-specialty">{trader.specialty}</p>
                                     <p className="trader-bio">{trader.bio}</p>
-                                    {isConnected ? (
+                                    {isCurrentTrader ? (
                                         <span className="status-connected">✓ Connected</span>
                                     ) : (
                                         <button
                                             className="btn-connect"
                                             onClick={() => handleRequestConnect(trader)}
-                                            disabled={isConnecting}
+                                            disabled={isConnecting || hasOtherEngagement}
                                         >
                                             {!hasSignalAccess
                                                 ? 'Subscribe to Connect'
+                                                : hasOtherEngagement
+                                                ? 'Disconnect your current trader first'
                                                 : isConnecting ? 'Connecting...' : 'Connect'}
                                         </button>
                                     )}
