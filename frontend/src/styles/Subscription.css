@@ -99,17 +99,6 @@
     padding: 32px;
 }
 
-.addon-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-}
-
-.addon-card-header .btn-cancel-sub {
-    white-space: nowrap;
-}
-
 .plan-card-name {
     color: #00ff41;
     font-size: 12px;
