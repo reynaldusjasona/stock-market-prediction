@@ -103,6 +103,17 @@ async def getSignalAccessStatus(
     return await subscription_service.getSignalAccessStatus(userID)
 
 
+@router.post("/signal-access/cancel")
+async def cancelSignalAccess(
+    current_user: dict = Depends(get_current_user),
+):
+    userID = current_user["sub"]
+    try:
+        return await subscription_service.cancelSignalAccess(userID)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
 @router.post("/webhook")
 async def stripeWebhook(request: Request):
     payload = await request.body()
