@@ -21,6 +21,8 @@ function Subscription() {
     const [addonError, setAddonError] = useState(null)
     const [addonSuccess, setAddonSuccess] = useState(null)
     const [addonLoading, setAddonLoading] = useState(false)
+    // 'plan' | 'signal' | null - which cancel action is pending confirmation
+    const [confirmAction, setConfirmAction] = useState(null)
     const [searchParams, setSearchParams] = useSearchParams()
     const { refreshSubscription } = useAuth()
 
@@ -139,6 +141,28 @@ function Subscription() {
         }
     }
 
+    async function cancelSignalAccess() {
+        setAddonError(null)
+        setAddonSuccess(null)
+        try {
+            await api.post('/subscription/signal-access/cancel')
+            setAddonSuccess('Trader Access cancelled.')
+            await loadSubscription()
+        } catch (err) {
+            setAddonError(err.message)
+        }
+    }
+
+    async function confirmCancel() {
+        const action = confirmAction
+        setConfirmAction(null)
+        if (action === 'plan') {
+            await cancelSubscription()
+        } else if (action === 'signal') {
+            await cancelSignalAccess()
+        }
+    }
+
     if (loading) return <p>Loading...</p>
 
     return (
@@ -164,7 +188,7 @@ function Subscription() {
                                 {currentSub.expires_at && <> &middot; Renews/Expires {new Date(currentSub.expires_at).toLocaleDateString()}</>}
                             </p>
                         </div>
-                        <button className="btn-cancel-sub" onClick={cancelSubscription}>Cancel Subscription</button>
+                        <button className="btn-cancel-sub" onClick={() => setConfirmAction('plan')}>Cancel Subscription</button>
                     </div>
                 )}
 
@@ -211,7 +235,9 @@ function Subscription() {
                                             <p className="addon-locked-msg">Subscribe to the Investor Plan first.</p>
                                         </>
                                     ) : hasSignalAccess ? (
-                                        <button className="btn-subscribed" disabled>Active</button>
+                                        <button className="btn-cancel-sub" onClick={() => setConfirmAction('signal')}>
+                                            Cancel Trader Access
+                                        </button>
                                     ) : (
                                         <button className="btn-subscribe" onClick={startSignalAccessCheckout} disabled={addonLoading}>
                                             {addonLoading ? 'Processing...' : 'Subscribe'}
@@ -222,6 +248,23 @@ function Subscription() {
                         })()}
                     </div>
                 </div>
+
+                {confirmAction && (
+                    <div className="confirm-overlay" onClick={() => setConfirmAction(null)}>
+                        <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+                            <h3>{confirmAction === 'plan' ? 'Cancel Investor Plan?' : 'Cancel Trader Access?'}</h3>
+                            <p>
+                                {confirmAction === 'plan'
+                                    ? "This cancels your entire subscription. If Trader Access is currently active, it will be removed too, since it's part of the same subscription."
+                                    : 'This removes Trader Access — trader connections and signal features will no longer be available. Your Investor Plan stays active.'}
+                            </p>
+                            <div className="confirm-actions">
+                                <button className="btn-keep" onClick={() => setConfirmAction(null)}>Keep it</button>
+                                <button className="btn-cancel-sub" onClick={confirmCancel}>Yes, Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </AppLayout>
     )
