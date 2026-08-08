@@ -37,6 +37,46 @@
     cursor: pointer;
 }
 
+.current-trader-banner {
+    background: #13141a;
+    border: 1px solid #00ff4140;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    color: #ccc;
+    font-size: 14px;
+}
+
+.current-trader-banner strong {
+    color: #00ff41;
+}
+
+.btn-disconnect {
+    background: transparent;
+    color: #ff4444;
+    border: 1px solid #ff4444;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-disconnect:hover {
+    background: #ff4444;
+    color: #ffffff;
+}
+
+.btn-disconnect:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .traders-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
