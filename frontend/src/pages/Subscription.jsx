@@ -165,6 +165,8 @@ function Subscription() {
 
     if (loading) return <p>Loading...</p>
 
+    const hasSignalAccess = Boolean(currentSub?.has_signal_access)
+
     return (
         <AppLayout>
             <div className="subscription-content">
@@ -219,11 +221,19 @@ function Subscription() {
                     <div className="plans-grid">
                         {(() => {
                             const hasBasePlan = currentSub && currentSub.status === 'active'
-                            const hasSignalAccess = Boolean(currentSub?.has_signal_access)
                             return (
                                 <div className={hasBasePlan ? 'plan-card-sub' : 'plan-card-sub plan-card-locked'}>
-                                    <p className="plan-card-name">Trader Access</p>
-                                    <p className="plan-card-price">${SIGNAL_ACCESS_PRICE}<span>/month</span></p>
+                                    <div className="addon-card-header">
+                                        <div>
+                                            <p className="plan-card-name">Trader Access</p>
+                                            <p className="plan-card-price">${SIGNAL_ACCESS_PRICE}<span>/month</span></p>
+                                        </div>
+                                        {hasBasePlan && hasSignalAccess && (
+                                            <button className="btn-cancel-sub" onClick={() => setConfirmAction('signal')}>
+                                                Cancel Trader Access
+                                            </button>
+                                        )}
+                                    </div>
                                     <ul>
                                         {SIGNAL_ACCESS_FEATURES.map((f) => (
                                             <li key={f}>✓ {f}</li>
@@ -234,15 +244,11 @@ function Subscription() {
                                             <button className="btn-subscribed" disabled>Locked</button>
                                             <p className="addon-locked-msg">Subscribe to the Investor Plan first.</p>
                                         </>
-                                    ) : hasSignalAccess ? (
-                                        <button className="btn-cancel-sub" onClick={() => setConfirmAction('signal')}>
-                                            Cancel Trader Access
-                                        </button>
-                                    ) : (
+                                    ) : !hasSignalAccess ? (
                                         <button className="btn-subscribe" onClick={startSignalAccessCheckout} disabled={addonLoading}>
                                             {addonLoading ? 'Processing...' : 'Subscribe'}
                                         </button>
-                                    )}
+                                    ) : null}
                                 </div>
                             )
                         })()}
@@ -254,9 +260,16 @@ function Subscription() {
                         <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
                             <h3>{confirmAction === 'plan' ? 'Cancel Investor Plan?' : 'Cancel Trader Access?'}</h3>
                             <p>
-                                {confirmAction === 'plan'
-                                    ? "This cancels your entire subscription. If Trader Access is currently active, it will be removed too, since it's part of the same subscription."
-                                    : 'This removes Trader Access — trader connections and signal features will no longer be available. Your Investor Plan stays active.'}
+                                {confirmAction === 'plan' ? (
+                                    <>
+                                        This cancels your Investor Plan.
+                                        {hasSignalAccess && (
+                                            <> Cancelling your Investor Plan will also cancel your active Trader Access add-on immediately — both will stop working right away.</>
+                                        )}
+                                    </>
+                                ) : (
+                                    'This removes Trader Access — trader connections and signal features will no longer be available. Your Investor Plan stays active.'
+                                )}
                             </p>
                             <div className="confirm-actions">
                                 <button className="btn-keep" onClick={() => setConfirmAction(null)}>Keep it</button>
