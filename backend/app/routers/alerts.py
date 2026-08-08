@@ -17,6 +17,18 @@ class UpdateAlertRequest(BaseModel):
     alert_type: str
 
 
+# "" (no path segment) and "/{ticker}" (one path segment) are distinct
+# route shapes, so this is unambiguous regardless of registration order -
+# unlike POST /check-all vs POST /{ticker} below, which both look like a
+# single path segment and do need a specific order.
+@router.get("")
+async def getAllAlerts(
+    current_user: dict = Depends(get_current_user),
+):
+    userID = current_user["sub"]
+    return await alert_service.getAllAlertsForUser(userID)
+
+
 @router.get("/{ticker}")
 async def getAlertForm(
     ticker: str,
