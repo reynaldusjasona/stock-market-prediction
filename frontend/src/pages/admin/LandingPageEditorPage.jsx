@@ -9,7 +9,6 @@ const BLANK ={
   features: { subtitle:'', items:[{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''}] },
   testimonials: [{name:'',quote:'',rating:5},{name:'',quote:'',rating:5},{name:'',quote:'',rating:5}],
   subscription: { title:'', subtitle:'', plan_name:'', price:'', period:'', bullets:['','','',''], cta_label:'', footnote:'' },
-  faqs: [{question:'',answer:''},{question:'',answer:''},{question:'',answer:''}],
 }
 
 const clone = o => JSON.parse(JSON.stringify(o))
@@ -20,7 +19,6 @@ const SECTIONS = [
   {key:'features',label:'Features' },
   {key:'testimonials',label:'Testimonials' },
   {key:'subscription',label:'Subscription' },
-  {key:'faqs',label:'FAQ' },
 ]
 
 function LandingPageEditorPage() {
@@ -41,7 +39,6 @@ function LandingPageEditorPage() {
           features:{ ...BLANK.features, ...(d.features || {}), items: d.features?.items?.length ? d.features.items : BLANK.features.items },
           testimonials: d.testimonials?.length ? d.testimonials : clone(BLANK.testimonials),
           subscription:{ ...BLANK.subscription, ...(d.subscription || {}), bullets: d.subscription?.bullets?.length ? d.subscription.bullets : BLANK.subscription.bullets },
-          faqs: d.faqs?.length ? d.faqs : clone(BLANK.faqs),
         })
       })
       .catch(err => {
@@ -58,7 +55,6 @@ function LandingPageEditorPage() {
   const setFeatures= fn => setData(d => { const n = clone(d); fn(n.features); mark(); return n })
   const setTestimonials= fn => setData(d => { const n = clone(d); fn(n.testimonials); mark(); return n })
   const setSubscription= fn => setData(d => { const n = clone(d); fn(n.subscription); mark(); return n })
-  const setFaqs= fn => setData(d => { const n = clone(d); fn(n.faqs); mark(); return n })
 
   const handleSave = async()=> {
     if (!data.hero.headline?.trim()) { showToast('Hero headline is required', 'error'); setTab('hero'); return }
@@ -271,22 +267,6 @@ function LandingPageEditorPage() {
         </div>
       )}
 
-      {tab === 'faqs' && (
-        <div className="admin-card">
-          <div className="admin-card-header"><h2 className="admin-card-title">FAQ Section</h2></div>
-          <div className="admin-card-body">
-            {data.faqs.map((f, i) => (
-              <div key={i} style={{ marginBottom:'1rem', paddingBottom:'1rem', borderBottom: i < data.faqs.length-1 ? '1px solid var(--border)' : 'none' }}>
-                <div className="admin-form-label">Question {i+1}</div>
-                <input className="admin-form-input" style={{ marginBottom:'0.6rem' }} maxLength={150} value={f.question}
-                  onChange={e => setFaqs(fs => { fs[i].question = e.target.value })} placeholder="Question"/>
-                <textarea className="admin-form-textarea" style={{ minHeight:'70px' }} maxLength={400} value={f.answer}
-                  onChange={e => setFaqs(fs => { fs[i].answer = e.target.value })} placeholder="Answer"/>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -92,7 +92,19 @@ function Subscription() {
         const addon = searchParams.get('addon')
         if (status === 'success' && addon === 'signal') {
             setAddonSuccess('Payment successful! Confirming your signal access...')
-            loadSubscription()
+            // fallback activation in case the webhook hasn't fired yet
+            api.post('/subscription/signal-access/activate')
+                .catch((err) => {
+                    // 409 means webhook already activated it - not a real failure
+                    if (err.status === 409) return
+                    console.log('signal access activation fallback failed:', err.message)
+                    setAddonSuccess(null)
+                    setAddonError(
+                        "Payment succeeded, but we couldn't confirm your signal access "
+                        + "automatically. Please refresh this page in a moment."
+                    )
+                })
+                .finally(() => loadSubscription())
             setSearchParams({}, { replace: true })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

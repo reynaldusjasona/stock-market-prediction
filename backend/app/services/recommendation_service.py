@@ -1,6 +1,7 @@
 import json
 
 from app.core.database import supabase
+from ml.inference.predict import buildTimeframePredictions
 
 # users.risk_tolerance is stored lowercase ("low"/"moderate"/"high"),
 # while predictions.risk_level is stored as "Low Risk"/"Moderate Risk"/
@@ -51,6 +52,7 @@ def _build_recommendation(pred: dict, stockMap: dict) -> dict:
         "confidence_score": confidence,
         "risk_level": pred.get("risk_level"),
         "reason": reason,
+        "predictions": buildTimeframePredictions(signal, confidence),
     }
 
 
@@ -85,6 +87,7 @@ async def getGeneralRecommendations(limit: int = 10) -> list:
                         "No prediction data available yet — run a "
                         "prediction to get signals"
                     ),
+                    "predictions": buildTimeframePredictions("Hold", 50),
                 }
                 for s in (stocksResult.data or [])
             ]

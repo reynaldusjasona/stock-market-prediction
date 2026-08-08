@@ -30,9 +30,9 @@ function ManageUserAccountsPage(){
   const loadUsers=async(q = '')=>{
     setLoading(true)
     try{
-      const d=await adminApi.getAllUsers(q ? { q } : {})
+      const d= q ? await adminApi.searchUsers(q) : await adminApi.getAllUsers()
       setUsers(Array.isArray(d) ? d : (d?.users || []))
-    } 
+    }
 	catch (err){
       showToast(err.message || 'Failed to load users', 'error')
       setUsers([])
