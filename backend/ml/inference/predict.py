@@ -3,6 +3,44 @@ import pandas as pd
 from ml.training.evaluate import load_model
 from ml.training.features import _FEATURE_COLS, calculate_indicators, fetch_stock_data
 
+# We only have one trained model (next-day direction). 3d/5d are not
+# independent forecasts from separate models - they reuse the 1d
+# signal and scale confidence down to reflect the extra uncertainty of
+# a longer horizon. This is a heuristic placeholder agreed on by the
+# team, not a statistically calibrated per-horizon prediction.
+_TIMEFRAME_CONFIDENCE_SCALARS = {
+    "1d": 1.0,
+    "3d": 0.85,
+    "5d": 0.75,
+}
+
+
+def _risk_level_for_confidence(confidence: float) -> str:
+    if confidence >= 75:
+        return "Low Risk"
+    elif confidence >= 50:
+        return "Moderate Risk"
+    return "High Risk"
+
+
+def buildTimeframePredictions(signal: str, confidence: float) -> list:
+    """
+    Expand a single next-day signal/confidence into 1d/3d/5d variants
+    by scaling confidence per _TIMEFRAME_CONFIDENCE_SCALARS. Signal
+    stays the same across timeframes; only confidence (and the
+    risk_level derived from it) changes.
+    """
+    predictions = []
+    for timeframe, scalar in _TIMEFRAME_CONFIDENCE_SCALARS.items():
+        scaledConfidence = round(confidence * scalar, 2)
+        predictions.append({
+            "timeframe": timeframe,
+            "signal": signal,
+            "confidence": scaledConfidence,
+            "risk_level": _risk_level_for_confidence(scaledConfidence),
+        })
+    return predictions
+
 
 def get_latest_features(
     ticker: str,
@@ -62,13 +100,7 @@ def getPrediction(ticker: str) -> dict:
 
     signal = label_encoder.inverse_transform([pred_enc])[0]
     confidence = round(float(proba.max()) * 100, 2)
-
-    if confidence >= 75:
-        risk_level = "Low Risk"
-    elif confidence >= 50:
-        risk_level = "Moderate Risk"
-    else:
-        risk_level = "High Risk"
+    risk_level = _risk_level_for_confidence(confidence)
 
     row = features.iloc[0]
     reasoning = (
@@ -86,6 +118,26 @@ def getPrediction(ticker: str) -> dict:
     }
 
 
+def getMultiTimeframePredictions(ticker: str) -> dict:
+    """
+    Same single-model prediction as getPrediction(), plus a
+    "predictions" list with 1d/3d/5d variants (see
+    buildTimeframePredictions). Existing top-level keys (ticker,
+    signal, confidence, risk_level, reasoning) are unchanged, so
+    callers that only read those keep working.
+    """
+    base = getPrediction(ticker)
+    if "error" in base:
+        return base
+
+    return {
+        **base,
+        "predictions": buildTimeframePredictions(
+            base["signal"], base["confidence"]
+        ),
+    }
+
+
 if __name__ == "__main__":
-    result = getPrediction("AAPL")
+    result = getMultiTimeframePredictions("AAPL")
     print(result)

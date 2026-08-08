@@ -231,6 +231,31 @@ async def cancelSignalAccess(userID: str) -> dict:
     return result.data[0]
 
 
+async def activateSignalAccess(userID: str) -> dict:
+    """Fallback activation for signal access after Stripe redirect."""
+    existing = (
+        supabase.table("subscriptions")
+        .select("id, has_signal_access")
+        .eq("user_id", userID)
+        .eq("status", "active")
+        .execute()
+    )
+    if not existing.data:
+        raise HTTPException(
+            status_code=400,
+            detail="No active subscription found.",
+        )
+    if existing.data[0].get("has_signal_access"):
+        raise HTTPException(
+            status_code=409,
+            detail="Signal access already active.",
+        )
+    supabase.table("subscriptions").update(
+        {"has_signal_access": True}
+    ).eq("user_id", userID).eq("status", "active").execute()
+    return {"status": "signal_access_activated"}
+
+
 async def getSignalAccessStatus(userID: str) -> dict:
     result = (
         supabase.table("subscriptions")

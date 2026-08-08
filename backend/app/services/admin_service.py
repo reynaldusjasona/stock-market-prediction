@@ -120,7 +120,27 @@ async def searchUserByKeywords(keywords: str) -> list:
         .or_(f"name.ilike.{pattern},email.ilike.{pattern}")
         .execute()
     )
-    return result.data or []
+    users = result.data or []
+    if not users:
+        return []
+
+    userIDs = [u["id"] for u in users]
+    subsResult = (
+        supabase.table("subscriptions")
+        .select("user_id, status, expires_at")
+        .in_("user_id", userIDs)
+        .execute()
+    )
+    subsMap = {s["user_id"]: s for s in (subsResult.data or [])}
+
+    for user in users:
+        sub = subsMap.get(user["id"])
+        user["subscription_status"] = sub.get("status") if sub else None
+        user["subscription_expires_at"] = (
+            sub.get("expires_at") if sub else None
+        )
+
+    return users
 
 
 async def getAllUserAccount() -> list:
@@ -434,7 +454,6 @@ def _default_landing_content() -> dict:
             "cta_label": "",
             "footnote": "",
         },
-        "faqs": [],
     }
 
 
@@ -446,10 +465,77 @@ def _apply_landing_defaults(content: dict) -> dict:
         merged[key] = (
             {**defaults[key], **section} if isinstance(section, dict) else defaults[key]
         )
-    for key in ("testimonials", "faqs"):
+    for key in ("testimonials",):
         section = content.get(key)
         merged[key] = section if isinstance(section, list) else defaults[key]
     return merged
+
+
+def buildPublicLandingSections(content: dict) -> list:
+    """
+    Adapt the admin-editor content shape ({hero, about, features, ...})
+    into the flat {section_key, title, subtitle, content, image_url,
+    is_visible, display_order} list the public landing page (Landing.jsx)
+    reads from GET /api/landing. Sections with no content are omitted.
+
+    ViewLandingSection.jsx only renders a single title/subtitle/content
+    per section, so multi-card sections (about, features) are condensed
+    into one paragraph per card ("Title: body"), joined together.
+    """
+    hero = content.get("hero") or {}
+    about = content.get("about") or {}
+    features = content.get("features") or {}
+
+    sections = []
+
+    if hero.get("headline"):
+        sections.append({
+            "section_key": "hero",
+            "title": hero.get("headline"),
+            "subtitle": None,
+            "content": hero.get("subline") or None,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 0,
+        })
+
+    aboutCards = about.get("cards") or []
+    aboutText = " • ".join(
+        f"{card.get('title')}: {card.get('body')}"
+        if card.get("title") else card.get("body", "")
+        for card in aboutCards
+        if card.get("body")
+    )
+    if aboutText:
+        sections.append({
+            "section_key": "about",
+            "title": "About StockWise AI",
+            "subtitle": about.get("subtitle") or None,
+            "content": aboutText,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 1,
+        })
+
+    featureItems = features.get("items") or []
+    featuresText = " • ".join(
+        f"{item.get('title')}: {item.get('body')}"
+        if item.get("title") else item.get("body", "")
+        for item in featureItems
+        if item.get("body")
+    )
+    if featuresText:
+        sections.append({
+            "section_key": "features",
+            "title": "Platform Features",
+            "subtitle": features.get("subtitle") or None,
+            "content": featuresText,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 2,
+        })
+
+    return sections
 
 
 async def getLandingContent() -> dict:
