@@ -15,46 +15,16 @@ from sklearn.utils.class_weight import compute_sample_weight
 
 from ml.training.features import get_multiple_tickers
 from ml.training.label_triple_barrier import apply_triple_barrier_by_ticker
+from ml.training.train_common import TRAIN_TICKERS, split_data
 
-
-TRAIN_TICKERS = [
-    "AAPL", "MSFT", "GOOGL", "NVDA", "META", "AMD", "ORCL", "CRM",
-    "AMZN", "TSLA", "WMT", "COST", "MCD", "NKE", "SBUX",
-    "JPM", "BAC", "GS", "V", "MA",
-    "JNJ", "PFE", "UNH", "MRK", "ABBV",
-    "XOM", "CVX", "COP",
-    "BA", "CAT", "GE",
-    "DIS", "NFLX", "KO", "PEP",
-]
 
 EXCLUDED_COLUMNS = [
     "Date", "Ticker", "Label",
     "dynamic_target", "next_high", "next_low", "next_close",
     "upper_barrier_price", "lower_barrier_price",
     "Upper_Touched", "Lower_Touched", "Barrier_Type",
+    "High", "Low",
 ]
-
-
-def split_data(
-    X: pd.DataFrame,
-    y: pd.Series,
-) -> tuple[
-    pd.DataFrame, pd.DataFrame, pd.DataFrame,
-    pd.Series, pd.Series, pd.Series,
-]:
-    """Perform a chronological 70/15/15 split."""
-    n_samples = len(X)
-    train_end = int(n_samples * 0.70)
-    validation_end = int(n_samples * 0.85)
-
-    return (
-        X.iloc[:train_end].copy(),
-        X.iloc[train_end:validation_end].copy(),
-        X.iloc[validation_end:].copy(),
-        y.iloc[:train_end].copy(),
-        y.iloc[train_end:validation_end].copy(),
-        y.iloc[validation_end:].copy(),
-    )
 
 
 def create_optuna_objective(
