@@ -218,22 +218,28 @@ function Subscription() {
                     {addonError && <p className="error-msg">{addonError}</p>}
                     {addonSuccess && <p className="success-msg">{addonSuccess}</p>}
 
+                    {hasSignalAccess && (
+                        <div className="current-sub-card">
+                            <div>
+                                <p className="current-sub-label">Add-on Status</p>
+                                <p className="current-sub-plan">Trader Access</p>
+                                <p className="current-sub-meta">
+                                    Status: <span className="badge-active">active</span>
+                                </p>
+                            </div>
+                            <button className="btn-cancel-sub" onClick={() => setConfirmAction('signal')}>
+                                Cancel Trader Access
+                            </button>
+                        </div>
+                    )}
+
                     <div className="plans-grid">
                         {(() => {
                             const hasBasePlan = currentSub && currentSub.status === 'active'
                             return (
                                 <div className={hasBasePlan ? 'plan-card-sub' : 'plan-card-sub plan-card-locked'}>
-                                    <div className="addon-card-header">
-                                        <div>
-                                            <p className="plan-card-name">Trader Access</p>
-                                            <p className="plan-card-price">${SIGNAL_ACCESS_PRICE}<span>/month</span></p>
-                                        </div>
-                                        {hasBasePlan && hasSignalAccess && (
-                                            <button className="btn-cancel-sub" onClick={() => setConfirmAction('signal')}>
-                                                Cancel Trader Access
-                                            </button>
-                                        )}
-                                    </div>
+                                    <p className="plan-card-name">Trader Access</p>
+                                    <p className="plan-card-price">${SIGNAL_ACCESS_PRICE}<span>/month</span></p>
                                     <ul>
                                         {SIGNAL_ACCESS_FEATURES.map((f) => (
                                             <li key={f}>✓ {f}</li>
@@ -248,7 +254,9 @@ function Subscription() {
                                         <button className="btn-subscribe" onClick={startSignalAccessCheckout} disabled={addonLoading}>
                                             {addonLoading ? 'Processing...' : 'Subscribe'}
                                         </button>
-                                    ) : null}
+                                    ) : (
+                                        <button className="btn-subscribed" disabled>Active</button>
+                                    )}
                                 </div>
                             )
                         })()}
