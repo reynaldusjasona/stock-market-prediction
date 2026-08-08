@@ -95,6 +95,15 @@ async def createSignalAccessCheckoutSession(
     return await subscription_service.createSignalAccessCheckout(userID, email)
 
 
+@router.post("/signal-access/activate")
+async def activateSignalAccess(
+    current_user: dict = Depends(get_current_user),
+):
+    """Fallback activation after Stripe redirect, in case webhook hasn't fired."""
+    userID = current_user["sub"]
+    return await subscription_service.activateSignalAccess(userID)
+
+
 @router.get("/signal-access/status")
 async def getSignalAccessStatus(
     current_user: dict = Depends(get_current_user),

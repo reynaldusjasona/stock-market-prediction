@@ -122,38 +122,32 @@ async def endorseSignal(
 
 async def getTraderEndorsements(trader_id: str, limit: int = 20) -> list:
     result = (
-        supabase.table("signal_endorsements")
-        .select("id, prediction_id, endorsement, notes, created_at")
+        supabase.table("trader_signal")
+        .select(
+            "id, ticker, signal, confidence_score, verdict, note, "
+            "endorsed_at, created_at, investor_id"
+        )
         .eq("trader_id", trader_id)
-        .order("created_at", desc=True)
+        .not_.is_("verdict", "null")
+        .order("endorsed_at", desc=True)
         .limit(limit)
         .execute()
     )
-    endorsements = result.data or []
-
-    predictionIDs = list({e["prediction_id"] for e in endorsements})
-    predictionMap = {}
-    if predictionIDs:
-        predictionsResult = (
-            supabase.table("predictions")
-            .select("id, ticker, signal")
-            .in_("id", predictionIDs)
-            .execute()
-        )
-        predictionMap = {p["id"]: p for p in (predictionsResult.data or [])}
+    rows = result.data or []
 
     items = []
-    for e in endorsements:
-        pred = predictionMap.get(e["prediction_id"], {})
+    for row in rows:
         items.append(
             {
-                "id": e["id"],
-                "prediction_id": e["prediction_id"],
-                "ticker": pred.get("ticker"),
-                "predicted_action": pred.get("signal"),
-                "endorsement": e.get("endorsement"),
-                "notes": e.get("notes"),
-                "created_at": e.get("created_at"),
+                "id": row["id"],
+                "ticker": row.get("ticker"),
+                "signal": row.get("signal"),
+                "confidence_score": row.get("confidence_score"),
+                "verdict": row.get("verdict"),
+                "note": row.get("note"),
+                "endorsed_at": row.get("endorsed_at"),
+                "created_at": row.get("created_at"),
+                "investor_id": row.get("investor_id"),
             }
         )
     return items
