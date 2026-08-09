@@ -100,6 +100,24 @@ async def sendOtpEmail(to_email: str, otp_code: str) -> bool:
         return False
 
 
+async def sendPasswordResetEmail(to_email: str, name: str, otp_code: str) -> bool:
+    subject = "StockWise AI — Reset your password"
+    body = (
+        f"<h2>Hi {name},</h2>"
+        "<p>We received a request to reset your StockWise AI password.</p>"
+        f"<p>Your password reset code is: <b>{otp_code}</b></p>"
+        "<p>This code will expire in 5 minutes.</p>"
+        "<p>If you did not request this, you can safely ignore this email — "
+        "your password will not be changed.</p>"
+        "<p>— StockWise AI Team</p>"
+    )
+    try:
+        await asyncio.to_thread(_send_sync, to_email, subject, body)
+        return True
+    except Exception:
+        return False
+
+
 async def sendPendingEmailNotification(to_email: str, message: str) -> bool:
     subject = "StockWise AI - Notification"
     body = f"<p>{message}</p>"
