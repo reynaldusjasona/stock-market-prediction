@@ -118,6 +118,23 @@ async def sendOtpEmail(to_email: str, otp_code: str) -> bool:
         return False
 
 
+async def sendLoginOtpEmail(to_email: str, otp_code: str) -> bool:
+    subject = "StockWise AI — Your Login Code"
+    body = (
+        "<h2>Login Verification</h2>"
+        f"<p>Your login code is: <b>{otp_code}</b></p>"
+        "<p>This code will expire in 5 minutes.</p>"
+        "<p>If you did not attempt to log in, please secure your account "
+        "by changing your password.</p>"
+        "<p>— StockWise AI Team</p>"
+    )
+    try:
+        await asyncio.to_thread(_send_sync, to_email, subject, body)
+        return True
+    except Exception:
+        return False
+
+
 async def sendPasswordResetEmail(to_email: str, name: str, otp_code: str) -> bool:
     subject = "StockWise AI — Reset your password"
     body = (
