@@ -8,12 +8,15 @@ from typing import Optional
 from fastapi import HTTPException
 
 from app.core.database import supabase
-from app.core.email import sendVerificationEmail
+from app.core.email import sendPasswordResetEmail, sendVerificationEmail
 from app.core.security import createAccessToken, hashPassword, verifyPassword
 
 _EMAIL_RE = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 _VALID_LEVELS = {"low", "moderate", "high"}
 _FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+_RESET_OTP_EXPIRE_MINUTES = 5
+_RESET_TOKEN_EXPIRE_MINUTES = 10
 
 _PUBLIC_FIELDS = (
     "id, name, email, role, status, risk_tolerance, "
@@ -401,3 +404,126 @@ async def changePassword(
         "id", userID
     ).execute()
     return {"message": "Password changed successfully"}
+
+
+async def requestPasswordReset(email: str) -> None:
+    """Look up the user and, if they exist and are verified, generate and
+    email a reset OTP. Silently no-ops for unknown/unverified emails - the
+    router always returns the same generic response either way, so this
+    never signals whether the email is registered.
+
+    Stored in reset_otp_code / reset_otp_expires_at - deliberately separate
+    columns from otp_code / otp_expires_at (used by admin 2FA), so a
+    concurrent login-OTP and forgot-password-OTP on the same account never
+    collide or clobber each other.
+    """
+    result = (
+        supabase.table("users")
+        .select("id, name, email, is_verified, status")
+        .eq("email", email)
+        .execute()
+    )
+    if not result.data:
+        return
+    user = result.data[0]
+    if not user.get("is_verified") or user.get("status") != "active":
+        return
+
+    otp_code = await generateOtp()
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=_RESET_OTP_EXPIRE_MINUTES
+    )
+    supabase.table("users").update({
+        "reset_otp_code": otp_code,
+        "reset_otp_expires_at": expires_at.isoformat(),
+    }).eq("id", user["id"]).execute()
+
+    sent = await sendPasswordResetEmail(email, user["name"], otp_code)
+    if not sent:
+        print(
+            f"[forgot-password] Failed to send reset OTP email to {email}. "
+            f"Fallback code: {otp_code}"
+        )
+
+
+async def verifyResetOtp(email: str, otpCode: str) -> str:
+    """Verify a forgot-password OTP and issue a short-lived, purpose-scoped
+    reset token. Raises HTTPException(401) on any invalid/expired/unknown
+    input - deliberately the same generic error for "no such email",
+    "wrong code", and "expired code" so this can't be used to enumerate
+    registered emails either.
+
+    The reset token is a random opaque string stored on the user row
+    (reset_token / reset_token_expires_at), NOT a login JWT - it only
+    grants access to resetPasswordWithToken below, nothing else.
+    """
+    result = (
+        supabase.table("users")
+        .select("id, reset_otp_code, reset_otp_expires_at")
+        .eq("email", email)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=401, detail="Invalid or expired code.")
+
+    user = result.data[0]
+    stored_code = user.get("reset_otp_code")
+    expires_at = user.get("reset_otp_expires_at")
+    if (
+        not stored_code
+        or stored_code != otpCode
+        or not expires_at
+        or datetime.fromisoformat(expires_at) <= datetime.now(timezone.utc)
+    ):
+        raise HTTPException(status_code=401, detail="Invalid or expired code.")
+
+    reset_token = secrets.token_urlsafe(32)
+    token_expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=_RESET_TOKEN_EXPIRE_MINUTES
+    )
+    # clear the OTP (single-use) and store the new reset token in the same
+    # update, so a code can never be replayed to mint a second token
+    supabase.table("users").update({
+        "reset_otp_code": None,
+        "reset_otp_expires_at": None,
+        "reset_token": reset_token,
+        "reset_token_expires_at": token_expires_at.isoformat(),
+    }).eq("id", user["id"]).execute()
+
+    return reset_token
+
+
+async def resetPasswordWithToken(resetToken: str, newPassword: str) -> dict:
+    result = (
+        supabase.table("users")
+        .select("id, reset_token_expires_at")
+        .eq("reset_token", resetToken)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(
+            status_code=401, detail="Invalid or expired reset link."
+        )
+
+    user = result.data[0]
+    expires_at = user.get("reset_token_expires_at")
+    if not expires_at or datetime.fromisoformat(expires_at) <= datetime.now(
+        timezone.utc
+    ):
+        raise HTTPException(
+            status_code=401, detail="Invalid or expired reset link."
+        )
+
+    if len(newPassword) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="New password must be at least 8 characters",
+        )
+
+    hashed = hashPassword(newPassword)
+    supabase.table("users").update({
+        "password_hash": hashed,
+        "reset_token": None,
+        "reset_token_expires_at": None,
+    }).eq("id", user["id"]).execute()
+    return {"message": "Password reset successful"}
