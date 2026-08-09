@@ -84,6 +84,24 @@ async def sendVerificationEmail(
         return False
 
 
+async def sendRegistrationOtpEmail(to_email: str, name: str, otp_code: str) -> bool:
+    subject = "StockWise AI — Verify your email"
+    body = (
+        f"<h2>Hi {name},</h2>"
+        "<p>Thanks for registering on StockWise AI.</p>"
+        f"<p>Your verification code is: <b>{otp_code}</b></p>"
+        "<p>This code will expire in 5 minutes.</p>"
+        "<p>If you did not create this account, you can safely ignore "
+        "this email.</p>"
+        "<p>— StockWise AI Team</p>"
+    )
+    try:
+        await asyncio.to_thread(_send_sync, to_email, subject, body)
+        return True
+    except Exception:
+        return False
+
+
 async def sendOtpEmail(to_email: str, otp_code: str) -> bool:
     subject = "StockWise AI — Your Admin Login Code"
     body = (
