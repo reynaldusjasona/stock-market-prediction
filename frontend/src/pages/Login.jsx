@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/api'
+import ForgotPasswordModal from '../components/ForgotPasswordModal'
 import '../styles/AuthLayout.css'
 
 function Login() {
@@ -9,6 +10,7 @@ function Login() {
     const [password, setPassword] = useState('')
     const [error, setError] = useState(null)
     const [resendMessage, setResendMessage] = useState(null)
+    const [showForgotPassword, setShowForgotPassword] = useState(false)
     const { login } = useAuth()
     const navigate  = useNavigate()
 
@@ -63,11 +65,17 @@ function Login() {
                         <input type="password" placeholder="••••••••"
                             value={password} onChange={e => setPassword(e.target.value)}/>
                     </div>
+                    <p className="auth-footer forgot-password-link">
+                        <span onClick={() => setShowForgotPassword(true)}>Forgot Password?</span>
+                    </p>
                     <button className="btn-full" onClick={handleLogin}>Log in →</button>
                     <p className="auth-footer">Didn't get a verification email? <span onClick={handleResendVerification}>Resend it</span></p>
                     <p className="auth-footer">Don't have an account? <span onClick={() => navigate('/register')}>Register</span></p>
                 </div>
             </div>
+            {showForgotPassword && (
+                <ForgotPasswordModal onClose={() => setShowForgotPassword(false)} />
+            )}
         </div>
     )
 }

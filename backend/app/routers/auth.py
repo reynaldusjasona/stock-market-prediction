@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.core.database import supabase
 from app.core.email import sendOtpEmail
+from app.core.rate_limit import checkRateLimit
 from app.core.security import get_current_user, hashPassword
 from app.services.activity_service import logActivity
 from app.services.auth_service import (
@@ -20,7 +21,9 @@ from app.services.auth_service import (
     invalidateSession,
     login as svcLogin,
     logout as svcLogout,
+    requestPasswordReset,
     resendVerification as svcResendVerification,
+    resetPasswordWithToken as svcResetPasswordWithToken,
     saveOtp,
     savePreferences,
     updateAccount as svcUpdateAccount,
@@ -31,6 +34,7 @@ from app.services.auth_service import (
     validateInputs,
     verifyEmailToken as svcVerifyEmailToken,
     verifyOtp,
+    verifyResetOtp as svcVerifyResetOtp,
 )
 
 router = APIRouter()
@@ -94,6 +98,20 @@ class ResendVerificationRequest(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     old_password: str
+    new_password: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class VerifyResetOtpRequest(BaseModel):
+    email: str
+    code: str
+
+
+class ResetPasswordWithTokenRequest(BaseModel):
+    reset_token: str
     new_password: str
 
 
@@ -220,6 +238,44 @@ async def resetPasswordRoute(
     return await changePassword(
         userID, body.old_password, body.new_password
     )
+
+
+@router.post("/auth/forgot-password", tags=["Auth"])
+async def forgotPassword(body: ForgotPasswordRequest):
+    # Rate-limited (and, when allowed, executed) before we know whether the
+    # email is even registered - requestPasswordReset silently no-ops for
+    # unknown/unverified emails, and the response below is identical either
+    # way, so nothing here ever reveals which emails exist.
+    if not checkRateLimit(
+        "forgot-password", body.email, max_count=3, window_minutes=15
+    ):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests. Please try again later.",
+        )
+    await requestPasswordReset(body.email)
+    return {
+        "message": "If that email is registered and verified, "
+        "a password reset code has been sent."
+    }
+
+
+@router.post("/auth/verify-reset-otp", tags=["Auth"])
+async def verifyResetOtpRoute(body: VerifyResetOtpRequest):
+    if not checkRateLimit(
+        "verify-reset-otp", body.email, max_count=5, window_minutes=15
+    ):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Please try again later.",
+        )
+    reset_token = await svcVerifyResetOtp(body.email, body.code)
+    return {"reset_token": reset_token}
+
+
+@router.post("/auth/reset-password-with-token", tags=["Auth"])
+async def resetPasswordWithTokenRoute(body: ResetPasswordWithTokenRequest):
+    return await svcResetPasswordWithToken(body.reset_token, body.new_password)
 
 
 @router.get("/auth/user/{investorID}", tags=["Auth"])
