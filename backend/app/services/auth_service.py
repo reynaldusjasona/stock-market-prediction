@@ -9,6 +9,7 @@ from fastapi import HTTPException
 
 from app.core.database import supabase
 from app.core.email import (
+    sendLoginOtpEmail,
     sendPasswordResetEmail,
     sendRegistrationOtpEmail,
     sendVerificationEmail,
@@ -22,6 +23,8 @@ _FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 _RESET_OTP_EXPIRE_MINUTES = 5
 _RESET_TOKEN_EXPIRE_MINUTES = 10
 _REGISTER_OTP_EXPIRE_MINUTES = 5
+_LOGIN_CHALLENGE_EXPIRE_MINUTES = 5
+_LOGIN_OTP_EXPIRE_MINUTES = 5
 
 _PUBLIC_FIELDS = (
     "id, name, email, role, status, risk_tolerance, "
@@ -170,7 +173,14 @@ async def resendVerification(email: str) -> None:
     await createAndSendRegistrationOtp(user["id"], user["name"], user["email"])
 
 
-async def login(identifier: str, password: str) -> dict:
+async def _checkLoginCredentials(identifier: str, password: str) -> dict:
+    """Shared credential/eligibility checks used by both login() (admin,
+    unchanged - a real token is issued the moment this returns) and the
+    investor/trader login-otp flow below (where a token is only issued
+    after a second OTP step). Same checks, same order, same exceptions
+    either flow already relied on - only what happens AFTER this returns
+    differs between the two.
+    """
     result = (
         supabase.table("users")
         .select("*")
@@ -203,12 +213,116 @@ async def login(identifier: str, password: str) -> dict:
                 detail="Your trader registration has been rejected. "
                 "Please contact support.",
             )
+    return user
+
+
+async def login(identifier: str, password: str) -> dict:
+    user = await _checkLoginCredentials(identifier, password)
     token = createAccessToken(
         {"sub": user["id"], "email": user["email"], "role": user["role"]}
     )
     supabase.table("users").update(
         {"session_token": token}
     ).eq("id", user["id"]).execute()
+    return {"token": token, "user": _strip_hash(user)}
+
+
+async def initiateLoginOtp(identifier: str, password: str) -> str:
+    """Investor/trader login step 1. Runs the exact same credential and
+    eligibility checks as login() via _checkLoginCredentials - but instead
+    of issuing a real session token, issues a short-lived opaque
+    login_challenge_token and emails an OTP that must be presented
+    alongside it in verifyLoginOtp. No usable token is ever returned from
+    this step.
+
+    Admin accounts are explicitly rejected here (after the password check
+    already succeeded, so this reveals nothing an attacker couldn't already
+    infer from having the right password) - admin must keep using the
+    existing POST /auth/login + send-2fa/verify-2fa flow untouched. Without
+    this check, this endpoint would double as an undocumented way for an
+    admin account to log in while completely bypassing admin 2FA, since
+    this is a separate OTP mechanism with its own columns.
+    """
+    user = await _checkLoginCredentials(identifier, password)
+    if user.get("role") == "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Admin accounts must use the standard login flow.",
+        )
+
+    challenge_token = secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc)
+    challenge_expires_at = now + timedelta(
+        minutes=_LOGIN_CHALLENGE_EXPIRE_MINUTES
+    )
+    otp_code = await generateOtp()
+    otp_expires_at = now + timedelta(minutes=_LOGIN_OTP_EXPIRE_MINUTES)
+
+    supabase.table("users").update({
+        "login_challenge_token": challenge_token,
+        "login_challenge_expires_at": challenge_expires_at.isoformat(),
+        "login_otp_code": otp_code,
+        "login_otp_expires_at": otp_expires_at.isoformat(),
+    }).eq("id", user["id"]).execute()
+
+    sent = await sendLoginOtpEmail(user["email"], otp_code)
+    if not sent:
+        print(
+            f"[login-otp] Failed to send login OTP email to "
+            f"{user['email']}. Fallback code: {otp_code}"
+        )
+
+    return challenge_token
+
+
+async def verifyLoginOtp(loginChallenge: str, otpCode: str) -> dict:
+    """Investor/trader login step 2. Looked up by login_challenge_token,
+    not email - the challenge is already an unguessable secret scoped to
+    this one login attempt, so keying off it (rather than requiring the
+    client to resend the email) is at least as safe.
+
+    On success, mints the same real session token login() issues today and
+    clears both single-use fields. Any failure - unknown/expired challenge,
+    wrong code, expired code - raises the same generic HTTPException(401),
+    matching verifyResetOtp/verifyRegisterOtp's non-enumerable pattern.
+    """
+    result = (
+        supabase.table("users")
+        .select("*")
+        .eq("login_challenge_token", loginChallenge)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=401, detail="Invalid or expired code.")
+
+    user = result.data[0]
+    now = datetime.now(timezone.utc)
+    challenge_expires_at = user.get("login_challenge_expires_at")
+    stored_code = user.get("login_otp_code")
+    otp_expires_at = user.get("login_otp_expires_at")
+    if (
+        not challenge_expires_at
+        or datetime.fromisoformat(challenge_expires_at) <= now
+        or not stored_code
+        or stored_code != otpCode
+        or not otp_expires_at
+        or datetime.fromisoformat(otp_expires_at) <= now
+    ):
+        raise HTTPException(status_code=401, detail="Invalid or expired code.")
+
+    token = createAccessToken(
+        {"sub": user["id"], "email": user["email"], "role": user["role"]}
+    )
+    # clear the challenge + OTP (single-use) in the same update that grants
+    # the real session, so neither can be replayed
+    supabase.table("users").update({
+        "session_token": token,
+        "login_challenge_token": None,
+        "login_challenge_expires_at": None,
+        "login_otp_code": None,
+        "login_otp_expires_at": None,
+    }).eq("id", user["id"]).execute()
+
     return {"token": token, "user": _strip_hash(user)}
 
 

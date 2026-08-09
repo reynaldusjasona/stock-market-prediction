@@ -18,6 +18,7 @@ from app.services.auth_service import (
     getPreferences as svcGetPreferences,
     getRiskTolerance as svcGetRiskTolerance,
     getUserDetails as svcGetUserDetails,
+    initiateLoginOtp,
     invalidateSession,
     login as svcLogin,
     logout as svcLogout,
@@ -33,6 +34,7 @@ from app.services.auth_service import (
     validateFormInput,
     validateInputs,
     verifyEmailToken as svcVerifyEmailToken,
+    verifyLoginOtp as svcVerifyLoginOtp,
     verifyOtp,
     verifyRegisterOtp as svcVerifyRegisterOtp,
     verifyResetOtp as svcVerifyResetOtp,
@@ -121,6 +123,16 @@ class ResetPasswordWithTokenRequest(BaseModel):
     new_password: str
 
 
+class RequestLoginOtpRequest(BaseModel):
+    email: str
+    password: str
+
+
+class VerifyLoginOtpRequest(BaseModel):
+    login_challenge: str
+    code: str
+
+
 @router.post("/auth/register", tags=["Auth"])
 async def register(body: RegisterRequest):
     validation = await validateInputs(body.name, body.email, body.password)
@@ -183,6 +195,38 @@ async def register(body: RegisterRequest):
 @router.post("/auth/login", tags=["Auth"])
 async def login(body: LoginRequest):
     result = await svcLogin(body.email, body.password)
+    await logActivity(
+        userID=result["user"]["id"], action="login", targetType="auth"
+    )
+    return result
+
+
+@router.post("/auth/request-login-otp", tags=["Auth"])
+async def requestLoginOtp(body: RequestLoginOtpRequest):
+    if not checkRateLimit(
+        "request-login-otp", body.email, max_count=5, window_minutes=15
+    ):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Please try again later.",
+        )
+    login_challenge = await initiateLoginOtp(body.email, body.password)
+    return {
+        "login_challenge": login_challenge,
+        "message": "Enter the code we sent to your email",
+    }
+
+
+@router.post("/auth/verify-login-otp", tags=["Auth"])
+async def verifyLoginOtpRoute(body: VerifyLoginOtpRequest):
+    if not checkRateLimit(
+        "verify-login-otp", body.login_challenge, max_count=5, window_minutes=15
+    ):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Please try again later.",
+        )
+    result = await svcVerifyLoginOtp(body.login_challenge, body.code)
     await logActivity(
         userID=result["user"]["id"], action="login", targetType="auth"
     )
