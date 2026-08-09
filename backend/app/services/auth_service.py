@@ -8,7 +8,11 @@ from typing import Optional
 from fastapi import HTTPException
 
 from app.core.database import supabase
-from app.core.email import sendPasswordResetEmail, sendVerificationEmail
+from app.core.email import (
+    sendPasswordResetEmail,
+    sendRegistrationOtpEmail,
+    sendVerificationEmail,
+)
 from app.core.security import createAccessToken, hashPassword, verifyPassword
 
 _EMAIL_RE = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
@@ -17,6 +21,7 @@ _FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 _RESET_OTP_EXPIRE_MINUTES = 5
 _RESET_TOKEN_EXPIRE_MINUTES = 10
+_REGISTER_OTP_EXPIRE_MINUTES = 5
 
 _PUBLIC_FIELDS = (
     "id, name, email, role, status, risk_tolerance, "
@@ -91,6 +96,67 @@ async def verifyEmailToken(token: str) -> dict:
     return {"message": "Email verified successfully. You can now log in."}
 
 
+async def createAndSendRegistrationOtp(userID: str, name: str, email: str) -> None:
+    """Generate and email a registration-verification OTP.
+
+    Stored in register_otp_code / register_otp_expires_at - deliberately
+    separate from otp_code/otp_expires_at (admin 2FA) and
+    reset_otp_code/reset_otp_expires_at (forgot password), so none of the
+    three OTP flows on this table can ever collide on the same account.
+    """
+    otp_code = await generateOtp()
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=_REGISTER_OTP_EXPIRE_MINUTES
+    )
+    supabase.table("users").update({
+        "register_otp_code": otp_code,
+        "register_otp_expires_at": expires_at.isoformat(),
+        "is_verified": False,
+    }).eq("id", userID).execute()
+
+    sent = await sendRegistrationOtpEmail(email, name, otp_code)
+    if not sent:
+        print(
+            f"[register-otp] Failed to send registration OTP email to "
+            f"{email}. Fallback code: {otp_code}"
+        )
+
+
+async def verifyRegisterOtp(email: str, otpCode: str) -> dict:
+    """Verify a registration OTP and mark the account verified.
+
+    Raises the same generic HTTPException(401) for an unknown email, wrong
+    code, or expired code - mirroring verifyResetOtp's non-enumerable
+    pattern so this can't be used to probe which emails are registered.
+    """
+    result = (
+        supabase.table("users")
+        .select("id, register_otp_code, register_otp_expires_at")
+        .eq("email", email)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=401, detail="Invalid or expired code.")
+
+    user = result.data[0]
+    stored_code = user.get("register_otp_code")
+    expires_at = user.get("register_otp_expires_at")
+    if (
+        not stored_code
+        or stored_code != otpCode
+        or not expires_at
+        or datetime.fromisoformat(expires_at) <= datetime.now(timezone.utc)
+    ):
+        raise HTTPException(status_code=401, detail="Invalid or expired code.")
+
+    supabase.table("users").update({
+        "is_verified": True,
+        "register_otp_code": None,
+        "register_otp_expires_at": None,
+    }).eq("id", user["id"]).execute()
+    return {"message": "Email verified successfully. You can now log in."}
+
+
 async def resendVerification(email: str) -> None:
     result = (
         supabase.table("users")
@@ -101,7 +167,7 @@ async def resendVerification(email: str) -> None:
     if not result.data or result.data[0].get("is_verified"):
         return
     user = result.data[0]
-    await createAndSendVerificationEmail(user["id"], user["name"], user["email"])
+    await createAndSendRegistrationOtp(user["id"], user["name"], user["email"])
 
 
 async def login(identifier: str, password: str) -> dict:
