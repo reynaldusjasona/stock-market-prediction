@@ -10,7 +10,7 @@ from app.core.security import get_current_user, hashPassword
 from app.services.activity_service import logActivity
 from app.services.auth_service import (
     changePassword,
-    createAndSendVerificationEmail,
+    createAndSendRegistrationOtp,
     deleteAccountAndData,
     generateOtp,
     getDeleteConfirm,
@@ -34,6 +34,7 @@ from app.services.auth_service import (
     validateInputs,
     verifyEmailToken as svcVerifyEmailToken,
     verifyOtp,
+    verifyRegisterOtp as svcVerifyRegisterOtp,
     verifyResetOtp as svcVerifyResetOtp,
 )
 
@@ -94,6 +95,11 @@ class LogoutRequest(BaseModel):
 
 class ResendVerificationRequest(BaseModel):
     email: str
+
+
+class VerifyRegisterOtpRequest(BaseModel):
+    email: str
+    code: str
 
 
 class ChangePasswordRequest(BaseModel):
@@ -169,7 +175,7 @@ async def register(body: RegisterRequest):
     await savePreferences(
         user_id, body.sectors or [], body.level or "moderate"
     )
-    await createAndSendVerificationEmail(user_id, body.name, body.email)
+    await createAndSendRegistrationOtp(user_id, body.name, body.email)
 
     return {"message": "Registration successful", "user_id": user_id}
 
@@ -222,11 +228,30 @@ async def verifyEmail(token: str):
 
 @router.post("/auth/resend-verification", tags=["Auth"])
 async def resendVerification(body: ResendVerificationRequest):
+    if not checkRateLimit(
+        "resend-verification", body.email, max_count=3, window_minutes=15
+    ):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests. Please try again later.",
+        )
     await svcResendVerification(body.email)
     return {
         "message": "If the email exists and is not verified, "
-        "a new link has been sent."
+        "a new verification code has been sent."
     }
+
+
+@router.post("/auth/verify-register-otp", tags=["Auth"])
+async def verifyRegisterOtpRoute(body: VerifyRegisterOtpRequest):
+    if not checkRateLimit(
+        "verify-register-otp", body.email, max_count=5, window_minutes=15
+    ):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Please try again later.",
+        )
+    return await svcVerifyRegisterOtp(body.email, body.code)
 
 
 @router.post("/auth/reset-password", tags=["Auth"])
