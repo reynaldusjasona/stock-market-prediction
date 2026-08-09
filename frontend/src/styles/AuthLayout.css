@@ -87,3 +87,9 @@
     color: #00ff41;
     cursor: pointer;
 }
+
+.forgot-password-link {
+    text-align: right;
+    margin-top: -12px;
+    margin-bottom: 20px;
+}
