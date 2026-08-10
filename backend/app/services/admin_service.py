@@ -304,7 +304,7 @@ async def getModelPerformance() -> dict:
 
 _MODEL_CONFIG = {
     "model_type": "XGBoost (XGBClassifier)",
-    "target_classes": ["Buy", "Hold", "Sell"],
+    "target_classes": ["Buy", "Sell"],
     "features": [
         "Open", "High", "Low", "Close", "Volume",
         "SMA20", "EMA20", "RSI14", "MACD", "MACD_Signal",
@@ -324,8 +324,11 @@ _MODEL_CONFIG = {
     "training_window": "5 years historical data per ticker",
     "class_balance_method": "sample_weight='balanced'",
     "threshold": (
-        "Per-ticker quantile labeling: top 20% of next-day returns -> Buy, "
-        "bottom 20% -> Sell, middle 60% -> Hold"
+        "Binary triple-barrier labeling: upper/lower barriers are set at "
+        "+/-1.5x the 20-day rolling volatility of returns from the entry "
+        "price; a next-day high touching the upper barrier -> Buy, a "
+        "next-day low touching the lower barrier -> Sell; days touching "
+        "neither or both barriers are dropped"
     ),
     "training_tickers": "35 tickers across 7 sectors",
     "accuracy": "~50% (balanced)",
@@ -709,13 +712,6 @@ _MODEL_QUALITY_FALLBACK = [
         "recall_score": 0.18,
         "f1_score": 0.21,
         "support": 1521,
-    },
-    {
-        "class_name": "Hold",
-        "precision_score": 0.66,
-        "recall_score": 0.67,
-        "f1_score": 0.67,
-        "support": 4755,
     },
     {
         "class_name": "Sell",
