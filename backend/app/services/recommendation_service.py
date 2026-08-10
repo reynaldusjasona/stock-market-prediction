@@ -80,14 +80,14 @@ async def getGeneralRecommendations(limit: int = 10) -> list:
                     "ticker": s["ticker"],
                     "company_name": s.get("company_name"),
                     "sector": s.get("sector"),
-                    "signal": "Hold",
+                    "signal": "No Signal",
                     "confidence_score": 50,
                     "risk_level": "Moderate Risk",
                     "reason": (
                         "No prediction data available yet — run a "
                         "prediction to get signals"
                     ),
-                    "predictions": buildTimeframePredictions("Hold", 50),
+                    "predictions": buildTimeframePredictions("No Signal", 50),
                 }
                 for s in (stocksResult.data or [])
             ]
