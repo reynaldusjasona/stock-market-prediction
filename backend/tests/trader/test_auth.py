@@ -17,7 +17,6 @@ from tests.trader.conftest import (
     MOCK_TRADER,
     TRADER_HEADERS,
     FakeSupabaseResult,
-    _mock_require_approved_trader,
 )
 
 client = TestClient(app)
