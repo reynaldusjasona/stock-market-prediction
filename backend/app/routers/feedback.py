@@ -57,6 +57,7 @@ async def listPublicFeedback():
             "id": row["id"],
             "name": (row.get("users") or {}).get("name") or "StockWise AI investor",
             "text": row["message"],
+            "rating": row.get("rating"),
         }
         for row in rows
     ]
