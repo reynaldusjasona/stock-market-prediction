@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
+import { api } from '../api/api'
 
 const AuthContext = createContext(null)
 
@@ -8,6 +9,31 @@ export function AuthProvider({ children }) {
         catch { return null }
     })
     const [token, setToken] = useState(localStorage.getItem('token'))
+    const [subscription, setSubscription] = useState(null)
+    const [subscriptionLoaded, setSubscriptionLoaded] = useState(false)
+
+    async function refreshSubscription() {
+        try {
+            const data = await api.get('/subscription')
+            setSubscription(data)
+        } catch {
+            setSubscription(null)
+        } finally {
+            setSubscriptionLoaded(true)
+        }
+    }
+
+    // re-fetch whenever the token changes (initial load with a stored
+    // token, a fresh login, or a logout clearing it)
+    useEffect(() => {
+        if (token) {
+            refreshSubscription()
+        } else {
+            setSubscription(null)
+            setSubscriptionLoaded(true)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token])
 
     function login(userData, userToken) {
         setUser(userData)
@@ -23,8 +49,21 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('user')
     }
 
+    // gate #1: general investor features (Recommendations, Alerts, Prediction
+    // tab). Traders unlock this for free - they're service providers, not
+    // customers of these features.
+    const isSubscribed = user?.role === 'trader' || subscription !== null
+
+    // gate #2: trader-connection features (Browse Traders "Connect", future
+    // "Ask Trader"). Separate from the base Investor Plan - an investor with
+    // only the base plan and no Signal Access still sees this as locked.
+    const hasSignalAccess = user?.role === 'trader' || Boolean(subscription?.has_signal_access)
+
     return (
-        <AuthContext.Provider value={{ user, token, login, logout }}>
+        <AuthContext.Provider value={{
+            user, token, login, logout,
+            subscription, isSubscribed, hasSignalAccess, subscriptionLoaded, refreshSubscription,
+        }}>
             {children}
         </AuthContext.Provider>
     )

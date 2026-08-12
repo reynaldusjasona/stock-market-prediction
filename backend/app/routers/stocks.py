@@ -1,13 +1,14 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_optional_user
 from app.services.stock_service import (
     calculateIndicators,
     fetchFundamentals,
     fetchPriceData,
     fetchStockList,
     fetchTrendingTickers,
-    getOrderBook as svcGetOrderBook,
     getPriceHistory as svcGetPriceHistory,
     getLivePrice as svcGetLivePrice,
     getTopGainersandLosers as svcGetTopGainersandLosers,
@@ -40,8 +41,11 @@ async def getTopGainersandLosers():
 
 
 @router.get("/stocks", tags=["Stocks"])
-async def getStocks():
-    return await fetchStockList()
+async def getStocks(
+    current_user: Optional[dict] = Depends(get_optional_user),
+):
+    userId = current_user.get("sub") if current_user else None
+    return await fetchStockList(userId)
 
 
 # ---- DYNAMIC ROUTES (ticker param) ----
@@ -78,14 +82,6 @@ async def getPriceHistory(
 @router.get("/stocks/{ticker}/price", tags=["Stocks"])
 async def getLivePrice(ticker: str):
     return await svcGetLivePrice(ticker)
-
-
-@router.get("/stocks/{ticker}/orderbook", tags=["Stocks"])
-async def getOrderBook(
-    ticker: str,
-    _user: dict = Depends(get_current_user),
-):
-    return await svcGetOrderBook(ticker)
 
 
 @router.get("/stocks/{ticker}/fundamentals", tags=["Stocks"])

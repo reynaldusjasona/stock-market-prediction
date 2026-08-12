@@ -39,9 +39,11 @@ async def createSubscription(
             status_code=400,
             detail="Traders have free access and do not require a subscription.",
         )
-    if body.plan != "premium":
+    valid_plans = {p["id"] for p in subscription_service.PLANS}
+    if body.plan not in valid_plans:
         raise HTTPException(
-            status_code=400, detail="Invalid plan. Only 'premium' is available."
+            status_code=400,
+            detail=f"Invalid plan. Must be one of: {', '.join(sorted(valid_plans))}",
         )
     userID = current_user["sub"]
     try:
@@ -91,6 +93,15 @@ async def createSignalAccessCheckoutSession(
     userID = current_user["sub"]
     email = current_user.get("email", "")
     return await subscription_service.createSignalAccessCheckout(userID, email)
+
+
+@router.post("/signal-access/activate")
+async def activateSignalAccess(
+    current_user: dict = Depends(get_current_user),
+):
+    """Fallback activation after Stripe redirect, in case webhook hasn't fired."""
+    userID = current_user["sub"]
+    return await subscription_service.activateSignalAccess(userID)
 
 
 @router.get("/signal-access/status")

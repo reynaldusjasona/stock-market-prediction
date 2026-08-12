@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
 import { formatPrice as formatNum } from '../utils/format'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/Dashboard.css'
 import '../styles/StockDetail.css'
@@ -9,7 +10,6 @@ import ViewStockChart from '../components/stock/ViewStockChart'
 import ViewNews from '../components/stock/ViewNews'
 import ViewPrediction from '../components/stock/ViewPrediction'
 import ViewFundamentalAnalysis from '../components/stock/ViewFundamentalAnalysis'
-import ViewOrderBook from '../components/stock/ViewOrderBook'
 
 function formatLarge(num) {
     if (!num) return 'N/A'
@@ -22,6 +22,7 @@ function formatLarge(num) {
 function StockDetail() {
     const { ticker } = useParams()
     const navigate = useNavigate()
+    const { user, isSubscribed, hasSignalAccess } = useAuth()
 
     // states in kind of a random order lol
     const [activeTab, setActiveTab] = useState('Chart')
@@ -33,8 +34,16 @@ function StockDetail() {
     const [newsError, setNewsError] = useState(null)
     const [fundData, setFundData] = useState(null)
     const [historyData, setHistoryData] = useState([])
-    const [orderBookData, setOrderBookData] = useState(null)
     const [activeInterval, setActiveInterval] = useState('1D')
+
+    // Ask Trader - an investor can only have one active engagement, so
+    // this is a single engagement (or null), never a list to pick from
+    const [engagement, setEngagement] = useState(null)
+    const [showAskModal, setShowAskModal] = useState(false)
+    const [askMessage, setAskMessage] = useState('')
+    const [askError, setAskError] = useState(null)
+    const [askSuccess, setAskSuccess] = useState(null)
+    const [asking, setAsking] = useState(false)
 
     // switch between tabs
     function switchTab(tabName) {
@@ -76,13 +85,6 @@ function StockDetail() {
             console.log('fundamentals failed:', err.message)
         }
 
-        try {
-            const ob = await api.get(`/stocks/${ticker}/orderbook`)
-            setOrderBookData(ob)
-        } catch (err) {
-            console.log('orderbook failed:', err.message)
-        }
-
         setLoading(false)
     }
 
@@ -98,9 +100,51 @@ function StockDetail() {
     }
 
     useEffect(() => {
+        if (!isSubscribed) {
+            setLoading(false)
+            return
+        }
         loadStockData()
         loadHistory()
-    }, [ticker])
+    }, [ticker, isSubscribed])
+
+    // pull the investor's current engagement (at most one) so we know
+    // whether "Ask Trader" can go straight to that trader
+    useEffect(() => {
+        if (user?.role !== 'investor' || !hasSignalAccess) return
+        api.get('/investor/engagements/me')
+            .then((data) => setEngagement((data.engagements || [])[0] || null))
+            .catch((err) => console.log('engagements failed:', err.message))
+    }, [user?.role, hasSignalAccess])
+
+    function openAskModal() {
+        setAskError(null)
+        setAskSuccess(null)
+        setAskMessage('')
+        setShowAskModal(true)
+    }
+
+    async function handleSendInquiry() {
+        if (!engagement) {
+            setAskError('Connect with a trader first.')
+            return
+        }
+        setAsking(true)
+        setAskError(null)
+        try {
+            await api.post('/investor/stock-inquiries', {
+                trader_id: engagement.trader_id,
+                ticker,
+                message: askMessage.trim() || undefined,
+            })
+            setShowAskModal(false)
+            setAskSuccess(`Sent ${ticker} to your trader.`)
+        } catch (err) {
+            setAskError(err.message)
+        } finally {
+            setAsking(false)
+        }
+    }
 
     if (loading) return <p>Loading...</p>
 
@@ -110,7 +154,25 @@ function StockDetail() {
         <AppLayout>
             <>
                 <div className="page-header">
-                    <span className="back-link" onClick={() => navigate('/dashboard')}>&larr; Back</span>
+                    <div className="page-header-top">
+                        <span className="back-link" onClick={() => navigate('/dashboard')}>&larr; Back</span>
+                        {user?.role === 'investor' && (
+                            !hasSignalAccess ? (
+                                <button className="btn-browse-traders" onClick={() => navigate('/subscription')}>
+                                    Subscribe to Ask a Trader
+                                </button>
+                            ) : !engagement ? (
+                                <button className="btn-browse-traders" onClick={() => navigate('/browse-traders')}>
+                                    Connect with a Trader
+                                </button>
+                            ) : (
+                                <button className="btn-browse-traders" onClick={openAskModal}>
+                                    Ask Trader
+                                </button>
+                            )
+                        )}
+                    </div>
+                    {askSuccess && <p className="success-msg">{askSuccess}</p>}
                     <h1>{ticker}</h1>
                     {stockInfo && (
                         <div className="stock-header-stats">
@@ -128,7 +190,7 @@ function StockDetail() {
 
                 {/* tab bar */}
                 <div className="tab-bar">
-                    {['Chart', 'News', 'Prediction', 'Fundamental', 'OrderBook'].map((tab) => (
+                    {['Chart', 'News', 'Prediction', 'Fundamental'].map((tab) => (
                         <span
                             key={tab}
                             className={activeTab === tab ? 'tab-item active' : 'tab-item'}
@@ -165,8 +227,32 @@ function StockDetail() {
                     <ViewFundamentalAnalysis fundData={fundData} formatNum={formatNum} formatLarge={formatLarge} />
                 )}
 
-                {/* order book tab */}
-                {activeTab === 'OrderBook' && <ViewOrderBook orderBook={orderBookData} />}
+                {showAskModal && (
+                    <div className="ask-trader-overlay" onClick={() => setShowAskModal(false)}>
+                        <div className="ask-trader-modal" onClick={(e) => e.stopPropagation()}>
+                            <h3>Ask about {ticker}</h3>
+                            {askError && <p className="error-msg">{askError}</p>}
+                            {engagement && (
+                                <p className="subtitle">To {engagement.trader?.name || 'your trader'}</p>
+                            )}
+                            <div className="form-group">
+                                <label>Message (optional)</label>
+                                <textarea
+                                    rows={3}
+                                    placeholder={`What would you like to ask about ${ticker}?`}
+                                    value={askMessage}
+                                    onChange={(e) => setAskMessage(e.target.value)}
+                                />
+                            </div>
+                            <div className="ask-trader-actions">
+                                <button className="btn-secondary" onClick={() => setShowAskModal(false)}>Cancel</button>
+                                <button className="btn-primary" onClick={handleSendInquiry} disabled={asking}>
+                                    {asking ? 'Sending...' : 'Send'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </>
         </AppLayout>
     )
