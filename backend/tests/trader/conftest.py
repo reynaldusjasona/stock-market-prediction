@@ -28,9 +28,6 @@ def _mock_require_approved_trader():
     return MOCK_TRADER
 
 
-app.dependency_overrides[get_current_user] = _mock_get_current_user
-app.dependency_overrides[require_approved_trader] = _mock_require_approved_trader
-
 TRADER_HEADERS = {"Authorization": "Bearer test"}
 
 
@@ -52,6 +49,15 @@ class FakeSupabaseQuery:
 
     def execute(self):
         return self._result
+
+
+@pytest.fixture(autouse=True)
+def _set_trader_override():
+    app.dependency_overrides[get_current_user] = _mock_get_current_user
+    app.dependency_overrides[require_approved_trader] = (
+        _mock_require_approved_trader
+    )
+    yield
 
 
 @pytest.fixture(autouse=True)
