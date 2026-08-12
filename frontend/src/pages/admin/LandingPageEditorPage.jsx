@@ -7,6 +7,7 @@ const BLANK ={
   hero: { tag:'', headline:'', subline:'', cta_label:'', secondary_label:'' },
   about: { subtitle:'', cards:[{title:'',body:''},{title:'',body:''},{title:'',body:''}] },
   features: { subtitle:'', items:[{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''}] },
+  marketing: { subtitle:'', cards:[{title:'',body:''},{title:'',body:''},{title:'',body:''}], video_url:'' },
   testimonials: [{name:'',quote:'',rating:5},{name:'',quote:'',rating:5},{name:'',quote:'',rating:5}],
   subscription: { title:'', subtitle:'', plan_name:'', price:'', period:'', bullets:['','','',''], cta_label:'', footnote:'' },
   faqs: [{question:'',answer:''},{question:'',answer:''},{question:'',answer:''}],
@@ -14,10 +15,34 @@ const BLANK ={
 
 const clone = o => JSON.parse(JSON.stringify(o))
 
+function AddVideoLink({ onAdd }) {
+  const [value, setValue] = useState('')
+
+  const handleAdd = () => {
+    const trimmed = value.trim()
+    if (!trimmed) return
+    onAdd(trimmed)
+    setValue('')
+  }
+
+  return (
+    <div style={{ display:'flex', gap:'0.5rem', alignItems:'center' }}>
+      <input className="admin-form-input" style={{ flex:1 }} value={value}
+        placeholder="https://youtube.com/watch?v=..."
+        onChange={e => setValue(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAdd() } }}/>
+      <button type="button" className="btn-admin btn-primary" onClick={handleAdd} disabled={!value.trim()}>
+        Add
+      </button>
+    </div>
+  )
+}
+
 const SECTIONS = [
   {key:'hero',label:'Hero' },
   {key:'about',label:'About' },
   {key:'features',label:'Features' },
+  {key:'marketing',label:'Marketing' },
   {key:'testimonials',label:'Testimonials' },
   {key:'subscription',label:'Subscription' },
   {key:'faqs',label:'FAQ' },
@@ -39,6 +64,7 @@ function LandingPageEditorPage() {
           hero: { ...BLANK.hero, ...(d.hero || {}) },
           about:{ ...BLANK.about, ...(d.about || {}), cards: d.about?.cards?.length ? d.about.cards : BLANK.about.cards },
           features:{ ...BLANK.features, ...(d.features || {}), items: d.features?.items?.length ? d.features.items : BLANK.features.items },
+          marketing:{ ...BLANK.marketing, ...(d.marketing || {}), cards: d.marketing?.cards?.length ? d.marketing.cards : BLANK.marketing.cards },
           testimonials: d.testimonials?.length ? d.testimonials : clone(BLANK.testimonials),
           subscription:{ ...BLANK.subscription, ...(d.subscription || {}), bullets: d.subscription?.bullets?.length ? d.subscription.bullets : BLANK.subscription.bullets },
           faqs: d.faqs?.length ? d.faqs : clone(BLANK.faqs),
@@ -56,6 +82,7 @@ function LandingPageEditorPage() {
   const setHero= fn => setData(d => { const n = clone(d); fn(n.hero); mark(); return n })
   const setAbout= fn => setData(d => { const n = clone(d); fn(n.about); mark(); return n })
   const setFeatures= fn => setData(d => { const n = clone(d); fn(n.features); mark(); return n })
+  const setMarketing= fn => setData(d => { const n = clone(d); fn(n.marketing); mark(); return n })
   const setTestimonials= fn => setData(d => { const n = clone(d); fn(n.testimonials); mark(); return n })
   const setSubscription= fn => setData(d => { const n = clone(d); fn(n.subscription); mark(); return n })
   const setFaqs= fn => setData(d => { const n = clone(d); fn(n.faqs); mark(); return n })
@@ -187,6 +214,44 @@ function LandingPageEditorPage() {
                     onChange={e => setFeatures(ff => { ff.items[i].title = e.target.value })} placeholder="Title"/>
                   <textarea className="admin-form-textarea" style={{ minHeight:'60px' }} value={f.body}
                     onChange={e => setFeatures(ff => { ff.items[i].body = e.target.value })} placeholder="Description"/>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'marketing' && (
+        <div className="admin-card">
+          <div className="admin-card-header"><h2 className="admin-card-title">Marketing Section</h2></div>
+          <div className="admin-card-body">
+            <div className="admin-form-group">
+              <label className="admin-form-label">Subtitle</label>
+              <input className="admin-form-input" maxLength={200} value={data.marketing.subtitle}
+                onChange={e => setMarketing(m => { m.subtitle = e.target.value })}/>
+            </div>
+
+            <div className="admin-form-group">
+              <label className="admin-form-label">Promotional Video Link</label>
+              {data.marketing.video_url ? (
+                <div style={{ display:'flex', gap:'0.5rem', alignItems:'center' }}>
+                  <input className="admin-form-input" style={{ flex:1 }} value={data.marketing.video_url} readOnly/>
+                  <button type="button" className="btn-admin btn-ghost"
+                    onClick={() => setMarketing(m => { m.video_url = '' })}>Remove</button>
+                </div>
+              ) : (
+                <AddVideoLink onAdd={url => setMarketing(m => { m.video_url = url })} />
+              )}
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'1rem' }}>
+              {data.marketing.cards.map((c, i) => (
+                <div key={i} style={{ background:'var(--bg)', border:'1px solid var(--border)', borderRadius:'8px', padding:'1rem' }}>
+                  <div style={{ fontSize:'0.68rem', fontWeight:700, textTransform:'uppercase', color:'var(--text-subtle)', marginBottom:'0.6rem' }}>Card {i+1}</div>
+                  <input className="admin-form-input" style={{ marginBottom:'0.6rem' }} maxLength={60} value={c.title}
+                    onChange={e => setMarketing(m => { m.cards[i].title = e.target.value })} placeholder="Title"/>
+                  <textarea className="admin-form-textarea" style={{ minHeight:'70px' }} value={c.body}
+                    onChange={e => setMarketing(m => { m.cards[i].body = e.target.value })} placeholder="Description"/>
                 </div>
               ))}
             </div>
