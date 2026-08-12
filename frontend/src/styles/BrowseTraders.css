@@ -16,6 +16,27 @@
     margin-bottom: 16px;
 }
 
+.empty-state {
+    color: #888;
+    font-size: 14px;
+}
+
+.signal-access-banner {
+    background: #13141a;
+    border: 1px solid #2a2b30;
+    border-radius: 6px;
+    padding: 12px 16px;
+    color: #ccc;
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+.signal-access-banner span {
+    color: #00ff41;
+    font-weight: 600;
+    cursor: pointer;
+}
+
 .traders-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -79,4 +100,22 @@
     padding: 10px;
     font-size: 14px;
     font-weight: 600;
+}
+
+.btn-connect:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.status-connected {
+    display: block;
+    width: 100%;
+    text-align: center;
+    color: #00ff41;
+    border: 1px solid #00ff4140;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    box-sizing: border-box;
 }

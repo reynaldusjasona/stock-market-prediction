@@ -7,19 +7,6 @@ key = os.getenv("SUPABASE_KEY")
 supabase = create_client(url, key)
 
 TABLES = {
-    "signal_endorsements": """
-CREATE TABLE signal_endorsements (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    trader_id UUID NOT NULL REFERENCES users(id),
-    prediction_id UUID NOT NULL REFERENCES predictions(id),
-    endorsement VARCHAR NOT NULL CHECK (endorsement IN ('agree', 'disagree')),
-    notes TEXT,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE (trader_id, prediction_id)
-);
-
-GRANT ALL ON signal_endorsements TO authenticated;
-""",
     "trader_clients": """
 CREATE TABLE trader_clients (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

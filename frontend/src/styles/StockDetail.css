@@ -1,13 +1,116 @@
+.page-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
 .back-link {
     display: inline-block;
     color: #888;
     font-size: 13px;
     cursor: pointer;
-    margin-bottom: 8px;
 }
 
 .back-link:hover {
     color: #ffffff;
+}
+
+.btn-browse-traders {
+    background: #00ff41;
+    color: #000000;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.ask-trader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.ask-trader-modal {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 24px;
+    width: 360px;
+    max-width: 90vw;
+}
+
+.ask-trader-modal h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 16px;
+}
+
+.ask-trader-modal .form-group {
+    margin-bottom: 16px;
+}
+
+.ask-trader-modal label {
+    display: block;
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.ask-trader-modal select,
+.ask-trader-modal textarea {
+    width: 100%;
+    background: #0d0e12;
+    border: 1px solid #2a2b30;
+    border-radius: 6px;
+    color: #ffffff;
+    padding: 8px 10px;
+    font-size: 14px;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.ask-trader-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.ask-trader-actions .btn-primary {
+    background: #00ff41;
+    color: #000000;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.ask-trader-actions .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ask-trader-actions .btn-secondary {
+    background: transparent;
+    color: #888;
+    border: 1px solid #2a2b30;
+    border-radius: 6px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
 }
 
 .stock-header-stats {
@@ -61,8 +164,29 @@
 /* chart timeframe buttons */
 .chart-timeframes {
     display: flex;
+    align-items: center;
     gap: 8px;
     margin-bottom: 16px;
+}
+
+.chart-indicator-controls {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.indicator-select,
+.indicator-period-input {
+    background: #0d0e12;
+    border: 1px solid #2a2b30;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 13px;
+    padding: 6px 10px;
+}
+
+.indicator-period-input {
+    width: 64px;
 }
 
 .timeframe-btn {
@@ -191,6 +315,65 @@
     text-align: left;
 }
 
+/* prediction timeframes */
+.pred-section-heading {
+    color: #ccc;
+    font-size: 14px;
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+
+.pred-timeframe-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.pred-timeframe-card {
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pred-timeframe-label {
+    color: #888;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pred-signal {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.pred-signal-buy {
+    color: #00ff41;
+}
+
+.pred-signal-sell {
+    color: #ff4444;
+}
+
+.pred-signal-hold {
+    color: #888;
+}
+
+.pred-confidence {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.pred-risk {
+    color: #ccc;
+    font-size: 13px;
+}
+
 /* fundamentals */
 .fund-grid {
     display: grid;
@@ -219,46 +402,4 @@
     color: #ffffff;
     font-size: 16px;
     font-weight: 600;
-}
-
-/* order book */
-.orderbook-cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-}
-
-.orderbook-col {
-    background: #13141a;
-    border: 1px solid #1a1b20;
-    border-radius: 8px;
-    padding: 16px 20px;
-}
-
-.orderbook-col h3 {
-    font-size: 12px;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 12px;
-}
-
-.orderbook-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-    font-size: 14px;
-    border-bottom: 1px solid #1a1b20;
-}
-
-.orderbook-row:last-child {
-    border-bottom: none;
-}
-
-.bid-row span:first-child {
-    color: #00ff41;
-}
-
-.ask-row span:first-child {
-    color: #ff4444;
 }

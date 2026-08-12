@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/api'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/Alerts.css'
 
 function Alerts() {
     const [alerts, setAlerts] = useState([])
     const [loading, setLoading] = useState(false)
+    const { isSubscribed } = useAuth()
     const [showForm, setShowForm] = useState(false)
     const [ticker, setTicker] = useState('')
     const [targetPrice, setTargetPrice] = useState('')
@@ -42,9 +44,15 @@ function Alerts() {
         }
     }
 
+    // opportunistically check all of this user's alerts against current
+    // prices whenever they visit this page, since there's no background
+    // job doing this - then load the (possibly just-updated) alert list
     useEffect(() => {
-        loadAlerts()
-    }, [])
+        if (!isSubscribed) return
+        api.post('/alerts/check-all')
+            .catch((err) => console.log('alert check failed:', err.message))
+            .finally(() => loadAlerts())
+    }, [isSubscribed])
 
     // search function - same pattern as watchlist
     async function searchTickers(query) {
@@ -117,86 +125,89 @@ function Alerts() {
                         <h1>Alerts</h1>
                         <p>Get notified when your conditions are met</p>
                     </div>
-                    <button className="btn-create-alert" onClick={() => setShowForm(!showForm)}>
+                </div>
+
+                <>
+                    <button className="btn-create-alert" onClick={() => setShowForm(!showForm)} style={{ marginBottom: '20px' }}>
                         + Create Alert
                     </button>
-                </div>
 
-                {showForm && (
-                    <div className="alert-form">
-                        <div className="search-wrap">
-                            <input value={ticker} onChange={(e) => searchTickers(e.target.value)} placeholder="Search ticker..." />
-                            {showDropdown && searchResults.length > 0 && (
-                                <div className="search-dropdown">
-                                    {searchResults.map(s => (
-                                        <div key={s.ticker} className="search-item" onClick={() => selectTicker(s.ticker)}>
-                                            <span className="search-ticker">{s.ticker}</span>
-                                            <span className="search-name">{s.company_name}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                    {showForm && (
+                        <div className="alert-form">
+                            <div className="search-wrap">
+                                <input value={ticker} onChange={(e) => searchTickers(e.target.value)} placeholder="Search ticker..." />
+                                {showDropdown && searchResults.length > 0 && (
+                                    <div className="search-dropdown">
+                                        {searchResults.map(s => (
+                                            <div key={s.ticker} className="search-item" onClick={() => selectTicker(s.ticker)}>
+                                                <span className="search-ticker">{s.ticker}</span>
+                                                <span className="search-name">{s.company_name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <input type="number" value={targetPrice} onChange={(e) => setTargetPrice(e.target.value)} placeholder="Target price" />
+                            <select value={condition} onChange={(e) => setCondition(e.target.value)}>
+                                <option value="above">Price Above</option>
+                                <option value="below">Price Below</option>
+                            </select>
+                            <button className="btn-create-alert" onClick={createAlert} style={{ opacity: selectedTicker ? 1 : 0.5 }}>Save Alert</button>
+                            <button className="btn-cancel" onClick={() => setShowForm(false)}>Cancel</button>
                         </div>
-                        <input type="number" value={targetPrice} onChange={(e) => setTargetPrice(e.target.value)} placeholder="Target price" />
-                        <select value={condition} onChange={(e) => setCondition(e.target.value)}>
-                            <option value="above">Price Above</option>
-                            <option value="below">Price Below</option>
-                        </select>
-                        <button className="btn-create-alert" onClick={createAlert} style={{ opacity: selectedTicker ? 1 : 0.5 }}>Save Alert</button>
-                        <button className="btn-cancel" onClick={() => setShowForm(false)}>Cancel</button>
-                    </div>
-                )}
+                    )}
 
-                {error && <p className="error-msg">{error}</p>}
+                    {error && <p className="error-msg">{error}</p>}
 
-                <div className="alerts-table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Ticker</th>
-                                <th>Condition</th>
-                                <th>Target Price</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {!loading && alerts.length === 0 && (
-                                <tr><td colSpan="5" style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No alerts yet. Create one above.</td></tr>
-                            )}
-                            {alerts.map(alert => (
-                                <tr key={alert.id}>
-                                    <td className="ticker-cell">{alert.ticker}</td>
-                                    <td>Price {alert.condition} ${Number(alert.target_price).toFixed(2)}</td>
-                                    <td>${Number(alert.target_price).toFixed(2)}</td>
-                                    <td>
-                                        <span className={alert.is_triggered ? 'badge-triggered' : 'badge-active'}>
-                                            {alert.is_triggered ? 'Triggered' : 'Active'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {editingId === alert.id ? (
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} style={{ width: '100px' }} />
-                                                <select value={editCondition} onChange={(e) => setEditCondition(e.target.value)}>
-                                                    <option value="above">Above</option>
-                                                    <option value="below">Below</option>
-                                                </select>
-                                                <button onClick={() => saveEdit(alert.id)} className="btn-save">Save</button>
-                                                <button onClick={() => setEditingId(null)} className="btn-cancel">Cancel</button>
-                                            </div>
-                                        ) : (
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <button className="btn-edit" onClick={() => { setEditingId(alert.id); setEditPrice(alert.target_price); setEditCondition(alert.condition) }}>✏️</button>
-                                                <button className="btn-delete" onClick={() => deleteAlert(alert.id)}>🗑️</button>
-                                            </div>
-                                        )}
-                                    </td>
+                    <div className="alerts-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ticker</th>
+                                    <th>Condition</th>
+                                    <th>Target Price</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {!loading && alerts.length === 0 && (
+                                    <tr><td colSpan="5" style={{ textAlign: 'center', color: '#888', padding: '40px' }}>No alerts yet. Create one above.</td></tr>
+                                )}
+                                {alerts.map(alert => (
+                                    <tr key={alert.id}>
+                                        <td className="ticker-cell">{alert.ticker}</td>
+                                        <td>Price {alert.condition} ${Number(alert.target_price).toFixed(2)}</td>
+                                        <td>${Number(alert.target_price).toFixed(2)}</td>
+                                        <td>
+                                            <span className={alert.is_triggered ? 'badge-triggered' : 'badge-active'}>
+                                                {alert.is_triggered ? 'Triggered' : 'Active'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {editingId === alert.id ? (
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} style={{ width: '100px' }} />
+                                                    <select value={editCondition} onChange={(e) => setEditCondition(e.target.value)}>
+                                                        <option value="above">Above</option>
+                                                        <option value="below">Below</option>
+                                                    </select>
+                                                    <button onClick={() => saveEdit(alert.id)} className="btn-save">Save</button>
+                                                    <button onClick={() => setEditingId(null)} className="btn-cancel">Cancel</button>
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <button className="btn-edit" onClick={() => { setEditingId(alert.id); setEditPrice(alert.target_price); setEditCondition(alert.condition) }}>✏️</button>
+                                                    <button className="btn-delete" onClick={() => deleteAlert(alert.id)}>🗑️</button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
             </div>
         </AppLayout>
     )

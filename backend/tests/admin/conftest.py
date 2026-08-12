@@ -23,8 +23,6 @@ def _mock_get_current_user():
     return MOCK_ADMIN
 
 
-app.dependency_overrides[get_current_user] = _mock_get_current_user
-
 ADMIN_HEADERS = {"Authorization": "Bearer test"}
 
 
@@ -46,6 +44,12 @@ class FakeSupabaseQuery:
 
     def execute(self):
         return self._result
+
+
+@pytest.fixture(autouse=True)
+def _set_admin_override():
+    app.dependency_overrides[get_current_user] = _mock_get_current_user
+    yield
 
 
 @pytest.fixture(autouse=True)
