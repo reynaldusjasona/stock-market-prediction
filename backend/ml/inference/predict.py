@@ -1,7 +1,6 @@
 import functools
 
 import pandas as pd
-import shap
 
 from ml.training.evaluate import load_model
 from ml.training.features import _FEATURE_COLS, calculate_indicators, fetch_stock_data
@@ -74,13 +73,14 @@ def get_latest_features(
 
 
 @functools.lru_cache(maxsize=1)
-def _get_explainer() -> shap.TreeExplainer:
+def _get_explainer():
     """
     Build a SHAP TreeExplainer around the cached model instance.
 
     Cached in memory after the first call so repeated predictions don't
     rebuild the explainer on every request.
     """
+    import shap
     model, _ = load_model()
     return shap.TreeExplainer(model)
 
