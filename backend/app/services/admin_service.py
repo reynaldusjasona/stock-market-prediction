@@ -120,7 +120,7 @@ async def searchUserByKeywords(keywords: str) -> list:
         .or_(f"name.ilike.{pattern},email.ilike.{pattern}")
         .execute()
     )
-    users = result.data or []
+    users = [u for u in (result.data or []) if u.get("status") != "deleted"]
     if not users:
         return []
 
@@ -147,6 +147,7 @@ async def getAllUserAccount() -> list:
     result = (
         supabase.table("users")
         .select(_ADMIN_FIELDS)
+        .neq("status", "deleted")
         .execute()
     )
     users = result.data or []
@@ -243,8 +244,9 @@ async def getDashboardStats() -> dict:
             .execute()
         )
         alertsResult = (
-            supabase.table("price_alerts")
+            supabase.table("admin_alerts")
             .select("id", count="exact")
+            .eq("is_resolved", False)
             .execute()
         )
         return {
@@ -271,7 +273,6 @@ _FALLBACK_MODEL_METRICS = {
     "buy_precision": 0.25,
     "sell_precision": 0.25,
     "hold_precision": 0.66,
-    "roc_auc": 0.58,
     "training_samples": 50000,
     "last_trained": "2026-06-18",
     "note": "Fallback metrics from offline evaluation",
@@ -332,7 +333,6 @@ _MODEL_CONFIG = {
     ),
     "training_tickers": "35 tickers across 7 sectors",
     "accuracy": "~50% (balanced)",
-    "roc_auc": "~0.65",
     "data_sources": [
         "yfinance (training)",
         "Alpha Vantage (historical)",
@@ -446,6 +446,11 @@ def _default_landing_content() -> dict:
             "subtitle": "",
             "items": [],
         },
+        "marketing": {
+            "subtitle": "",
+            "cards": [],
+            "video_url": "",
+        },
         "testimonials": [],
         "subscription": {
             "title": "",
@@ -463,7 +468,7 @@ def _default_landing_content() -> dict:
 def _apply_landing_defaults(content: dict) -> dict:
     defaults = _default_landing_content()
     merged = {**defaults, **content}
-    for key in ("hero", "about", "features", "subscription"):
+    for key in ("hero", "about", "features", "marketing", "subscription"):
         section = content.get(key)
         merged[key] = (
             {**defaults[key], **section} if isinstance(section, dict) else defaults[key]
@@ -475,19 +480,10 @@ def _apply_landing_defaults(content: dict) -> dict:
 
 
 def buildPublicLandingSections(content: dict) -> list:
-    """
-    Adapt the admin-editor content shape ({hero, about, features, ...})
-    into the flat {section_key, title, subtitle, content, image_url,
-    is_visible, display_order} list the public landing page (Landing.jsx)
-    reads from GET /api/landing. Sections with no content are omitted.
-
-    ViewLandingSection.jsx only renders a single title/subtitle/content
-    per section, so multi-card sections (about, features) are condensed
-    into one paragraph per card ("Title: body"), joined together.
-    """
     hero = content.get("hero") or {}
     about = content.get("about") or {}
     features = content.get("features") or {}
+    marketing = content.get("marketing") or {}
 
     sections = []
 
@@ -536,6 +532,24 @@ def buildPublicLandingSections(content: dict) -> list:
             "image_url": None,
             "is_visible": True,
             "display_order": 2,
+        })
+
+    marketingCards = marketing.get("cards") or []
+    marketingText = " • ".join(
+        f"{card.get('title')}: {card.get('body')}"
+        if card.get("title") else card.get("body", "")
+        for card in marketingCards
+        if card.get("body")
+    )
+    if marketingText:
+        sections.append({
+            "section_key": "marketing",
+            "title": "Why Choose StockWise AI",
+            "subtitle": marketing.get("subtitle") or None,
+            "content": marketingText,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 3,
         })
 
     return sections
