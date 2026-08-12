@@ -120,13 +120,34 @@ async def searchUserByKeywords(keywords: str) -> list:
         .or_(f"name.ilike.{pattern},email.ilike.{pattern}")
         .execute()
     )
-    return result.data or []
+    users = [u for u in (result.data or []) if u.get("status") != "deleted"]
+    if not users:
+        return []
+
+    userIDs = [u["id"] for u in users]
+    subsResult = (
+        supabase.table("subscriptions")
+        .select("user_id, status, expires_at")
+        .in_("user_id", userIDs)
+        .execute()
+    )
+    subsMap = {s["user_id"]: s for s in (subsResult.data or [])}
+
+    for user in users:
+        sub = subsMap.get(user["id"])
+        user["subscription_status"] = sub.get("status") if sub else None
+        user["subscription_expires_at"] = (
+            sub.get("expires_at") if sub else None
+        )
+
+    return users
 
 
 async def getAllUserAccount() -> list:
     result = (
         supabase.table("users")
         .select(_ADMIN_FIELDS)
+        .neq("status", "deleted")
         .execute()
     )
     users = result.data or []
@@ -223,8 +244,9 @@ async def getDashboardStats() -> dict:
             .execute()
         )
         alertsResult = (
-            supabase.table("price_alerts")
+            supabase.table("admin_alerts")
             .select("id", count="exact")
+            .eq("is_resolved", False)
             .execute()
         )
         return {
@@ -251,7 +273,6 @@ _FALLBACK_MODEL_METRICS = {
     "buy_precision": 0.25,
     "sell_precision": 0.25,
     "hold_precision": 0.66,
-    "roc_auc": 0.58,
     "training_samples": 50000,
     "last_trained": "2026-06-18",
     "note": "Fallback metrics from offline evaluation",
@@ -284,7 +305,7 @@ async def getModelPerformance() -> dict:
 
 _MODEL_CONFIG = {
     "model_type": "XGBoost (XGBClassifier)",
-    "target_classes": ["Buy", "Hold", "Sell"],
+    "target_classes": ["Buy", "Sell"],
     "features": [
         "Open", "High", "Low", "Close", "Volume",
         "SMA20", "EMA20", "RSI14", "MACD", "MACD_Signal",
@@ -304,12 +325,14 @@ _MODEL_CONFIG = {
     "training_window": "5 years historical data per ticker",
     "class_balance_method": "sample_weight='balanced'",
     "threshold": (
-        "Per-ticker quantile labeling: top 20% of next-day returns -> Buy, "
-        "bottom 20% -> Sell, middle 60% -> Hold"
+        "Binary triple-barrier labeling: upper/lower barriers are set at "
+        "+/-1.5x the 20-day rolling volatility of returns from the entry "
+        "price; a next-day high touching the upper barrier -> Buy, a "
+        "next-day low touching the lower barrier -> Sell; days touching "
+        "neither or both barriers are dropped"
     ),
     "training_tickers": "35 tickers across 7 sectors",
     "accuracy": "~50% (balanced)",
-    "roc_auc": "~0.65",
     "data_sources": [
         "yfinance (training)",
         "Alpha Vantage (historical)",
@@ -423,6 +446,11 @@ def _default_landing_content() -> dict:
             "subtitle": "",
             "items": [],
         },
+        "marketing": {
+            "subtitle": "",
+            "cards": [],
+            "video_url": "",
+        },
         "testimonials": [],
         "subscription": {
             "title": "",
@@ -434,22 +462,97 @@ def _default_landing_content() -> dict:
             "cta_label": "",
             "footnote": "",
         },
-        "faqs": [],
     }
 
 
 def _apply_landing_defaults(content: dict) -> dict:
     defaults = _default_landing_content()
     merged = {**defaults, **content}
-    for key in ("hero", "about", "features", "subscription"):
+    for key in ("hero", "about", "features", "marketing", "subscription"):
         section = content.get(key)
         merged[key] = (
             {**defaults[key], **section} if isinstance(section, dict) else defaults[key]
         )
-    for key in ("testimonials", "faqs"):
+    for key in ("testimonials",):
         section = content.get(key)
         merged[key] = section if isinstance(section, list) else defaults[key]
     return merged
+
+
+def buildPublicLandingSections(content: dict) -> list:
+    hero = content.get("hero") or {}
+    about = content.get("about") or {}
+    features = content.get("features") or {}
+    marketing = content.get("marketing") or {}
+
+    sections = []
+
+    if hero.get("headline"):
+        sections.append({
+            "section_key": "hero",
+            "title": hero.get("headline"),
+            "subtitle": None,
+            "content": hero.get("subline") or None,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 0,
+        })
+
+    aboutCards = about.get("cards") or []
+    aboutText = " • ".join(
+        f"{card.get('title')}: {card.get('body')}"
+        if card.get("title") else card.get("body", "")
+        for card in aboutCards
+        if card.get("body")
+    )
+    if aboutText:
+        sections.append({
+            "section_key": "about",
+            "title": "About StockWise AI",
+            "subtitle": about.get("subtitle") or None,
+            "content": aboutText,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 1,
+        })
+
+    featureItems = features.get("items") or []
+    featuresText = " • ".join(
+        f"{item.get('title')}: {item.get('body')}"
+        if item.get("title") else item.get("body", "")
+        for item in featureItems
+        if item.get("body")
+    )
+    if featuresText:
+        sections.append({
+            "section_key": "features",
+            "title": "Platform Features",
+            "subtitle": features.get("subtitle") or None,
+            "content": featuresText,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 2,
+        })
+
+    marketingCards = marketing.get("cards") or []
+    marketingText = " • ".join(
+        f"{card.get('title')}: {card.get('body')}"
+        if card.get("title") else card.get("body", "")
+        for card in marketingCards
+        if card.get("body")
+    )
+    if marketingText:
+        sections.append({
+            "section_key": "marketing",
+            "title": "Why Choose StockWise AI",
+            "subtitle": marketing.get("subtitle") or None,
+            "content": marketingText,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 3,
+        })
+
+    return sections
 
 
 async def getLandingContent() -> dict:
@@ -623,13 +726,6 @@ _MODEL_QUALITY_FALLBACK = [
         "recall_score": 0.18,
         "f1_score": 0.21,
         "support": 1521,
-    },
-    {
-        "class_name": "Hold",
-        "precision_score": 0.66,
-        "recall_score": 0.67,
-        "f1_score": 0.67,
-        "support": 4755,
     },
     {
         "class_name": "Sell",
