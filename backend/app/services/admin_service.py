@@ -689,12 +689,18 @@ async def getActivityLogs(
     logs = logsResult.data or []
 
     userIDs = list({log["user_id"] for log in logs if log.get("user_id")})
+    targetUserIDs = list({
+        log["target_id"] for log in logs
+        if log.get("target_type") == "user" and log.get("target_id")
+    })
+    allIDs = list(set(userIDs + targetUserIDs))
+
     userMap = {}
-    if userIDs:
+    if allIDs:
         usersResult = (
             supabase.table("users")
             .select("id, name, email")
-            .in_("id", userIDs)
+            .in_("id", allIDs)
             .execute()
         )
         userMap = {u["id"]: u for u in (usersResult.data or [])}
@@ -702,6 +708,7 @@ async def getActivityLogs(
     items = []
     for log in logs:
         user = userMap.get(log.get("user_id"))
+        target = userMap.get(log.get("target_id")) if log.get("target_type") == "user" else None
         items.append({
             "id": log["id"],
             "user_id": log.get("user_id"),
@@ -712,6 +719,7 @@ async def getActivityLogs(
             "action": log.get("action"),
             "target_type": log.get("target_type"),
             "target_id": log.get("target_id"),
+            "target_name": target.get("name") if target else None,
             "metadata": log.get("metadata"),
             "created_at": log.get("created_at"),
         })
