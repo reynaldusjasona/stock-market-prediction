@@ -18,7 +18,7 @@ const MARKET_SECTORS = [
 const RISK_LEVELS = ['low', 'moderate', 'high']
 
 function Account() {
-    const { user } = useAuth()
+    const { user, refreshSubscription } = useAuth()
     const navigate = useNavigate()
     const userID = user?.id
 
@@ -79,6 +79,11 @@ function Account() {
         } finally {
             setSubLoading(false)
         }
+        // keep AuthContext's cached copy in sync too - this page has its own
+        // separate subscription fetch, so without this, cancelling here
+        // leaves isSubscribed stale everywhere else in the app until a
+        // hard refresh
+        refreshSubscription()
     }
 
     function toggleMarket(sector) {
@@ -121,7 +126,7 @@ function Account() {
     }
 
     const currentPlanInfo = subscription
-        ? plans.find((p) => p.plan === subscription.plan)
+        ? plans.find((p) => p.id === subscription.plan)
         : null
 
     return (
@@ -212,7 +217,7 @@ function Account() {
                                         <div className="sub-summary-row">
                                             <span className="sub-summary-label">Price</span>
                                             <span className="sub-summary-value">
-                                                {currentPlanInfo ? `$${currentPlanInfo.price}/${currentPlanInfo.period}` : '-'}
+                                                {currentPlanInfo ? `$${currentPlanInfo.price}/${currentPlanInfo.interval}` : '-'}
                                             </span>
                                         </div>
                                         <div className="sub-summary-row">

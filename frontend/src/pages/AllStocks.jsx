@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/AllStocks.css'
 import ViewStocksList from '../components/allstocks/ViewStocksList'
@@ -10,14 +11,15 @@ function AllStocks() {
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
+    const { isSubscribed } = useAuth()
 
-    // no search yet - just show trending stocks
-    async function loadTrending() {
+    // no search - show every stock we track
+    async function loadAllStocks() {
         try {
-            const data = await api.get('/stocks/trending')
+            const data = await api.get('/stocks')
             setStocks(data)
         } catch (err) {
-            console.log('trending failed:', err.message)
+            console.log('stock list failed:', err.message)
         }
         setLoading(false)
     }
@@ -34,12 +36,16 @@ function AllStocks() {
     }
 
     useEffect(() => {
+        if (!isSubscribed) {
+            setLoading(false)
+            return
+        }
         if (!searchQuery) {
-            loadTrending()
+            loadAllStocks()
         } else {
             runSearch(searchQuery)
         }
-    }, [searchQuery])
+    }, [searchQuery, isSubscribed])
 
     if (loading) return <p>Loading...</p>
 

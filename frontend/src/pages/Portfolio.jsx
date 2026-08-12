@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/Portfolio.css'
 import ViewHoldingsDetails from '../components/portfolio/ViewHoldingsDetails'
@@ -11,16 +12,24 @@ function Portfolio() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [ticker, setTicker] = useState('')
+    const [searchResults, setSearchResults] = useState([])
+    const [showDropdown, setShowDropdown] = useState(false)
+    const [selectedFromSearch, setSelectedFromSearch] = useState(false)
     const [shares, setShares] = useState('')
     const [avgPrice, setAvgPrice] = useState('')
     const [liveprices, setLivePrices] = useState({})
     const [totalValue, setTotalValue] = useState(0)
     const [totalGainLoss, setTotalGainLoss] = useState(0)
     const navigate = useNavigate()
+    const { isSubscribed } = useAuth()
 
     useEffect(() => {
+        if (!isSubscribed) {
+            setLoading(false)
+            return
+        }
         loadPortfolio()
-    }, [])
+    }, [isSubscribed])
 
     // get all holdings
     async function loadPortfolio() {
@@ -62,9 +71,35 @@ function Portfolio() {
         setTotalGainLoss(gainloss)
     }
 
-    // add new holding
+    // search stocks as user types - same pattern as Watchlist
+    async function searchStocks(query) {
+        setTicker(query)
+        setSelectedFromSearch(false)
+        if (query.length < 1) {
+            setSearchResults([])
+            setShowDropdown(false)
+            return
+        }
+        try {
+            const results = await api.get(`/stocks/search?q=${query}`)
+            setSearchResults(results)
+            setShowDropdown(true)
+        } catch (err) {
+            console.log('search failed:', err.message)
+        }
+    }
+
+    // when user picks from dropdown
+    function selectStock(selectedTicker) {
+        setTicker(selectedTicker)
+        setSelectedFromSearch(true)
+        setShowDropdown(false)
+        setSearchResults([])
+    }
+
+    // add new holding - only if picked from search, same guard as Watchlist
     async function addHolding() {
-        if (!ticker || !shares || !avgPrice) return
+        if (!ticker || !selectedFromSearch || !shares || !avgPrice) return
         try {
             await api.post('/portfolio', {
                 ticker: ticker.toUpperCase(),
@@ -72,6 +107,7 @@ function Portfolio() {
                 average_buy_price: parseFloat(avgPrice)
             })
             setTicker('')
+            setSelectedFromSearch(false)
             setShares('')
             setAvgPrice('')
             loadPortfolio()
@@ -121,7 +157,11 @@ function Portfolio() {
 
                 <AddStockToHolding
                     ticker={ticker}
-                    setTicker={setTicker}
+                    onTickerChange={searchStocks}
+                    searchResults={searchResults}
+                    showDropdown={showDropdown}
+                    onSelect={selectStock}
+                    selectedFromSearch={selectedFromSearch}
                     shares={shares}
                     setShares={setShares}
                     avgPrice={avgPrice}

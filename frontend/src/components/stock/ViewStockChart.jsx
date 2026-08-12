@@ -1,7 +1,16 @@
-import { useEffect, useRef } from 'react'
-import { createChart, CandlestickSeries } from 'lightweight-charts'
+import { useEffect, useRef, useState } from 'react'
+import { createChart, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts'
+import { calculateSMA, calculateEMA, calculateRSI, calculateMACD } from '../../utils/indicators'
 
 const timeframes = ['1D', '1W', '1M', '3M']
+const INDICATORS = [
+    { value: 'none', label: 'No Indicator' },
+    { value: 'sma', label: 'MA' },
+    { value: 'ema', label: 'EMA' },
+    { value: 'rsi', label: 'RSI' },
+    { value: 'macd', label: 'MACD' },
+]
+const DEFAULT_PERIOD = { sma: 20, ema: 20, rsi: 14 }
 
 // groups daily candles into bigger candles depending on the chosen interval
 function aggregateCandles(dailyData, interval) {
@@ -51,7 +60,17 @@ function aggregateCandles(dailyData, interval) {
 
 function ViewStockChart({ chartData, activeInterval, onIntervalChange }) {
     const containerRef = useRef(null)
+    const chartRef = useRef(null)
     const seriesRef = useRef(null)
+    const indicatorSeriesRef = useRef([])
+
+    const [indicatorType, setIndicatorType] = useState('none')
+    const [period, setPeriod] = useState(DEFAULT_PERIOD.sma)
+
+    function handleIndicatorChange(type) {
+        setIndicatorType(type)
+        if (DEFAULT_PERIOD[type]) setPeriod(DEFAULT_PERIOD[type])
+    }
 
     // create the chart once on mount
     useEffect(() => {
@@ -74,6 +93,7 @@ function ViewStockChart({ chartData, activeInterval, onIntervalChange }) {
             wickDownColor: '#ff4444',
         })
 
+        chartRef.current = chart
         seriesRef.current = series
 
         function handleResize() {
@@ -87,9 +107,10 @@ function ViewStockChart({ chartData, activeInterval, onIntervalChange }) {
         }
     }, [])
 
-    // rebuild the candles whenever the raw data or the chosen interval changes
+    // rebuild the candles whenever the raw data or the chosen interval changes,
+    // then layer the selected indicator on top of the same displayed candles
     useEffect(() => {
-        if (!seriesRef.current) return
+        if (!seriesRef.current || !chartRef.current) return
 
         // raw backend rows use "date" - normalize to the { time, open, high, low, close } shape
         const dailyCandles = chartData
@@ -104,7 +125,57 @@ function ViewStockChart({ chartData, activeInterval, onIntervalChange }) {
 
         const displayData = aggregateCandles(dailyCandles, activeInterval)
         seriesRef.current.setData(displayData)
-    }, [chartData, activeInterval])
+
+        // clear any indicator series left over from the previous
+        // type/period/interval before adding the new selection
+        indicatorSeriesRef.current.forEach((s) => chartRef.current.removeSeries(s))
+        indicatorSeriesRef.current = []
+
+        const chart = chartRef.current
+        if (indicatorType === 'sma' || indicatorType === 'ema') {
+            const points = indicatorType === 'sma'
+                ? calculateSMA(displayData, period)
+                : calculateEMA(displayData, period)
+            const line = chart.addSeries(LineSeries, { color: '#ffcc00', lineWidth: 2 })
+            line.setData(points)
+            indicatorSeriesRef.current.push(line)
+        } else if (indicatorType === 'rsi') {
+            const points = calculateRSI(displayData, period)
+            const line = chart.addSeries(LineSeries, {
+                color: '#60a5fa',
+                lineWidth: 2,
+                priceScaleId: 'rsi',
+            })
+            chart.priceScale('rsi').applyOptions({
+                scaleMargins: { top: 0.75, bottom: 0.02 },
+            })
+            line.setData(points)
+            indicatorSeriesRef.current.push(line)
+        } else if (indicatorType === 'macd') {
+            const { macdLine, signalLine, histogram } = calculateMACD(displayData)
+            const macd = chart.addSeries(LineSeries, {
+                color: '#00ff41',
+                lineWidth: 2,
+                priceScaleId: 'macd',
+            })
+            const signal = chart.addSeries(LineSeries, {
+                color: '#ff4444',
+                lineWidth: 2,
+                priceScaleId: 'macd',
+            })
+            const hist = chart.addSeries(HistogramSeries, {
+                color: '#888',
+                priceScaleId: 'macd',
+            })
+            chart.priceScale('macd').applyOptions({
+                scaleMargins: { top: 0.75, bottom: 0.02 },
+            })
+            macd.setData(macdLine)
+            signal.setData(signalLine)
+            hist.setData(histogram)
+            indicatorSeriesRef.current.push(macd, signal, hist)
+        }
+    }, [chartData, activeInterval, indicatorType, period])
 
     return (
         <div className="tab-content">
@@ -118,6 +189,28 @@ function ViewStockChart({ chartData, activeInterval, onIntervalChange }) {
                         {tf}
                     </span>
                 ))}
+
+                <div className="chart-indicator-controls">
+                    <select
+                        className="indicator-select"
+                        value={indicatorType}
+                        onChange={(e) => handleIndicatorChange(e.target.value)}
+                    >
+                        {INDICATORS.map((ind) => (
+                            <option key={ind.value} value={ind.value}>{ind.label}</option>
+                        ))}
+                    </select>
+                    {indicatorType !== 'none' && indicatorType !== 'macd' && (
+                        <input
+                            type="number"
+                            className="indicator-period-input"
+                            min={2}
+                            max={200}
+                            value={period}
+                            onChange={(e) => setPeriod(Math.max(2, Number(e.target.value) || 2))}
+                        />
+                    )}
+                </div>
             </div>
 
             <div ref={containerRef} style={{ width: '100%', height: '400px' }} />

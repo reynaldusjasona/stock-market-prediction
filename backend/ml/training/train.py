@@ -1,140 +1,215 @@
+import json
 import shutil
 from datetime import datetime
 from pathlib import Path
 
 import joblib
 import numpy as np
+import optuna
 import pandas as pd
 import xgboost as xgb
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_sample_weight
 
 from ml.training.features import get_multiple_tickers
 from ml.training.label_triple_barrier import apply_triple_barrier_by_ticker
+from ml.training.train_common import TRAIN_TICKERS, split_data
 
 
-TRAIN_TICKERS = [
-    # Technology
-    "AAPL", "MSFT", "GOOGL", "NVDA", "META", "AMD", "ORCL", "CRM",
-
-    # Consumer
-    "AMZN", "TSLA", "WMT", "COST", "MCD", "NKE", "SBUX",
-
-    # Finance
-    "JPM", "BAC", "GS", "V", "MA",
-
-    # Healthcare
-    "JNJ", "PFE", "UNH", "MRK", "ABBV",
-
-    # Energy
-    "XOM", "CVX", "COP",
-
-    # Industrial
-    "BA", "CAT", "GE",
-
-    # Communication / Defensive
-    "DIS", "NFLX", "KO", "PEP"
+EXCLUDED_COLUMNS = [
+    "Date", "Ticker", "Label",
+    "dynamic_target", "next_high", "next_low", "next_close",
+    "upper_barrier_price", "lower_barrier_price",
+    "Upper_Touched", "Lower_Touched", "Barrier_Type",
+    "High", "Low",
 ]
 
 
-def split_data(
-    X: pd.DataFrame, y: pd.Series
-) -> tuple[
-    pd.DataFrame, pd.DataFrame, pd.DataFrame,
-    pd.Series, pd.Series, pd.Series,
-]:
-    """
-    Perform a time-based (no-shuffle) 70/15/15 train/val/test split.
+def create_optuna_objective(
+    X_train: pd.DataFrame,
+    y_train: np.ndarray,
+    n_splits: int = 3,
+):
+    """Create a time-series cross-validation objective for Optuna."""
+    time_series_cv = TimeSeriesSplit(n_splits=n_splits)
 
-    Split indices are computed from len(X) so the chronological ordering
-    of the concatenated multi-ticker DataFrame is preserved.
+    def objective(trial: optuna.Trial) -> float:
+        params = {
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "n_estimators": trial.suggest_int(
+                "n_estimators", 100, 600, step=50
+            ),
+            "max_depth": trial.suggest_int("max_depth", 2, 8),
+            "learning_rate": trial.suggest_float(
+                "learning_rate", 0.005, 0.20, log=True
+            ),
+            "subsample": trial.suggest_float("subsample", 0.60, 1.00),
+            "colsample_bytree": trial.suggest_float(
+                "colsample_bytree", 0.60, 1.00
+            ),
+            "min_child_weight": trial.suggest_int(
+                "min_child_weight", 1, 15
+            ),
+            "gamma": trial.suggest_float("gamma", 0.0, 3.0),
+            "reg_alpha": trial.suggest_float(
+                "reg_alpha", 1e-4, 5.0, log=True
+            ),
+            "reg_lambda": trial.suggest_float(
+                "reg_lambda", 0.1, 10.0, log=True
+            ),
+            "random_state": 42,
+            "n_jobs": -1,
+            "tree_method": "hist",
+        }
 
-    Returns X_train, X_val, X_test, y_train, y_val, y_test.
-    """
-    n = len(X)
-    train_end = int(n * 0.70)
-    val_end = int(n * 0.85)
+        fold_scores = []
 
-    X_train = X.iloc[:train_end]
-    X_val = X.iloc[train_end:val_end]
-    X_test = X.iloc[val_end:]
+        for fold_number, (train_index, validation_index) in enumerate(
+            time_series_cv.split(X_train)
+        ):
+            X_fold_train = X_train.iloc[train_index]
+            X_fold_validation = X_train.iloc[validation_index]
+            y_fold_train = y_train[train_index]
+            y_fold_validation = y_train[validation_index]
 
-    y_train = y.iloc[:train_end]
-    y_val = y.iloc[train_end:val_end]
-    y_test = y.iloc[val_end:]
+            fold_weights = compute_sample_weight(
+                class_weight="balanced",
+                y=y_fold_train,
+            )
 
-    return X_train, X_val, X_test, y_train, y_val, y_test
+            model = xgb.XGBClassifier(**params)
+            model.fit(
+                X_fold_train,
+                y_fold_train,
+                sample_weight=fold_weights,
+                verbose=False,
+            )
+
+            validation_probabilities = model.predict_proba(
+                X_fold_validation
+            )[:, 1]
+
+            fold_auc = roc_auc_score(
+                y_fold_validation,
+                validation_probabilities,
+            )
+            fold_scores.append(float(fold_auc))
+
+            trial.report(
+                float(np.mean(fold_scores)),
+                step=fold_number,
+            )
+            if trial.should_prune():
+                raise optuna.TrialPruned()
+
+        return float(np.mean(fold_scores))
+
+    return objective
 
 
-# def train_model(
-#     X_train: pd.DataFrame,
-#     y_train: np.ndarray,
-#     X_val: pd.DataFrame,
-#     y_val: np.ndarray,
-# ) -> xgb.XGBClassifier:
-#     """
-#     Train XGBoost using fixed hyperparameters for fast experiments.
-#     """
-
-#     param_grid = {
-#         "n_estimators": [200, 400],
-#         "max_depth": [4, 6, 8],
-#         "learning_rate": [0.01, 0.05, 0.1],
-#         "subsample": [0.8, 1.0],
-#         "colsample_bytree": [0.8, 1.0]
-#     }
-#     base_model = xgb.XGBClassifier(
-#         eval_metric="mlogloss",
-#         random_state=42,
-#     )
-#     cv = TimeSeriesSplit(n_splits=3)
-#     grid_search = GridSearchCV(
-#         estimator=base_model,
-#         param_grid=param_grid,
-#         cv=cv,
-#         scoring="f1_macro",
-#         n_jobs=1,
-#         verbose=1,
-#     )
-#     sample_weight = compute_sample_weight(class_weight="balanced", y=y_train)
-#     grid_search.fit(X_train, y_train, sample_weight=sample_weight)
-#     print(f"Best parameters: {grid_search.best_params_}")
-#     print(f"Best CV f1 macro: {grid_search.best_score_:.4f}")
-#     return grid_search.best_estimator_
-
-def train_model(
+def train_model_optuna(
     X_train: pd.DataFrame,
     y_train: np.ndarray,
     X_val: pd.DataFrame,
     y_val: np.ndarray,
-) -> xgb.XGBClassifier:
-    """
-    Train XGBoost using a fixed set of hyperparameters.
-    Use this for quick testing before running GridSearchCV.
-    """
-
-    model = xgb.XGBClassifier(
-        n_estimators=200,
-        max_depth=6,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=1.0,
-        eval_metric="mlogloss",
-        random_state=42,
+    n_trials: int = 30,
+    n_splits: int = 3,
+    save_dir: str = "ml/saved_models",
+) -> tuple[xgb.XGBClassifier, optuna.Study]:
+    """Tune XGBoost with Optuna and fit one final model."""
+    objective = create_optuna_objective(
+        X_train=X_train,
+        y_train=y_train,
+        n_splits=n_splits,
     )
 
-    sample_weight = compute_sample_weight(
+    study = optuna.create_study(
+        direction="maximize",
+        sampler=optuna.samplers.TPESampler(seed=42),
+        pruner=optuna.pruners.MedianPruner(
+            n_startup_trials=5,
+            n_warmup_steps=1,
+        ),
+        study_name="xgboost_binary_stock_direction",
+    )
+
+    print(
+        f"Starting Optuna tuning: "
+        f"{n_trials} trials, {n_splits} time-series folds"
+    )
+    study.optimize(
+        objective,
+        n_trials=n_trials,
+        show_progress_bar=True,
+    )
+
+    print(f"Best CV ROC-AUC: {study.best_value:.4f}")
+    print("Best parameters:")
+    for name, value in study.best_params.items():
+        print(f"  {name}: {value}")
+
+    final_params = {
+        **study.best_params,
+        "objective": "binary:logistic",
+        "eval_metric": "logloss",
+        "random_state": 42,
+        "n_jobs": -1,
+        "tree_method": "hist",
+    }
+
+    final_model = xgb.XGBClassifier(**final_params)
+    final_weights = compute_sample_weight(
         class_weight="balanced",
         y=y_train,
     )
 
-    model.fit(
+    final_model.fit(
         X_train,
         y_train,
-        sample_weight=sample_weight,
+        sample_weight=final_weights,
+        eval_set=[(X_val, y_val)],
+        verbose=False,
     )
 
-    return model
+    train_predictions = final_model.predict(X_train)
+    validation_predictions = final_model.predict(X_val)
+    validation_probabilities = final_model.predict_proba(X_val)[:, 1]
+
+    print(
+        f"Train accuracy: "
+        f"{accuracy_score(y_train, train_predictions):.4f}"
+    )
+    print(
+        f"Validation accuracy: "
+        f"{accuracy_score(y_val, validation_predictions):.4f}"
+    )
+    print(
+        f"Validation macro-F1: "
+        f"{f1_score(y_val, validation_predictions, average='macro'):.4f}"
+    )
+    print(
+        f"Validation ROC-AUC: "
+        f"{roc_auc_score(y_val, validation_probabilities):.4f}"
+    )
+
+    save_path = Path(save_dir)
+    save_path.mkdir(parents=True, exist_ok=True)
+
+    study.trials_dataframe().to_csv(
+        save_path / "optuna_trials.csv",
+        index=False,
+    )
+    with open(
+        save_path / "optuna_best_params.json",
+        "w",
+        encoding="utf-8",
+    ) as output_file:
+        json.dump(study.best_params, output_file, indent=4)
+
+    return final_model, study
 
 
 def save_model(
@@ -142,17 +217,7 @@ def save_model(
     label_encoder: LabelEncoder,
     save_dir: str = "ml/saved_models",
 ) -> str:
-    """
-    Persist the trained model and its LabelEncoder to disk.
-
-    Creates save_dir (and any missing parents) if it does not already exist.
-    Saves:
-      <save_dir>/xgboost_model_YYYYMMDD_HHMMSS.joblib — timestamped model
-      <save_dir>/xgboost_model_latest.joblib           — copy of the latest model
-      <save_dir>/label_encoder.pkl                     — the fitted LabelEncoder
-
-    Returns the absolute path string of the timestamped model file.
-    """
+    """Save the binary model and its matching label encoder."""
     save_path = Path(save_dir)
     save_path.mkdir(parents=True, exist_ok=True)
 
@@ -168,59 +233,33 @@ def save_model(
     return str(model_file.resolve())
 
 
-def run_training() -> dict:
-    """
-    Orchestrate the full training pipeline end-to-end.
-
-    Steps:
-      1. Fetch and engineer features for all training tickers.
-      2. Label data by Triple Barrier Method
-      3. Split into train / val / test sets (time-based, no shuffle).
-      4. Fit a LabelEncoder on y_train; transform y_train and y_val.
-      5. Train the XGBClassifier with early stopping on the val set.
-      6. Save model and encoder to backend/ml/saved_models/.
-      7. Print sample counts, class distribution, and saved path.
-
-    Returns a dict with keys: model_path, n_train, n_val, n_test.
-    """
+def run_training(
+    n_trials: int = 60,
+    n_splits: int = 3,
+) -> dict:
+    """Run feature generation, labeling, Optuna tuning, and saving."""
     print("Fetching feature data for all tickers...")
     combined = get_multiple_tickers(TRAIN_TICKERS)
 
     labeled_data = apply_triple_barrier_by_ticker(
         df=combined,
         ticker_column="Ticker",
-        profit_taking_multiplier=1.0,
-        stop_loss_multiplier=1.0,
+        profit_taking_multiplier=1.5,
+        stop_loss_multiplier=1.5,
         volatility_window=20,
         min_return=0.005,
         drop_ambiguous=True,
         drop_unlabeled=True,
+        binary_only=True,
     )
 
-    excluded_columns = [
-        "Date",
-        "Ticker",
-        "Label",
-
-        # Triple Barrier columns
-        "dynamic_target",
-        "next_high",
-        "next_low",
-        "next_close",
-        "upper_barrier_price",
-        "lower_barrier_price",
-        "Upper_Touched",
-        "Lower_Touched",
-        "Barrier_Type",
-    ]
-
     feature_columns = [
-        col
-        for col in labeled_data.columns
-        if col not in excluded_columns
+        column
+        for column in labeled_data.columns
+        if column not in EXCLUDED_COLUMNS
     ]
 
-    X = labeled_data[feature_columns]
+    X = labeled_data[feature_columns].copy()
     y = labeled_data["Label"].astype(str)
 
     print("Dataset built successfully")
@@ -229,30 +268,53 @@ def run_training() -> dict:
 
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(X, y)
 
-    le = LabelEncoder()
-    y_train_enc = le.fit_transform(y_train)
-    y_val_enc = le.transform(y_val)
+    label_encoder = LabelEncoder()
+    y_train_encoded = label_encoder.fit_transform(y_train)
+    y_val_encoded = label_encoder.transform(y_val)
 
-    print(f"Training samples : {len(X_train)}")
+    print(f"Training samples  : {len(X_train)}")
     print(f"Validation samples: {len(X_val)}")
-    print(f"Test samples     : {len(X_test)}")
-    print(f"Class distribution (train):\n{y_train.value_counts()}")
-    print(f"Label encoder classes: {list(le.classes_)}")
+    print(f"Test samples      : {len(X_test)}")
+    print(f"Training class distribution:\n{y_train.value_counts()}")
+    print(
+        f"Label encoder classes: "
+        f"{label_encoder.classes_.tolist()}"
+    )
+    print(f"Feature count: {len(feature_columns)}")
 
-    print("Training XGBoost classifier...")
-    model = train_model(X_train, y_train_enc, X_val, y_val_enc)
+    model, study = train_model_optuna(
+        X_train=X_train,
+        y_train=y_train_encoded,
+        X_val=X_val,
+        y_val=y_val_encoded,
+        n_trials=n_trials,
+        n_splits=n_splits,
+    )
 
-    model_path = save_model(model, le)
+    model_path = save_model(
+        model=model,
+        label_encoder=label_encoder,
+    )
     print(f"Model saved to: {model_path}")
+
+    test_probabilities = model.predict_proba(X_test)
+    print("First 20 test probabilities:")
+    print(test_probabilities[:20])
 
     return {
         "model_path": model_path,
         "n_train": len(X_train),
         "n_val": len(X_val),
         "n_test": len(X_test),
+        "n_features": len(feature_columns),
+        "best_cv_roc_auc": round(study.best_value, 4),
+        "best_params": study.best_params,
     }
 
 
 if __name__ == "__main__":
-    result = run_training()
+    result = run_training(
+        n_trials=60,
+        n_splits=3,
+    )
     print(result)
