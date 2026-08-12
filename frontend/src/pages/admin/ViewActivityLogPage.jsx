@@ -121,7 +121,10 @@ function ViewActivityLogPage(){
                   </td>
                   <td style={{ fontSize:'0.8rem', color:'var(--text-muted)' }}>
                     <div>{l.target_type || '—'}</div>
-                    {l.target_id && <div style={{ fontSize:'0.72rem', fontFamily:'var(--font-mono)' }}>{l.target_id}</div>}
+                    {l.target_name
+                      ? <div style={{ fontSize:'0.78rem' }}>{l.target_name}</div>
+                      : l.target_id && <div style={{ fontSize:'0.72rem', fontFamily:'var(--font-mono)' }}>{l.target_id}</div>
+                    }
                   </td>
                 </tr>
               ))}
