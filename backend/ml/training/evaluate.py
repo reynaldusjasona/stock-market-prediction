@@ -187,8 +187,10 @@ def run_evaluation() -> dict:
     y = labeled_data["Label"].astype(str)
     _, _, X_test, _, _, y_test = split_data(X, y)
 
-    print(f"Test set size: {len(X_test)}")
+    test_size = len(X_test)
+    print(f"Test set size: {test_size}")
     metrics = evaluate_model(model, label_encoder, X_test, y_test)
+    metrics["test_size"] = test_size
 
     print(f"Accuracy : {metrics['accuracy']}")
     print(f"Precision: {metrics['precision']}")
@@ -210,6 +212,56 @@ def run_evaluation() -> dict:
     return metrics
 
 
+def save_metrics_to_db(metrics: dict, test_size: int) -> None:
+    """
+    Upsert evaluation metrics into the Supabase prediction_metrics
+    table so the admin dashboard always reflects the latest model.
+    """
+    from app.core.database import supabase
+    from datetime import datetime, timezone
+
+    row = {
+        "accuracy": metrics["accuracy"],
+        "precision_score": metrics["precision"],
+        "recall_score": metrics["recall"],
+        "f1_score": metrics["f1"],
+        "total_predictions": test_size,
+        "model_version": f"xgboost_v2_{datetime.now(timezone.utc).strftime('%Y%m%d')}",
+        "evaluated_at": datetime.now(timezone.utc).isoformat(),
+        "notes": (
+            f"Binary classification (Buy/Sell). "
+            f"Triple barrier labeling, {len(TRAIN_TICKERS)} tickers, "
+            f"37 features. ROC-AUC: {metrics.get('roc_auc', 'N/A')}. "
+            f"Auto-saved by evaluation pipeline."
+        ),
+    }
+
+    existing = (
+        supabase.table("prediction_metrics")
+        .select("id")
+        .order("evaluated_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+
+    if existing.data:
+        supabase.table("prediction_metrics").update(row).eq(
+            "id", existing.data[0]["id"]
+        ).execute()
+        print(f"Updated prediction_metrics row {existing.data[0]['id']}")
+    else:
+        supabase.table("prediction_metrics").insert(row).execute()
+        print("Inserted new prediction_metrics row")
+
+
 if __name__ == "__main__":
     result = run_evaluation()
     print(result)
+
+    print("\nSaving metrics to Supabase...")
+    try:
+        save_metrics_to_db(result, test_size=result["test_size"])
+        print("Metrics saved to prediction_metrics table.")
+    except Exception as exc:
+        print(f"Failed to save metrics to DB: {exc}")
+        print("Metrics were printed above — update manually if needed.")
