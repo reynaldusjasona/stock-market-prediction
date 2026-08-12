@@ -17,7 +17,9 @@ _FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 _PUBLIC_FIELDS = (
     "id, name, email, role, status, risk_tolerance, "
-    "sector_preferences, created_at, updated_at"
+    "sector_preferences, created_at, updated_at, "
+    "phone, trader_status, license_number, specialization, "
+    "years_experience, bio"
 )
 
 

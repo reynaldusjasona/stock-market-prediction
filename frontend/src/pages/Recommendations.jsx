@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/api'
+import { useAuth } from '../context/AuthContext'
 import AppLayout from '../components/layout/AppLayout'
 import '../styles/Recommendations.css'
 import ViewStockRecommendation from '../components/recommendations/ViewStockRecommendation'
@@ -10,6 +11,7 @@ function Recommendations() {
     const [recommendations, setRecommendations] = useState([])
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
+    const { isSubscribed } = useAuth()
 
     async function loadRecommendations() {
         try {
@@ -29,8 +31,12 @@ function Recommendations() {
     }
 
     useEffect(() => {
-        loadRecommendations()
-    }, [])
+        if (isSubscribed) {
+            loadRecommendations()
+        } else {
+            setLoading(false)
+        }
+    }, [isSubscribed])
 
     if (loading) return <p>Loading...</p>
 
