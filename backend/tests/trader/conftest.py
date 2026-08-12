@@ -9,21 +9,26 @@ with patch("supabase.create_client", return_value=MagicMock()):
     from fastapi.testclient import TestClient  # noqa: E402
     from app.main import app  # noqa: E402
     from app.core.security import get_current_user  # noqa: E402
+    from app.routers.trader import require_approved_trader  # noqa: E402
 
-MOCK_ADMIN = {
-    "id": "admin1",
-    "sub": "admin1",
-    "name": "Sennett Faria",
-    "email": "sennett.faria@gmail.com",
-    "role": "admin",
+MOCK_TRADER = {
+    "id": "trader1",
+    "sub": "trader1",
+    "name": "Test Trader",
+    "email": "trader@test.com",
+    "role": "trader",
 }
 
 
 def _mock_get_current_user():
-    return MOCK_ADMIN
+    return MOCK_TRADER
 
 
-ADMIN_HEADERS = {"Authorization": "Bearer test"}
+def _mock_require_approved_trader():
+    return MOCK_TRADER
+
+
+TRADER_HEADERS = {"Authorization": "Bearer test"}
 
 
 class FakeSupabaseResult:
@@ -47,8 +52,11 @@ class FakeSupabaseQuery:
 
 
 @pytest.fixture(autouse=True)
-def _set_admin_override():
+def _set_trader_override():
     app.dependency_overrides[get_current_user] = _mock_get_current_user
+    app.dependency_overrides[require_approved_trader] = (
+        _mock_require_approved_trader
+    )
     yield
 
 
@@ -60,17 +68,17 @@ def mock_supabase():
         fake_query._result = FakeSupabaseResult(data=data, count=count)
 
     fake_query.set_result = set_result
-    fake_query.set_result(data=[])  # empty by default; tests set what they need
+    fake_query.set_result(data=[])
 
     mock_client = MagicMock()
     mock_client.table.return_value = fake_query
 
     with patch("app.core.database.supabase", mock_client), patch(
-        "app.services.admin_service.supabase", mock_client
+        "app.services.trader_service.supabase", mock_client
     ), patch("app.services.auth_service.supabase", mock_client), patch(
-        "app.services.feedback_service.supabase", mock_client
-    ), patch(
         "app.routers.auth.supabase", mock_client
+    ), patch(
+        "app.routers.trader.supabase", mock_client
     ):
         yield fake_query
 
