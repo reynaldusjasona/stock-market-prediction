@@ -136,7 +136,7 @@
     z-index: 20;
     display: flex;
     align-items: center;
-    gap: 32px;
+    gap: 20px;
     height: 64px;
     padding: 0 40px;
     background: #0d0e12;
@@ -145,15 +145,16 @@
 
 .topbar-search {
     position: relative;
-    width: 320px;
+    width: 280px;
     flex-shrink: 0;
 }
 
 .topbar-nav {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 16px;
     flex: 1;
+    min-width: 0;
 }
 
 .topbar-nav span {
