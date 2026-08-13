@@ -51,7 +51,7 @@ function ViewModelPerformancePage(){
     : null
 
   const metrics=[
-    {label:'Accuracy',val: pct(perf?.accuracy),color: accColor(perf?.accuracy, config)},
+    {label:'Accuracy',val: pct(perf?.accuracy),color: ''},
     {label:'Precision',val: pct(perf?.precision_score ?? perf?.precision ?? avgPrecision),color: ''},
     {label:'Recall',val: pct(perf?.recall),color: ''},
     {label:'F1 Score',val: pct(perf?.f1_score),color: ''},
