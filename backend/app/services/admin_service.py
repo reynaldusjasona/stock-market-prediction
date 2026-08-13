@@ -451,6 +451,7 @@ def _default_landing_content() -> dict:
             "items": [],
         },
         "marketing": {
+            "title": "",
             "subtitle": "",
             "cards": [],
             "video_url": "",
@@ -488,6 +489,7 @@ def buildPublicLandingSections(content: dict) -> list:
     about = content.get("about") or {}
     features = content.get("features") or {}
     marketing = content.get("marketing") or {}
+    subscription = content.get("subscription") or {}
 
     sections = []
 
@@ -498,6 +500,9 @@ def buildPublicLandingSections(content: dict) -> list:
             "subtitle": None,
             "content": hero.get("subline") or None,
             "image_url": None,
+            "tag": hero.get("tag") or None,
+            "cta_label": hero.get("cta_label") or None,
+            "secondary_label": hero.get("secondary_label") or None,
             "is_visible": True,
             "display_order": 0,
         })
@@ -548,12 +553,28 @@ def buildPublicLandingSections(content: dict) -> list:
     if marketingText:
         sections.append({
             "section_key": "marketing",
-            "title": "Why Choose StockWise AI",
+            "title": marketing.get("title") or "Why Choose StockWise AI",
             "subtitle": marketing.get("subtitle") or None,
             "content": marketingText,
             "image_url": None,
+            "video_url": marketing.get("video_url") or None,
             "is_visible": True,
             "display_order": 3,
+        })
+
+    # only title/subtitle/footnote are surfaced here - plan_name/price/period/
+    # bullets/cta_label live on this same admin tab but are deliberately not
+    # emitted, since the actual plan card on the public page is sourced live
+    # from GET /subscription/plans, not from landing_page_config
+    if subscription.get("title"):
+        sections.append({
+            "section_key": "subscription",
+            "title": subscription.get("title"),
+            "subtitle": subscription.get("subtitle") or None,
+            "content": subscription.get("footnote") or None,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 4,
         })
 
     return sections
