@@ -114,11 +114,7 @@ function DashboardPage(){
         {/* Brand */}
         <div style={{display:'flex', alignItems:'center', gap:'0.6rem',
           padding:'1rem 1rem 0.85rem', borderBottom:'1px solid var(--border)'}}>
-          <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
-            <rect width="28" height="28" rx="6" fill="#00ff41" fillOpacity="0.12"/>
-            <polyline points="5,18 10,12 14,15 19,8 23,11" stroke="#00ff41" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="23" cy="11" r="2" fill="#00ff41"/>
-          </svg>
+          <img src="/Logo.jpg" alt="StockWise AI" style={{ height:22, borderRadius:4 }}/>
           <div>
             <div style={{ fontSize:'0.88rem', fontWeight:700, color:'var(--text)', lineHeight:1.2 }}>
               StockWise <span style={{color:'var(--accent)'}}>AI</span>
@@ -178,11 +174,7 @@ function DashboardPage(){
           padding:'0.6rem 1.5rem', borderBottom:'1px solid var(--border)',
           background:'var(--surface)', position:'sticky', top:0, zIndex:50, gap:'1rem'}}>
           <div style={{display:'flex', alignItems:'center', gap:'0.6rem'}}>
-            <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
-              <rect width="28" height="28" rx="6" fill="#00ff41" fillOpacity="0.12"/>
-              <polyline points="5,18 10,12 14,15 19,8 23,11" stroke="#00ff41" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="23" cy="11" r="2" fill="#00ff41"/>
-            </svg>
+            <img src="/Logo.jpg" alt="StockWise AI" style={{ height:18, borderRadius:3 }}/>
             <span style={{fontSize:'0.88rem', fontWeight:700, color:'var(--text)'}}>
               StockWise <span style={{ color:'var(--accent)' }}>AI</span>
             </span>
