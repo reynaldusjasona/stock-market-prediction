@@ -232,7 +232,10 @@ async def _getPendingFeedbackCount() -> int:
 async def getDashboardStats() -> dict:
     try:
         usersResult = (
-            supabase.table("users").select("id", count="exact").execute()
+            supabase.table("users")
+            .select("id", count="exact")
+            .neq("status", "deleted")
+            .execute()
         )
         subscriptionsResult = (
             supabase.table("subscriptions")
