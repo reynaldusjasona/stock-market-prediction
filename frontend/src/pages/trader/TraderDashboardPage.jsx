@@ -68,8 +68,8 @@ function TraderOverview({onNav}) {
       .finally(()=> setLoading(false))
   }, [])
 
-  const pending  = signals.filter(s => !s.endorsement)
-  const reviewed = signals.filter(s => s.endorsement)
+  const pending  = signals.filter(s => !s.verdict && !s.endorsement)
+  const reviewed = signals.filter(s => s.verdict || s.endorsement)
 
   const cards = [
     {label:'Pending Reviews',val: pending.length,  nav:'signals', cls: pending.length ? ' pending' : ''},
