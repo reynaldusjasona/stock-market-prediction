@@ -68,6 +68,8 @@ async def getGeneralRecommendations(limit: int = 10) -> list:
         # rows are newest-first, so dedup keeps each ticker's most recent
         # prediction rather than an arbitrary/older one
         predictions = _dedupe_by_ticker(result.data or [])
+        # model is binary (Buy/Sell) — exclude legacy Hold predictions
+        predictions = [p for p in predictions if p.get("signal") in ("Buy", "Sell")]
         predictions.sort(key=lambda p: p.get("confidence_score") or 0, reverse=True)
         predictions = predictions[:limit]
 
@@ -80,14 +82,14 @@ async def getGeneralRecommendations(limit: int = 10) -> list:
                     "ticker": s["ticker"],
                     "company_name": s.get("company_name"),
                     "sector": s.get("sector"),
-                    "signal": "Hold",
+                    "signal": "No Signal",
                     "confidence_score": 50,
                     "risk_level": "Moderate Risk",
                     "reason": (
                         "No prediction data available yet — run a "
                         "prediction to get signals"
                     ),
-                    "predictions": buildTimeframePredictions("Hold", 50),
+                    "predictions": buildTimeframePredictions("No Signal", 50),
                 }
                 for s in (stocksResult.data or [])
             ]
@@ -181,8 +183,11 @@ async def getPersonalizedRecommendations(userId: str, limit: int = 10) -> list:
         # rows are newest-first, so dedup keeps each ticker's most recent
         # prediction rather than an arbitrary/older one
         predictions = _dedupe_by_ticker(predictionsResult.data or [])
+        # model is binary (Buy/Sell) — exclude legacy Hold predictions
         predictions = [
-            p for p in predictions if p.get("ticker") not in heldTickers
+            p for p in predictions
+            if p.get("signal") in ("Buy", "Sell")
+            and p.get("ticker") not in heldTickers
         ]
 
         allowedRisk = _allowed_risk_levels(riskTolerance)

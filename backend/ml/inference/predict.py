@@ -1,3 +1,5 @@
+import functools
+
 import pandas as pd
 
 from ml.training.evaluate import load_model
@@ -70,6 +72,19 @@ def get_latest_features(
     return processed[_FEATURE_COLS].iloc[[-1]]
 
 
+@functools.lru_cache(maxsize=1)
+def _get_explainer():
+    """
+    Build a SHAP TreeExplainer around the cached model instance.
+
+    Cached in memory after the first call so repeated predictions don't
+    rebuild the explainer on every request.
+    """
+    import shap
+    model, _ = load_model()
+    return shap.TreeExplainer(model)
+
+
 def getPrediction(ticker: str) -> dict:
     """
     Generate a Buy / Hold / Sell signal for a single ticker.
@@ -102,6 +117,31 @@ def getPrediction(ticker: str) -> dict:
     confidence = round(float(proba.max()) * 100, 2)
     risk_level = _risk_level_for_confidence(confidence)
 
+    try:
+        explainer = _get_explainer()
+        shapValues = explainer.shap_values(features)
+
+        if isinstance(shapValues, list):
+            classShapValues = shapValues[pred_enc][0]
+            baseValue = float(explainer.expected_value[pred_enc])
+        else:
+            classShapValues = shapValues[0]
+            baseValue = float(explainer.expected_value)
+
+        impacts = sorted(
+            zip(features.columns, classShapValues),
+            key=lambda pair: abs(pair[1]),
+            reverse=True,
+        )[:10]
+        shapExplanation = [
+            {"feature": featureName, "impact": float(impactValue)}
+            for featureName, impactValue in impacts
+        ]
+    except Exception as exc:
+        print(f"Error computing SHAP explanation for {ticker}: {exc}")
+        shapExplanation = []
+        baseValue = None
+
     row = features.iloc[0]
     reasoning = (
         f"RSI14 is {row['RSI14']:.1f}. "
@@ -115,6 +155,8 @@ def getPrediction(ticker: str) -> dict:
         "confidence": confidence,
         "risk_level": risk_level,
         "reasoning": reasoning,
+        "shapExplanation": shapExplanation,
+        "baseValue": baseValue,
     }
 
 
