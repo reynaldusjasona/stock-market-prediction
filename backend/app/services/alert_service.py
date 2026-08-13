@@ -166,3 +166,16 @@ async def getAlertForm(ticker: str, userID: str) -> list:
         .execute()
     )
     return result.data or []
+
+
+async def getAllAlertsForUser(userID: str) -> list:
+    # no is_active/is_triggered filter - the Alerts page already shows both
+    # ACTIVE and Triggered rows in the same table, so this should return
+    # everything for the user regardless of state
+    result = (
+        supabase.table("price_alerts")
+        .select("*")
+        .eq("user_id", userID)
+        .execute()
+    )
+    return result.data or []

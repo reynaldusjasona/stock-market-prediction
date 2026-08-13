@@ -65,7 +65,7 @@ class TestUC1TraderRegistration:
         ), patch(
             "app.routers.auth.savePreferences", return_value=None
         ), patch(
-            "app.routers.auth.createAndSendVerificationEmail",
+            "app.routers.auth.createAndSendRegistrationOtp",
             return_value=None,
         ):
             r = client.post(
@@ -106,7 +106,7 @@ class TestUC1TraderRegistration:
         ), patch(
             "app.routers.auth.savePreferences", return_value=None
         ), patch(
-            "app.routers.auth.createAndSendVerificationEmail",
+            "app.routers.auth.createAndSendRegistrationOtp",
             return_value=None,
         ):
             r = client.post(
