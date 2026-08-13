@@ -7,7 +7,7 @@ const BLANK ={
   hero: { tag:'', headline:'', subline:'', cta_label:'', secondary_label:'' },
   about: { subtitle:'', cards:[{title:'',body:''},{title:'',body:''},{title:'',body:''}] },
   features: { subtitle:'', items:[{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''},{title:'',body:''}] },
-  marketing: { subtitle:'', cards:[{title:'',body:''},{title:'',body:''},{title:'',body:''}], video_url:'' },
+  marketing: { title:'', subtitle:'', cards:[{title:'',body:''},{title:'',body:''},{title:'',body:''}], video_url:'' },
   testimonials: [{name:'',quote:'',rating:5},{name:'',quote:'',rating:5},{name:'',quote:'',rating:5}],
   subscription: { title:'', subtitle:'', plan_name:'', price:'', period:'', bullets:['','','',''], cta_label:'', footnote:'' },
 }
@@ -221,6 +221,12 @@ function LandingPageEditorPage() {
         <div className="admin-card">
           <div className="admin-card-header"><h2 className="admin-card-title">Marketing Section</h2></div>
           <div className="admin-card-body">
+            <div className="admin-form-group">
+              <label className="admin-form-label">Title</label>
+              <input className="admin-form-input" maxLength={80} value={data.marketing.title}
+                onChange={e => setMarketing(m => { m.title = e.target.value })}/>
+            </div>
+
             <div className="admin-form-group">
               <label className="admin-form-label">Subtitle</label>
               <input className="admin-form-input" maxLength={200} value={data.marketing.subtitle}
