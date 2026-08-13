@@ -45,7 +45,7 @@ function Recommendations() {
             <div className="recommendations-content">
                 <div className="recommendations-header">
                     <h1>Recommendations</h1>
-                    <p>AI-generated Buy / Hold / Sell signals tailored to your profile</p>
+                    <p>AI-generated Buy / Sell signals tailored to your profile</p>
                 </div>
 
                 <ViewStockRecommendation recommendations={recommendations} navigate={navigate} />
