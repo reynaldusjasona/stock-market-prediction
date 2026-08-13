@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 from fastapi import HTTPException
@@ -669,32 +670,43 @@ async def getActivityLogs(
     page: int = 1,
     limit: int = 20,
     actionFilter: str = None,
+    search: str = None,
 ) -> dict:
     offset = (page - 1) * limit
-
-    countQuery = supabase.table("activity_logs").select("id", count="exact")
-    if actionFilter:
-        countQuery = countQuery.eq("action", actionFilter)
-    countResult = countQuery.execute()
-    total = countResult.count or 0
+    FETCH_WINDOW = 1000
 
     logsQuery = (
         supabase.table("activity_logs")
         .select("*")
         .order("created_at", desc=True)
+        .limit(FETCH_WINDOW)
     )
     if actionFilter:
         logsQuery = logsQuery.eq("action", actionFilter)
-    logsResult = logsQuery.range(offset, offset + limit - 1).execute()
+    logsResult = logsQuery.execute()
     logs = logsResult.data or []
+    _UUID_RE = re.compile(
+        r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+        r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    )
+    userIDs = list({
+        log["user_id"] for log in logs
+        if log.get("user_id") and _UUID_RE.match(log["user_id"])
+    })
+    targetUserIDs = list({
+        log["target_id"] for log in logs
+        if log.get("target_type") == "user"
+        and log.get("target_id")
+        and _UUID_RE.match(log["target_id"])
+    })
+    allIDs = list(set(userIDs + targetUserIDs))
 
-    userIDs = list({log["user_id"] for log in logs if log.get("user_id")})
     userMap = {}
-    if userIDs:
+    if allIDs:
         usersResult = (
             supabase.table("users")
-            .select("id, name, email")
-            .in_("id", userIDs)
+            .select("id, name, email, role")
+            .in_("id", allIDs)
             .execute()
         )
         userMap = {u["id"]: u for u in (usersResult.data or [])}
@@ -702,19 +714,34 @@ async def getActivityLogs(
     items = []
     for log in logs:
         user = userMap.get(log.get("user_id"))
+        if not user or user.get("role") != "admin":
+            continue
+        target = userMap.get(log.get("target_id")) if log.get("target_type") == "user" else None
         items.append({
             "id": log["id"],
             "user_id": log.get("user_id"),
-            "user_name": user.get("name") if user else None,
-            "user_email": user.get("email") if user else None,
-            "admin_name": user.get("name") if user else "Unknown",
-            "admin_email": user.get("email") if user else "Unknown",
+            "user_name": user.get("name"),
+            "user_email": user.get("email"),
+            "admin_name": user.get("name"),
+            "admin_email": user.get("email"),
             "action": log.get("action"),
             "target_type": log.get("target_type"),
             "target_id": log.get("target_id"),
+            "target_name": target.get("name") if target else None,
             "metadata": log.get("metadata"),
             "created_at": log.get("created_at"),
         })
+
+    if search:
+        needle = search.strip().lower()
+        items = [
+            item for item in items
+            if needle in (item.get("admin_name") or "").lower()
+            or needle in (item.get("action") or "").lower()
+        ]
+
+    total = len(items)
+    items = items[offset:offset + limit]
 
     return {"logs": items, "total": total, "page": page, "limit": limit}
 
