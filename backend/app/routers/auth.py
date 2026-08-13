@@ -398,6 +398,13 @@ async def deleteAccount(
     await deleteAccountAndData(userID)
     if session_token:
         await invalidateSession(session_token)
+    actingUserID = current_user["sub"]
+    await logActivity(
+        userID=actingUserID,
+        action="user_deleted",
+        targetType="user",
+        targetId=userID,
+    )
     return {"message": "Account deleted"}
 
 

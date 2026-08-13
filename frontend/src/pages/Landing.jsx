@@ -58,7 +58,7 @@ function Landing() {
         <div>
             {/* navbar */}
             <nav className="nav">
-                <span className="nav-logo">StockWise <span>AI</span></span>
+                <span className="nav-logo"><img src="/Logo.jpg" alt="StockWise AI" style={{ height: 22, borderRadius: 4, marginRight: 8, verticalAlign: 'middle' }} />StockWise <span>AI</span></span>
                 <div className="nav-links">
                     <span onClick={() => document.getElementById('about')?.scrollIntoView({behavior: 'smooth'})}>About</span>
                     <span onClick={() => document.getElementById('features')?.scrollIntoView({behavior: 'smooth'})}>Features</span>
