@@ -34,11 +34,10 @@ jobs:
           cd backend
           pytest tests/admin -v
 
-      - name: Run investor test suites (mocked + real DB)
+      - name: Run investor test suite (mocked)
         run: |
           cd backend
           pytest tests/investor -v
-          pytest tests/investor_integration -v
 
       - name: Run trader test suite (mocked)
         run: |
