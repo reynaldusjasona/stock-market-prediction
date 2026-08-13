@@ -212,6 +212,22 @@ async def _personalize_stock_order(
     return preferred + others
 
 
+async def _enrich_with_prices(rows: list) -> list:
+    """Fetch live price data for each stock and merge into the row."""
+    async def _fetch_one(row):
+        try:
+            price_data = await fetchPriceData(row["ticker"])
+            row["current_price"] = price_data.get("current_price")
+            row["change_percent"] = price_data.get("change_percent")
+        except Exception:
+            row["current_price"] = None
+            row["change_percent"] = None
+        return row
+
+    enriched = await asyncio.gather(*[_fetch_one(r) for r in rows])
+    return list(enriched)
+
+
 async def fetchStockList(userId: Optional[str] = None) -> list:
     raw = await finnhubGet("stock/symbol", {"exchange": "US"})
     if "error" in raw or not isinstance(raw, list):
@@ -221,7 +237,8 @@ async def fetchStockList(userId: Optional[str] = None) -> list:
             .limit(100)
             .execute()
         )
-        return await _personalize_stock_order(cached.data or [], userId)
+        enriched = await _enrich_with_prices(cached.data or [])
+        return await _personalize_stock_order(enriched, userId)
     stocks = [s for s in raw if s.get("type") == "CS"][:500]
     rows = [
         {
@@ -248,7 +265,8 @@ async def fetchStockList(userId: Optional[str] = None) -> list:
         }
         for r in rows
     ]
-    return await _personalize_stock_order(result, userId)
+    enriched = await _enrich_with_prices(result)
+    return await _personalize_stock_order(enriched, userId)
 
 
 async def fetchPriceData(ticker: str) -> dict:
