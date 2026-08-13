@@ -69,7 +69,7 @@ function AppLayout({ children }) {
     return (
         <div className="app-shell">
             <aside className="sidebar" style={{ display: 'flex', flexDirection: 'column' }}>
-                <div className="sidebar-logo">StockWise <span>AI</span></div>
+                <div className="sidebar-logo"><img src="/Logo.jpg" alt="StockWise AI" style={{ height: 22, borderRadius: 4, marginRight: 8, verticalAlign: 'middle' }} />StockWise <span>AI</span></div>
                 {navLinks.map((link) => (
                     <span
                         key={link.path}
