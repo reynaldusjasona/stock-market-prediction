@@ -204,9 +204,10 @@ async def getActivityLog(
     page: int = 1,
     limit: int = 20,
     action: Optional[str] = None,
+    q: Optional[str] = None,
     current_user: dict = Depends(_require_admin),
 ):
-    return await getActivityLogs(page, limit, action)
+    return await getActivityLogs(page, limit, action, q)
 
 
 @router.get("/admin/stats", tags=["Admin"])
@@ -413,11 +414,6 @@ async def deleteApiSourceRoute(
     )
     return result
 
-
-# ---- PUBLIC (no auth) ----
-# admin.py has no other public endpoint, and stocks.py is purely
-# stock-domain, so this lives here without _require_admin per the
-# fallback rule for routes that don't fit either existing router.
 @router.get("/landing", tags=["Public"])
 async def getPublicLandingContent():
     content = await getLandingContent()
