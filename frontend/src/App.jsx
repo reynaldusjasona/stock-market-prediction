@@ -38,7 +38,7 @@ function App() {
 
           <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
 
-          <Route path="/browse-traders" element={<ProtectedRoute><BrowseTraders /></ProtectedRoute>} />
+          <Route path="/browse-traders" element={<ProtectedRoute roles={['investor']}><BrowseTraders /></ProtectedRoute>} />
 
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin" element={<AdminDashboardPage />} />

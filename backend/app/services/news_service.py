@@ -60,6 +60,21 @@ async def getStockNews(
             rows, on_conflict="url"
         ).execute()
 
+    # Read back any cached sentiment scores and merge into response
+    urls = [a["url"] for a in articles if a.get("url")]
+    if urls:
+        scored = (
+            supabase.table("news_articles")
+            .select("url, sentiment_score, sentiment_label")
+            .in_("url", urls[:50])
+            .execute()
+        )
+        score_map = {r["url"]: r for r in (scored.data or [])}
+        for article in articles:
+            cached = score_map.get(article.get("url"), {})
+            article["sentiment_score"] = cached.get("sentiment_score")
+            article["sentiment_label"] = cached.get("sentiment_label")
+
     return articles
 
 
