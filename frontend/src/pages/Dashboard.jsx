@@ -118,7 +118,7 @@ function Dashboard() {
                 <p>Market analysis is updated and ready for your next move.</p>
             </div>
 
-            <h2 className="section-heading">Market Overview</h2>
+            <h2 className="section-heading" id="market-overview">Market Overview</h2>
 
             <div className="market-grid">
                 <ViewTrendingTickers trendList={trendList} fmt={fmt} navigate={navigate} />

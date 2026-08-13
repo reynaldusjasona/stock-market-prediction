@@ -120,6 +120,16 @@ function AppLayout({ children }) {
                             </div>
                         )}
                     </div>
+                    {location.pathname === '/dashboard' && (
+                        <div className="topbar-nav">
+                            <span onClick={() => document.getElementById('market-overview')?.scrollIntoView({ behavior: 'smooth' })}>
+                                Market Overview
+                            </span>
+                            <span onClick={() => document.getElementById('stock-list')?.scrollIntoView({ behavior: 'smooth' })}>
+                                Stock List
+                            </span>
+                        </div>
+                    )}
                     <div className="topbar-actions">
                         <span
                             className="topbar-bell"
