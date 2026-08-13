@@ -32,7 +32,12 @@ class TestAlerts:
     def test_create_alert_success(self):
         with patch(
             "app.services.alert_service.validateAndSaveAlert",
-            return_value={"id": "a1", "ticker": "AAPL", "target_price": 200.0, "condition": "above"},
+            return_value={
+                "id": "a1",
+                "ticker": "AAPL",
+                "target_price": 200.0,
+                "condition": "above",
+            },
         ):
             r = client.post(
                 "/api/alerts/AAPL",
