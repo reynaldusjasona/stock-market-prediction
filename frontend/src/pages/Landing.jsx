@@ -103,6 +103,7 @@ function Landing() {
     const featureItems = parseContentItems(features?.content)
 
     const marketing = sections.marketing
+    const hasMarketing = Boolean(marketing)
     const videoUrl = marketing?.video_url
     const hasVideo = Boolean(videoUrl)
     const youtubeEmbedUrl = hasVideo ? getYouTubeEmbedUrl(videoUrl) : null
@@ -126,7 +127,7 @@ function Landing() {
                 <div className="nav-links">
                     <span onClick={() => document.getElementById('about')?.scrollIntoView({behavior: 'smooth'})}>About</span>
                     <span onClick={() => document.getElementById('features')?.scrollIntoView({behavior: 'smooth'})}>Features</span>
-                    {hasVideo && (
+                    {hasMarketing && (
                         <span onClick={() => document.getElementById('marketing-video')?.scrollIntoView({behavior: 'smooth'})}>Why StockWise</span>
                     )}
                     <span onClick={() => document.getElementById('testimonials').scrollIntoView({behavior: 'smooth'})}>Testimonials</span>
@@ -185,24 +186,26 @@ function Landing() {
                 </section>
             )}
 
-            {hasVideo && (
+            {hasMarketing && (
                 <section className="section" id="marketing-video">
                     <h2 className="section-title">{marketing.title}</h2>
                     {marketing.subtitle && <p className="section-sub">{marketing.subtitle}</p>}
-                    <div className="video-embed-wrap">
-                        {youtubeEmbedUrl ? (
-                            <iframe
-                                src={youtubeEmbedUrl}
-                                title="Marketing video"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            />
-                        ) : (
-                            <video src={videoUrl} controls />
-                        )}
-                    </div>
+                    {hasVideo && (
+                        <div className="video-embed-wrap">
+                            {youtubeEmbedUrl ? (
+                                <iframe
+                                    src={youtubeEmbedUrl}
+                                    title="Marketing video"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                />
+                            ) : (
+                                <video src={videoUrl} controls />
+                            )}
+                        </div>
+                    )}
                     {marketingItems.length > 0 && (
-                        <div className="cards-grid" style={{ marginTop: '32px' }}>
+                        <div className="cards-grid" style={hasVideo ? { marginTop: '32px' } : undefined}>
                             {marketingItems.map((item, i) => (
                                 <div className="card" key={item.title || i}>
                                     {item.title && <h3>{item.title}</h3>}

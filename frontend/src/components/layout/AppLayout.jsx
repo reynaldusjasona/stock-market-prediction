@@ -122,11 +122,17 @@ function AppLayout({ children }) {
                     </div>
                     {location.pathname === '/dashboard' && (
                         <div className="topbar-nav">
-                            <span onClick={() => document.getElementById('market-overview')?.scrollIntoView({ behavior: 'smooth' })}>
-                                Market Overview
+                            <span onClick={() => document.getElementById('trending-tickers')?.scrollIntoView({ behavior: 'smooth' })}>
+                                Trending Tickers
+                            </span>
+                            <span onClick={() => document.getElementById('top-gainers-losers')?.scrollIntoView({ behavior: 'smooth' })}>
+                                Top Gainers &amp; Losers
                             </span>
                             <span onClick={() => document.getElementById('stock-list')?.scrollIntoView({ behavior: 'smooth' })}>
                                 Stock List
+                            </span>
+                            <span onClick={() => document.getElementById('ai-recommendations')?.scrollIntoView({ behavior: 'smooth' })}>
+                                AI Recommendations
                             </span>
                         </div>
                     )}
