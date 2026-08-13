@@ -201,6 +201,36 @@ async def createSignalAccessCheckout(userID: str, email: str) -> dict:
     return {"checkout_url": session.url}
 
 
+async def cancelSignalAccess(userID: str) -> dict:
+    existing = (
+        supabase.table("subscriptions")
+        .select("id, has_signal_access")
+        .eq("user_id", userID)
+        .eq("status", "active")
+        .execute()
+    )
+    if not existing.data:
+        raise LookupError("No active subscription")
+    if not existing.data[0].get("has_signal_access"):
+        raise LookupError("Signal access is not active")
+
+    subscription_id = existing.data[0]["id"]
+    now = datetime.now(timezone.utc)
+
+    # only has_signal_access changes - status/plan are untouched so the
+    # base Investor Plan stays active
+    result = (
+        supabase.table("subscriptions")
+        .update({
+            "has_signal_access": False,
+            "updated_at": now.isoformat(),
+        })
+        .eq("id", subscription_id)
+        .execute()
+    )
+    return result.data[0]
+
+
 async def activateSignalAccess(userID: str) -> dict:
     """Fallback activation for signal access after Stripe redirect."""
     existing = (

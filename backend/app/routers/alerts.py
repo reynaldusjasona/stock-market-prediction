@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from postgrest.exceptions import APIError
 from pydantic import BaseModel
 
 from app.core.security import get_current_user
@@ -15,6 +16,18 @@ class CreateAlertRequest(BaseModel):
 class UpdateAlertRequest(BaseModel):
     new_price: float
     alert_type: str
+
+
+# "" (no path segment) and "/{ticker}" (one path segment) are distinct
+# route shapes, so this is unambiguous regardless of registration order -
+# unlike POST /check-all vs POST /{ticker} below, which both look like a
+# single path segment and do need a specific order.
+@router.get("")
+async def getAllAlerts(
+    current_user: dict = Depends(get_current_user),
+):
+    userID = current_user["sub"]
+    return await alert_service.getAllAlertsForUser(userID)
 
 
 @router.get("/{ticker}")
@@ -59,6 +72,17 @@ async def createAlertsForm(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except APIError as exc:
+        # 23503 = foreign key violation - price_alerts.ticker references
+        # stocks.ticker, so this means the ticker isn't a tracked stock.
+        # The constraint itself is correct; only translate this specific
+        # case to a clean 400 - anything else stays a genuine 500.
+        if exc.code == "23503":
+            raise HTTPException(
+                status_code=400,
+                detail=f"'{ticker}' is not a tracked stock on StockWise AI.",
+            )
+        raise
 
 
 @router.patch("/{alert_id}")

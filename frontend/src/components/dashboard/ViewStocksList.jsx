@@ -1,7 +1,7 @@
 function ViewStocksList({ stockList, navigate }) {
     return (
         <>
-            <h2 className="section-heading">Stock List</h2>
+            <h2 className="section-heading" id="stock-list">Stock List</h2>
             <div className="stock-table-wrap">
                 <table>
                     <thead>

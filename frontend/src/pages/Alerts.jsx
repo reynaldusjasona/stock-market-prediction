@@ -20,23 +20,11 @@ function Alerts() {
     const [editCondition, setEditCondition] = useState('above')
     const [error, setError] = useState(null)
 
-    // fetch trending to get tickers, then fetch alerts for each
     async function loadAlerts() {
         setLoading(true)
         try {
-            const trending = await api.get('/stocks/trending')
-            let allAlerts = []
-            for (const stock of trending) {
-                try {
-                    const tickerAlerts = await api.get('/alerts/' + stock.ticker)
-                    if (Array.isArray(tickerAlerts)) {
-                        allAlerts = [...allAlerts, ...tickerAlerts]
-                    }
-                } catch (e) {
-                    // no alerts for this ticker, skip
-                }
-            }
-            setAlerts(allAlerts)
+            const allAlerts = await api.get('/alerts')
+            setAlerts(Array.isArray(allAlerts) ? allAlerts : [])
         } catch (err) {
             console.log('load alerts failed:', err.message)
         } finally {
