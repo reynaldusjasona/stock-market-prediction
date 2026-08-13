@@ -1,30 +1,18 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../api/api'
 
-const FALLBACK_TESTIMONIALS = [
-    { name: 'Marcus Chen', text: 'The sentiment engine is frighteningly accurate. It caught the NVDA rally three days before the earnings report.', rating: 5 },
-    { name: 'Sarah Jenkins', text: 'StockWise AI turned my trading from a hobby into a systematic process. The risk-adjusted return tracking is a game changer.', rating: 5 },
-    { name: 'Michael Chen', text: 'The AI predictions for my favorite stocks have been incredibly accurate. Truly an unfair advantage.', rating: 5 },
-]
-
-const MIN_REAL_TESTIMONIALS = 3
-
 function ViewTestimonials() {
-    const [testimonials, setTestimonials] = useState(FALLBACK_TESTIMONIALS)
+    const [testimonials, setTestimonials] = useState([])
 
     useEffect(() => {
         api.get('/feedback/public')
-            .then((data) => {
-                const real = data.testimonials || []
-                // don't mix real and placeholder cards, and don't show a
-                // sparse 1-2 card section - only switch over once there's
-                // enough real approved feedback to fill the section
-                if (real.length >= MIN_REAL_TESTIMONIALS) {
-                    setTestimonials(real)
-                }
-            })
+            .then((data) => setTestimonials(data.testimonials || []))
             .catch((err) => console.log('testimonials failed:', err.message))
     }, [])
+
+    // matches ViewFAQ's pattern: render nothing rather than an empty
+    // header/grid until there's real approved feedback to show
+    if (testimonials.length === 0) return null
 
     return (
         <section className="section" id="testimonials">

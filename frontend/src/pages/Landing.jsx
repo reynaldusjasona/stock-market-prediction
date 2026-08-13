@@ -17,14 +17,54 @@ const HERO_FALLBACK = {
     secondary_label: 'Learn more →',
 }
 
+// GET /landing returns {sections: [{section_key, title, subtitle, content,
+// image_url, is_visible, display_order}, ...]} - buildPublicLandingSections
+// on the backend only includes a section at all when it has real content,
+// and it joins structured items (about.cards / features.items / marketing.cards)
+// into a single "Title: body • Title: body" string per section. Split that
+// back into individual items here so Features/About render as distinct
+// entries rather than one paragraph.
+function parseContentItems(content) {
+    if (!content) return []
+    return content.split(' • ').map((segment) => {
+        const sepIndex = segment.indexOf(': ')
+        if (sepIndex === -1) return { title: null, body: segment }
+        return { title: segment.slice(0, sepIndex), body: segment.slice(sepIndex + 2) }
+    })
+}
+
+function getYouTubeEmbedUrl(url) {
+    try {
+        const parsed = new URL(url)
+        if (parsed.hostname.includes('youtu.be')) {
+            return `https://www.youtube.com/embed${parsed.pathname}`
+        }
+        if (parsed.hostname.includes('youtube.com')) {
+            if (parsed.pathname === '/watch') {
+                const videoId = parsed.searchParams.get('v')
+                return videoId ? `https://www.youtube.com/embed/${videoId}` : null
+            }
+            if (parsed.pathname.startsWith('/embed/')) {
+                return url
+            }
+        }
+        return null
+    } catch {
+        return null
+    }
+}
+
 function Landing() {
     const navigate = useNavigate()
-    const [landing, setLanding] = useState(null)
+    const [sections, setSections] = useState({})
     const [plans, setPlans] = useState([])
 
     useEffect(() => {
         api.get('/landing')
-            .then((data) => setLanding(data || null))
+            .then((data) => {
+                const list = data?.sections || []
+                setSections(Object.fromEntries(list.map((s) => [s.section_key, s])))
+            })
             .catch((err) => console.log('landing content failed:', err.message))
 
         api.get('/subscription/plans')
@@ -32,27 +72,51 @@ function Landing() {
             .catch((err) => console.log('plans failed:', err.message))
     }, [])
 
-    const hero = {
-        tag: landing?.hero?.tag || HERO_FALLBACK.tag,
-        headline: landing?.hero?.headline || HERO_FALLBACK.headline,
-        subline: landing?.hero?.subline || HERO_FALLBACK.subline,
-        content: landing?.hero?.content || HERO_FALLBACK.content,
-        cta_label: landing?.hero?.cta_label || HERO_FALLBACK.cta_label,
-        secondary_label: landing?.hero?.secondary_label || HERO_FALLBACK.secondary_label,
-    }
+    // hero now carries tag/cta_label/secondary_label from the API too.
+    // HERO_FALLBACK is only used as a whole-object fallback when the hero
+    // section itself is absent from the response entirely - once a hero
+    // section exists, its fields are trusted as-is rather than falling
+    // back per-field (matching how About/Features already render blank
+    // rather than substituting fallback text for individual missing fields)
+    const heroSection = sections.hero
+    const hero = heroSection ? {
+        tag: heroSection.tag,
+        headline: heroSection.title,
+        // the backend only sends one descriptive string for hero (mapped
+        // from content.hero.subline into the section's "content" field) -
+        // use it once, as the main paragraph, rather than duplicating it
+        // into both subline and content
+        subline: null,
+        content: heroSection.content,
+        cta_label: heroSection.cta_label,
+        secondary_label: heroSection.secondary_label,
+    } : HERO_FALLBACK
 
-    // about/features are admin-editable but currently empty - skip the
-    // whole section rather than render an empty header/grid until real
-    // content exists
-    const about = landing?.about
-    const hasAbout = about && (about.subtitle || (about.cards || []).length > 0)
+    // a section only appears in the sections array at all when the backend
+    // found real content for it, so presence alone means "has content"
+    const about = sections.about
+    const hasAbout = Boolean(about)
+    const aboutItems = parseContentItems(about?.content)
 
-    const features = landing?.features
-    const hasFeatures = features && (features.subtitle || (features.items || []).length > 0)
+    const features = sections.features
+    const hasFeatures = Boolean(features)
+    const featureItems = parseContentItems(features?.content)
 
-    // CMS text for the pricing section header - the actual plan card below
-    // is always driven live by /subscription/plans, never by this content
-    const subscriptionCopy = landing?.subscription || {}
+    const marketing = sections.marketing
+    const videoUrl = marketing?.video_url
+    const hasVideo = Boolean(videoUrl)
+    const youtubeEmbedUrl = hasVideo ? getYouTubeEmbedUrl(videoUrl) : null
+    const marketingItems = parseContentItems(marketing?.content)
+
+    // buildPublicLandingSections now emits a "subscription" section entry
+    // when the admin has set a title - footnote text travels in the shared
+    // "content" field (same convention as about/features' body text)
+    const subscriptionSection = sections.subscription
+    const subscriptionCopy = subscriptionSection ? {
+        title: subscriptionSection.title,
+        subtitle: subscriptionSection.subtitle,
+        footnote: subscriptionSection.content,
+    } : {}
 
     return (
         <div>
@@ -62,6 +126,9 @@ function Landing() {
                 <div className="nav-links">
                     <span onClick={() => document.getElementById('about')?.scrollIntoView({behavior: 'smooth'})}>About</span>
                     <span onClick={() => document.getElementById('features')?.scrollIntoView({behavior: 'smooth'})}>Features</span>
+                    {hasVideo && (
+                        <span onClick={() => document.getElementById('marketing-video')?.scrollIntoView({behavior: 'smooth'})}>Why StockWise</span>
+                    )}
                     <span onClick={() => document.getElementById('testimonials').scrollIntoView({behavior: 'smooth'})}>Testimonials</span>
                     <span onClick={() => document.getElementById('subscription').scrollIntoView({behavior: 'smooth'})}>Subscription</span>
                     <span onClick={() => document.getElementById('faq').scrollIntoView({behavior: 'smooth'})}>FAQ</span>
@@ -88,12 +155,12 @@ function Landing() {
                 <section className="section" id="about">
                     <h2 className="section-title">About</h2>
                     {about.subtitle && <p className="section-sub">{about.subtitle}</p>}
-                    {(about.cards || []).length > 0 && (
+                    {aboutItems.length > 0 && (
                         <div className="cards-grid">
-                            {about.cards.map((card, i) => (
-                                <div className="card" key={card.title || i}>
-                                    {card.title && <h3>{card.title}</h3>}
-                                    {card.description && <p>{card.description}</p>}
+                            {aboutItems.map((item, i) => (
+                                <div className="card" key={item.title || i}>
+                                    {item.title && <h3>{item.title}</h3>}
+                                    {item.body && <p>{item.body}</p>}
                                 </div>
                             ))}
                         </div>
@@ -105,12 +172,41 @@ function Landing() {
                 <section className="section" id="features">
                     <h2 className="section-title">Features</h2>
                     {features.subtitle && <p className="section-sub">{features.subtitle}</p>}
-                    {(features.items || []).length > 0 && (
+                    {featureItems.length > 0 && (
                         <div className="cards-grid">
-                            {features.items.map((item, i) => (
+                            {featureItems.map((item, i) => (
                                 <div className="card" key={item.title || i}>
                                     {item.title && <h3>{item.title}</h3>}
-                                    {item.description && <p>{item.description}</p>}
+                                    {item.body && <p>{item.body}</p>}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </section>
+            )}
+
+            {hasVideo && (
+                <section className="section" id="marketing-video">
+                    <h2 className="section-title">{marketing.title}</h2>
+                    {marketing.subtitle && <p className="section-sub">{marketing.subtitle}</p>}
+                    <div className="video-embed-wrap">
+                        {youtubeEmbedUrl ? (
+                            <iframe
+                                src={youtubeEmbedUrl}
+                                title="Marketing video"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        ) : (
+                            <video src={videoUrl} controls />
+                        )}
+                    </div>
+                    {marketingItems.length > 0 && (
+                        <div className="cards-grid" style={{ marginTop: '32px' }}>
+                            {marketingItems.map((item, i) => (
+                                <div className="card" key={item.title || i}>
+                                    {item.title && <h3>{item.title}</h3>}
+                                    {item.body && <p>{item.body}</p>}
                                 </div>
                             ))}
                         </div>
