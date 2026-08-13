@@ -1,6 +1,6 @@
 function ViewTrendingTickers({ trendList, fmt, navigate }) {
     return (
-        <div className="market-box">
+        <div className="market-box" id="trending-tickers">
             <h3>Trending Tickers</h3>
             {trendList.map((stock) => (
                 <div

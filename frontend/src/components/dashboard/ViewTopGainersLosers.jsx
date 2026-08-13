@@ -1,6 +1,6 @@
 function ViewTopGainersLosers({ gainers, losers, fmt, navigate }) {
     return (
-        <div className="market-box">
+        <div className="market-box" id="top-gainers-losers">
             <h3>Top Gainers & Losers</h3>
             {gainers.map((stock) => (
                 <div
