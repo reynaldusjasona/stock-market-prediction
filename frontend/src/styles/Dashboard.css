@@ -32,6 +32,7 @@
     border: 1px solid #1a1b20;
     border-radius: 8px;
     padding: 20px;
+    scroll-margin-top: 80px;
 }
 
 .market-box h3 {
