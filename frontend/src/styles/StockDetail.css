@@ -315,6 +315,78 @@
     text-align: left;
 }
 
+/* SHAP feature-importance chart */
+.shap-unavailable {
+    color: #888;
+    font-size: 13px;
+    margin-top: 24px;
+}
+
+.shap-summary {
+    color: #ccc;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-top: 24px;
+    margin-bottom: 4px;
+}
+
+.shap-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.shap-row {
+    display: grid;
+    grid-template-columns: 180px 1fr 64px;
+    align-items: center;
+    gap: 12px;
+}
+
+.shap-label {
+    color: #ccc;
+    font-size: 13px;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.shap-bar-track {
+    background: #0d0e12;
+    border: 1px solid #1a1b20;
+    border-radius: 4px;
+    height: 16px;
+    overflow: hidden;
+}
+
+.shap-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+.shap-bar-fill.shap-positive {
+    background: #00ff41;
+}
+
+.shap-bar-fill.shap-negative {
+    background: #ff4444;
+}
+
+.shap-value {
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.shap-value.shap-positive-text {
+    color: #00ff41;
+}
+
+.shap-value.shap-negative-text {
+    color: #ff4444;
+}
+
 /* prediction timeframes */
 .pred-section-heading {
     color: #ccc;
