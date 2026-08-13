@@ -49,16 +49,44 @@ async def getStockNews(
             "session_date": session_date,
         }
         articles.append(article)
-        rows.append({
-            **article,
-            "sentiment_score": None,
-            "sentiment_label": None,
-        })
+        rows.append(article)
 
     if rows:
+        # sentiment_score/sentiment_label are deliberately NOT in this
+        # payload: on_conflict="url" upserts overwrite every column
+        # present for existing rows, and this upsert previously included
+        # those two as explicit None - which reset every already-scored
+        # article back to NULL on each call, since this function's own
+        # fetch window overlaps whatever the sentiment cron already
+        # scored. Omitting them lets new rows fall back to the column's
+        # NULL default while leaving cron-scored values on existing rows
+        # untouched.
         supabase.table("news_articles").upsert(
             rows, on_conflict="url"
         ).execute()
+
+        urls = [a["url"] for a in articles if a.get("url")]
+        # batched like getSentimentScore's urls[:50] below, but chunked
+        # over the whole list instead of truncated - a single .in_() call
+        # with a large ticker's full url list hits the same request-size
+        # limit that endpoint was already worked around for.
+        sentiment_by_url: dict = {}
+        for i in range(0, len(urls), 50):
+            chunk = urls[i:i + 50]
+            sentiment_response = (
+                supabase.table("news_articles")
+                .select("url, sentiment_score, sentiment_label")
+                .in_("url", chunk)
+                .execute()
+            )
+            for row in (sentiment_response.data or []):
+                sentiment_by_url[row["url"]] = (
+                    row["sentiment_score"], row["sentiment_label"]
+                )
+        for article in articles:
+            score, label = sentiment_by_url.get(article["url"], (None, None))
+            article["sentiment_score"] = score
+            article["sentiment_label"] = label
 
     return articles
 
