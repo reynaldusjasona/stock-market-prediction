@@ -29,7 +29,18 @@ jobs:
           cd backend
           flake8 . --max-line-length=100 --exclude=__pycache__,.venv,venv
 
-      - name: Run tests
+      - name: Run admin test suite (mocked)
         run: |
           cd backend
-          pytest tests/ -v --ignore=tests/admin_integration --ignore=tests/trader_integration
+          pytest tests/admin -v
+
+      - name: Run investor test suites (mocked + real DB)
+        run: |
+          cd backend
+          pytest tests/investor -v
+          pytest tests/investor_integration -v
+
+      - name: Run trader test suite (mocked)
+        run: |
+          cd backend
+          pytest tests/trader -v
