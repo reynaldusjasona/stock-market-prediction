@@ -57,10 +57,31 @@
 .ticker-symbol {
     font-weight: 600;
     color: #ffffff;
+    width: 80px;
+    flex-shrink: 0;
 }
 
 .ticker-price {
     color: #ffffff;
+    width: 100px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.change-positive {
+    color: #00ff41;
+    font-size: 13px;
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.change-negative {
+    color: #ff4444;
+    font-size: 13px;
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
 }
 
 .dashboard-recommendations {
@@ -94,15 +115,8 @@
     }
 }
 
-.change-positive {
-    color: #00ff41;
-    font-size: 13px;
-}
-
-.change-negative {
-    color: #ff4444;
-    font-size: 13px;
-}
+/* color + size for change-positive / change-negative are set
+   alongside .ticker-symbol / .ticker-price above */
 
 .stock-table-wrap {
     background: #13141a;
