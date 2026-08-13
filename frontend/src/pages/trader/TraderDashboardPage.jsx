@@ -164,7 +164,7 @@ function TraderDashboardPage() {
       {/* ── Sidebar ── */}
       <aside className="trader-sidenav">
         <div className="trader-brand">
-          <Logo/>
+          <img src="/Logo.jpg" alt="StockWise AI" style={{ height:22, borderRadius:4 }}/>
           <div>
             <div className="trader-brand-name">StockWise <span>AI</span></div>
             <div className="trader-brand-sub">Trader Portal</div>
@@ -197,7 +197,7 @@ function TraderDashboardPage() {
       <div className="trader-main">
         <header className="trader-topbar">
           <div className="trader-topbar-brand">
-            <Logo size={18}/>
+            <img src="/Logo.jpg" alt="StockWise AI" style={{ height:18, borderRadius:3 }}/>
             <span className="trader-topbar-name">StockWise <span>AI</span></span>
             <span className="trader-role-pill">TRADER</span>
           </div>
