@@ -136,7 +136,7 @@
     z-index: 20;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 32px;
     height: 64px;
     padding: 0 40px;
     background: #0d0e12;
@@ -146,6 +146,25 @@
 .topbar-search {
     position: relative;
     width: 320px;
+    flex-shrink: 0;
+}
+
+.topbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex: 1;
+}
+
+.topbar-nav span {
+    color: #888;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.topbar-nav span:hover {
+    color: #ffffff;
 }
 
 .topbar-search input {
@@ -205,6 +224,8 @@
     display: flex;
     align-items: center;
     gap: 24px;
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 .topbar-bell {
