@@ -10,6 +10,7 @@ const BLANK ={
   marketing: { title:'', subtitle:'', cards:[{title:'',body:''},{title:'',body:''},{title:'',body:''}], video_url:'' },
   testimonials: [{name:'',quote:'',rating:5},{name:'',quote:'',rating:5},{name:'',quote:'',rating:5}],
   subscription: { title:'', subtitle:'', plan_name:'', price:'', period:'', bullets:['','','',''], cta_label:'', footnote:'' },
+  trader_insights: { title:'', subtitle:'', plan_name:'', price:'', period:'', bullets:['','','',''], cta_label:'', footnote:'' },
 }
 
 const clone = o => JSON.parse(JSON.stringify(o))
@@ -44,6 +45,7 @@ const SECTIONS = [
   {key:'marketing',label:'Marketing' },
   {key:'testimonials',label:'Testimonials' },
   {key:'subscription',label:'Subscription' },
+  {key:'trader_insights',label:'Trader Insights' },
 ]
 
 function LandingPageEditorPage() {
@@ -65,6 +67,7 @@ function LandingPageEditorPage() {
           marketing:{ ...BLANK.marketing, ...(d.marketing || {}), cards: d.marketing?.cards?.length ? d.marketing.cards : BLANK.marketing.cards },
           testimonials: d.testimonials?.length ? d.testimonials : clone(BLANK.testimonials),
           subscription:{ ...BLANK.subscription, ...(d.subscription || {}), bullets: d.subscription?.bullets?.length ? d.subscription.bullets : BLANK.subscription.bullets },
+          trader_insights:{ ...BLANK.trader_insights, ...(d.trader_insights || {}), bullets: d.trader_insights?.bullets?.length ? d.trader_insights.bullets : BLANK.trader_insights.bullets },
         })
       })
       .catch(err => {
@@ -82,6 +85,7 @@ function LandingPageEditorPage() {
   const setMarketing= fn => setData(d => { const n = clone(d); fn(n.marketing); mark(); return n })
   const setTestimonials= fn => setData(d => { const n = clone(d); fn(n.testimonials); mark(); return n })
   const setSubscription= fn => setData(d => { const n = clone(d); fn(n.subscription); mark(); return n })
+  const setTraderInsights= fn => setData(d => { const n = clone(d); fn(n.trader_insights); mark(); return n })
 
   const handleSave = async()=> {
     if (!data.hero.headline?.trim()) { showToast('Hero headline is required', 'error'); setTab('hero'); return }
@@ -332,6 +336,67 @@ function LandingPageEditorPage() {
                 <label className="admin-form-label">Footnote</label>
                 <input className="admin-form-input" maxLength={60} value={data.subscription.footnote}
                   onChange={e => setSubscription(s => { s.footnote = e.target.value })}/>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'trader_insights' && (
+        <div className="admin-card">
+          <div className="admin-card-header"><h2 className="admin-card-title">Trader Access (Add-on)</h2></div>
+          <div className="admin-card-body">
+            <p style={{ fontSize:'0.82rem', color:'var(--text-muted)', marginBottom:'1rem' }}>
+              Configure the Trader Access add-on card shown on the landing page. This is the $19.99/month add-on that investors purchase on top of the Investor Plan.
+            </p>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem' }}>
+              <div className="admin-form-group">
+                <label className="admin-form-label">Display Title</label>
+                <input className="admin-form-input" maxLength={80} value={data.trader_insights.title}
+                  onChange={e => setTraderInsights(t => { t.title = e.target.value })}
+                  placeholder="Trader Access"/>
+              </div>
+              <div className="admin-form-group">
+                <label className="admin-form-label">Subtitle</label>
+                <input className="admin-form-input" maxLength={150} value={data.trader_insights.subtitle}
+                  onChange={e => setTraderInsights(t => { t.subtitle = e.target.value })}
+                  placeholder="Unlock professional trader insights"/>
+              </div>
+              <div style={{ display:'flex', gap:'0.5rem' }}>
+                <div className="admin-form-group" style={{ flex:1 }}>
+                  <label className="admin-form-label">Price</label>
+                  <input className="admin-form-input" value={data.trader_insights.price}
+                    onChange={e => setTraderInsights(t => { t.price = e.target.value })}
+                    placeholder="19.99"/>
+                </div>
+                <div className="admin-form-group" style={{ flex:1 }}>
+                  <label className="admin-form-label">Period</label>
+                  <input className="admin-form-input" value={data.trader_insights.period}
+                    onChange={e => setTraderInsights(t => { t.period = e.target.value })}
+                    placeholder="month"/>
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-form-label" style={{ marginTop:'0.5rem' }}>Feature Bullets</div>
+            {data.trader_insights.bullets.map((b, i) => (
+              <input key={i} className="admin-form-input" style={{ marginBottom:'0.6rem' }} value={b}
+                onChange={e => setTraderInsights(t => { t.bullets[i] = e.target.value })}
+                placeholder={['Connect with licensed traders','Ask a trader for stock analysis','View trader-endorsed Buy/Sell signals',''][i] || ''}/>
+            ))}
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem', marginTop:'0.5rem' }}>
+              <div className="admin-form-group" style={{ marginBottom:0 }}>
+                <label className="admin-form-label">CTA Label</label>
+                <input className="admin-form-input" maxLength={40} value={data.trader_insights.cta_label}
+                  onChange={e => setTraderInsights(t => { t.cta_label = e.target.value })}
+                  placeholder="Add to plan"/>
+              </div>
+              <div className="admin-form-group" style={{ marginBottom:0 }}>
+                <label className="admin-form-label">Footnote</label>
+                <input className="admin-form-input" maxLength={60} value={data.trader_insights.footnote}
+                  onChange={e => setTraderInsights(t => { t.footnote = e.target.value })}
+                  placeholder="Requires active Investor Plan"/>
               </div>
             </div>
           </div>
