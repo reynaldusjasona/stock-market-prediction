@@ -87,13 +87,13 @@ function ManageFeedbacksPage(){
         <div className="admin-table-wrap">
           <table className="admin-table" aria-label="User feedback">
             <thead>
-              <tr><th>User</th><th>Message Preview</th><th>Rating</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+              <tr><th>User</th><th>Role</th><th>Message Preview</th><th>Rating</th><th>Status</th><th>Date</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="6" style={{ textAlign:'center', padding:'2.5rem' }}><span className="admin-spinner"/></td></tr>
+                <tr><td colSpan="7" style={{ textAlign:'center', padding:'2.5rem' }}><span className="admin-spinner"/></td></tr>
               ) : !paged.length ? (
-                <tr><td colSpan="6"><div className="admin-empty"><p>No {filter !== 'all' ? filter + ' ' : ''}feedback found.</p></div></td></tr>
+                <tr><td colSpan="7"><div className="admin-empty"><p>No {filter !== 'all' ? filter + ' ' : ''}feedback found.</p></div></td></tr>
               ) : paged.map(f => {
                 const status= (f.status || 'pending').toLowerCase()
                 const preview= (f.message || f.content || '').slice(0, 80)
@@ -101,6 +101,7 @@ function ManageFeedbacksPage(){
                 return (
                   <tr key={f.id} style={{ cursor:'pointer' }} onClick={() => setViewTarget(f)}>
                     <td><div style={{ fontWeight:600, fontSize:'0.875rem' }}>{f.user_name || f.user_email || 'Anonymous'}</div></td>
+                    <td><span className={`status-badge status-${(f.user_role||'investor').toLowerCase()}`} style={{ fontSize:'0.75rem' }}>{f.user_role || 'investor'}</span></td>
                     <td style={{ maxWidth:'260px' }}>
                       <div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontSize:'0.875rem', color:'var(--text-muted)' }}>
                         {preview}{(f.message || '').length > 80 ? '…' : ''}
