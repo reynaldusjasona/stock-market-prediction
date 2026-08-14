@@ -242,6 +242,20 @@ function Landing() {
                             </p>
                         </div>
                     ))}
+                    <div className="plan-card plan-card-addon">
+                        <span className="plan-badge-addon">Add-on</span>
+                        <p className="plan-name" style={{ color: '#ffd600' }}>TRADER ACCESS</p>
+                        <p className="plan-price">$19.99<span>/month</span></p>
+                        <ul>
+                            <li>✓ Connect with licensed traders</li>
+                            <li>✓ Ask a trader for stock analysis</li>
+                            <li>✓ View trader-endorsed Buy/Sell signals</li>
+                        </ul>
+                        <button className="btn-secondary" onClick={() => navigate('/register?intent=subscribe')}>Add to plan</button>
+                        <p style={{ textAlign: 'center', color: '#888', marginTop: '12px', fontSize: '14px' }}>
+                            Requires active Investor Plan
+                        </p>
+                    </div>
                 </div>
             </section>
 
