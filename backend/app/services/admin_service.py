@@ -468,13 +468,23 @@ def _default_landing_content() -> dict:
             "cta_label": "",
             "footnote": "",
         },
+        "trader_insights": {
+            "title": "",
+            "subtitle": "",
+            "plan_name": "",
+            "price": "",
+            "period": "",
+            "bullets": [],
+            "cta_label": "",
+            "footnote": "",
+        },
     }
 
 
 def _apply_landing_defaults(content: dict) -> dict:
     defaults = _default_landing_content()
     merged = {**defaults, **content}
-    for key in ("hero", "about", "features", "marketing", "subscription"):
+    for key in ("hero", "about", "features", "marketing", "subscription", "trader_insights"):
         section = content.get(key)
         merged[key] = (
             {**defaults[key], **section} if isinstance(section, dict) else defaults[key]
