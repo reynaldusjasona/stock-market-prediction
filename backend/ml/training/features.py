@@ -318,14 +318,6 @@ def calculate_indicators(
         - out["Low"]
     ) / out["Open"]
 
-    # Sentiment features
-    # out = add_sentiment_features(
-    #     out=out,
-    #     ticker=ticker,
-    #     start=start,
-    #     end=end,
-    # )
-
     column_order = [
         "High", "Low", "Close", "Volume",
         "RSI14", "MACD", "MACD_Signal",
@@ -352,7 +344,7 @@ def calculate_indicators(
     return out
 
 
-_FEATURE_COLS = [
+_FEATURE_COLS_1DAY = [
     "Close", "Volume",
     "RSI14", "MACD", "MACD_Signal",
     "Distance_SMA20", "Distance_EMA20",
@@ -370,6 +362,40 @@ _FEATURE_COLS = [
     "Oil_Close", "Oil_Return_1D", "Oil_Return_5D",
     "NASDAQ_Return_1D", "NASDAQ_Return_5D",
 ]
+
+
+_EXCLUDED_FEATURES = {
+    "VIX_Close",
+    "Treasury_10Y",
+    "DXY_Close",
+    "Oil_Close",
+}
+
+_FEATURE_COLS_3DAY = [
+    feature
+    for feature in _FEATURE_COLS_1DAY
+    if feature not in _EXCLUDED_FEATURES
+]
+
+_FEATURE_COLS_5DAY = _FEATURE_COLS_3DAY.copy()
+
+_FEATURE_COLS = _FEATURE_COLS_1DAY
+
+
+def get_feature_columns_for_horizon(horizon_days: int) -> list[str]:
+    """Return the ordered feature list for one prediction horizon."""
+    feature_sets = {
+        1: _FEATURE_COLS_1DAY,
+        3: _FEATURE_COLS_3DAY,
+        5: _FEATURE_COLS_5DAY,
+    }
+
+    try:
+        return feature_sets[horizon_days].copy()
+    except KeyError as error:
+        raise ValueError(
+            "horizon_days must be one of 1, 3, or 5."
+        ) from error
 
 
 def get_feature_matrix(
