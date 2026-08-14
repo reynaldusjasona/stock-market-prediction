@@ -148,6 +148,7 @@ function Landing() {
                     <span onClick={() => document.getElementById('testimonials').scrollIntoView({behavior: 'smooth'})}>Testimonials</span>
                     <span onClick={() => document.getElementById('subscription').scrollIntoView({behavior: 'smooth'})}>Subscription</span>
                     <span onClick={() => document.getElementById('faq').scrollIntoView({behavior: 'smooth'})}>FAQ</span>
+                    <span onClick={() => document.getElementById('documentation').scrollIntoView({behavior: 'smooth'})}>Documentation</span>
                 </div>
                 <div className="nav-buttons">
                     <button className="btn-login" onClick={() => navigate('/login')}>Login</button>
@@ -275,6 +276,29 @@ function Landing() {
             </section>
 
             <ViewFAQ />
+
+            {/* project documentation */}
+            <section className="section" id="documentation">
+                <h2 className="section-title" style={{ textAlign: 'center' }}>Documentation</h2>
+                <p className="section-sub" style={{ textAlign: 'center' }}>
+                    FYP-26-S2-26 project documents — meeting minutes, reports, and technical documentation.
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <a
+                        className="doc-card-main"
+                        href="https://drive.google.com/drive/folders/1utV_7fIpIbIzMvZw-7RYje3zu0l_i111?usp=share_link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <span className="doc-card-icon">📁</span>
+                        <span className="doc-card-text">
+                            <span className="doc-card-title">View Project Documents</span>
+                            <span className="doc-card-sub">Meeting minutes, PRD, PTD, and more on Google Drive</span>
+                        </span>
+                        <span className="doc-card-arrow">↗</span>
+                    </a>
+                </div>
+            </section>
         </div>
     )
 }

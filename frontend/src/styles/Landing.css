@@ -319,3 +319,52 @@
     padding-bottom: 20px;
     line-height: 1.6;
 }
+
+/* documentation card */
+.doc-card-main {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: #13141a;
+    border: 1px solid #1a1b20;
+    border-radius: 8px;
+    padding: 24px 32px;
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+    max-width: 560px;
+    transition: border-color 0.2s;
+}
+
+.doc-card-main:hover {
+    border-color: #00ff41;
+}
+
+.doc-card-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.doc-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.doc-card-title {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.doc-card-sub {
+    color: #888;
+    font-size: 13px;
+}
+
+.doc-card-arrow {
+    margin-left: auto;
+    color: #888;
+    font-size: 18px;
+    flex-shrink: 0;
+}
