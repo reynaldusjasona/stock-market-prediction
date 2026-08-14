@@ -14,7 +14,7 @@ def get_prediction(ticker: str) -> dict:
         "contributions": json.dumps(result["contributions"]),
         "prediction_date": datetime.utcnow().date().isoformat(),
     }, on_conflict="ticker,prediction_date").execute()
-    
+
     return result
 
 
