@@ -119,6 +119,21 @@ function Landing() {
         footnote: subscriptionSection.content,
     } : {}
 
+    // trader_insights add-on card — all fields come from landing_page_config
+    // (no separate /subscription/plans entry). Falls back to the previous
+    // hardcoded values so the card never looks empty.
+    const ti = sections.trader_insights || {}
+    const traderCard = {
+        name: ti.title || 'TRADER ACCESS',
+        price: ti.price || '19.99',
+        period: ti.period || 'month',
+        bullets: (ti.bullets && ti.bullets.length > 0)
+            ? ti.bullets
+            : ['Connect with licensed traders', 'Ask a trader for stock analysis', 'View trader-endorsed Buy/Sell signals'],
+        cta: ti.cta_label || 'Add to plan',
+        footnote: ti.content || 'Requires active Investor Plan',
+    }
+
     return (
         <div>
             {/* navbar */}
@@ -244,16 +259,16 @@ function Landing() {
                     ))}
                     <div className="plan-card plan-card-addon">
                         <span className="plan-badge-addon">Add-on</span>
-                        <p className="plan-name" style={{ color: '#ffd600' }}>TRADER ACCESS</p>
-                        <p className="plan-price">$19.99<span>/month</span></p>
+                        <p className="plan-name" style={{ color: '#ffd600' }}>{traderCard.name.toUpperCase()}</p>
+                        <p className="plan-price">${traderCard.price}<span>/{traderCard.period}</span></p>
                         <ul>
-                            <li>✓ Connect with licensed traders</li>
-                            <li>✓ Ask a trader for stock analysis</li>
-                            <li>✓ View trader-endorsed Buy/Sell signals</li>
+                            {traderCard.bullets.map((b) => (
+                                <li key={b}>✓ {b}</li>
+                            ))}
                         </ul>
-                        <button className="btn-secondary" onClick={() => navigate('/register?intent=subscribe')}>Add to plan</button>
+                        <button className="btn-secondary" onClick={() => navigate('/register?intent=subscribe')}>{traderCard.cta}</button>
                         <p style={{ textAlign: 'center', color: '#888', marginTop: '12px', fontSize: '14px' }}>
-                            Requires active Investor Plan
+                            {traderCard.footnote}
                         </p>
                     </div>
                 </div>
