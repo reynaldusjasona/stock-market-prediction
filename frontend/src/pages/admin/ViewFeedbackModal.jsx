@@ -40,6 +40,12 @@ function ViewFeedbackModal({target, onClose, onApprove, onReject}){
               <div>{detail.created_at ? new Date(detail.created_at).toLocaleString('en-SG') : '—'}</div>
             </div>
             <div>
+              <div className="admin-form-label">Role</div>
+              <span className={`status-badge status-${(detail.user_role||'investor').toLowerCase()}`}>
+                {detail.user_role || 'investor'}
+              </span>
+            </div>
+            <div>
               <div className="admin-form-label">Status</div>
               <span className={`status-badge status-${(detail.status || 'pending').toLowerCase()}`}>
                 {detail.status || 'pending'}
