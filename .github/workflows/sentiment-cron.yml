@@ -19,15 +19,10 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install base dependencies
+      - name: Install dependencies
         run: |
           cd backend
-          pip install -r requirements.txt
-
-      - name: Install ML dependencies
-        run: |
-          cd backend
-          pip install -r requirements-ml.txt
+          pip install --no-cache-dir -r requirements.txt -r requirements-ml.txt
 
       - name: Run sentiment scoring
         env:
