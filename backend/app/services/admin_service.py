@@ -363,13 +363,14 @@ async def getFeedbackById(feedbackId: str) -> dict:
         row = result.data[0]
         userResult = (
             supabase.table("users")
-            .select("id, name, email")
+            .select("id, name, email, role")
             .eq("id", row["user_id"])
             .execute()
         )
         user = userResult.data[0] if userResult.data else {}
         row["user_name"] = user.get("name", "Unknown")
         row["user_email"] = user.get("email", "Unknown")
+        row["user_role"] = user.get("role", "unknown")
         return row
     except Exception:
         return None

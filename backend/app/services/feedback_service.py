@@ -35,7 +35,7 @@ async def getAllFeedback(
     if user_ids:
         users_result = (
             supabase.table("users")
-            .select("id, name, email")
+            .select("id, name, email, role")
             .in_("id", user_ids)
             .execute()
         )
@@ -45,6 +45,7 @@ async def getAllFeedback(
         user = user_map.get(row.get("user_id"))
         row["user_name"] = user.get("name") if user else "Unknown"
         row["user_email"] = user.get("email") if user else "Unknown"
+        row["user_role"] = user.get("role") if user else "unknown"
 
     return {
         "data": rows,

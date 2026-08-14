@@ -22,7 +22,7 @@ async def createFeedback(
     body: FeedbackCreate,
     current_user: dict = Depends(get_current_user),
 ):
-    if current_user.get("role") != "investor":
+    if current_user.get("role") not in {"investor", "trader"}:
         raise HTTPException(status_code=403, detail="Forbidden")
     try:
         return await feedback_service.createFeedback(
