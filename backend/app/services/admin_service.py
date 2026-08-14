@@ -588,6 +588,27 @@ def buildPublicLandingSections(content: dict) -> list:
             "display_order": 4,
         })
 
+    # trader_insights is an add-on card with no separate API like
+    # /subscription/plans, so all fields are emitted here
+    trader_insights = content.get("trader_insights") or {}
+    raw_bullets = trader_insights.get("bullets") or []
+    ti_bullets = [b for b in raw_bullets if b]
+    if trader_insights.get("title") or trader_insights.get("price"):
+        sections.append({
+            "section_key": "trader_insights",
+            "title": trader_insights.get("title") or None,
+            "subtitle": trader_insights.get("subtitle") or None,
+            "plan_name": trader_insights.get("plan_name") or None,
+            "price": trader_insights.get("price") or None,
+            "period": trader_insights.get("period") or None,
+            "bullets": ti_bullets,
+            "cta_label": trader_insights.get("cta_label") or None,
+            "content": trader_insights.get("footnote") or None,
+            "image_url": None,
+            "is_visible": True,
+            "display_order": 5,
+        })
+
     return sections
 
 
