@@ -131,9 +131,11 @@ function AppLayout({ children }) {
                             <span onClick={() => document.getElementById('stock-list')?.scrollIntoView({ behavior: 'smooth' })}>
                                 Stock List
                             </span>
-                            <span onClick={() => document.getElementById('ai-recommendations')?.scrollIntoView({ behavior: 'smooth' })}>
-                                AI Recommendations
-                            </span>
+                            {!isTrader && (
+                                <span onClick={() => document.getElementById('ai-recommendations')?.scrollIntoView({ behavior: 'smooth' })}>
+                                    AI Recommendations
+                                </span>
+                            )}
                         </div>
                     )}
                     <div className="topbar-actions">
