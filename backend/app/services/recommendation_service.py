@@ -39,7 +39,7 @@ def _build_recommendation(pred: dict, stockMap: dict) -> dict:
     signal = pred.get("signal")
     confidence = pred.get("confidence_score") or 0
     if signal == "Buy":
-        reason = f"Strong buy signal with {confidence:.0f}% confidence"
+        reason = f"Buy signal with {confidence:.0f}% confidence"
     elif signal == "Sell":
         reason = f"Sell signal detected with {confidence:.0f}% confidence"
     else:
