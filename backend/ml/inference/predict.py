@@ -24,6 +24,32 @@ def _risk_level_for_confidence(confidence: float) -> str:
     return "High Risk"
 
 
+_TIMEFRAME_CONFIDENCE_SCALARS = {
+    "1d": 1.0,
+    "3d": 0.85,
+    "5d": 0.75,
+}
+
+
+def buildTimeframePredictions(signal: str, confidence: float) -> list:
+    """
+    Expand a single next-day signal/confidence into 1d/3d/5d variants
+    by scaling confidence per _TIMEFRAME_CONFIDENCE_SCALARS. Used by
+    recommendation_service to build lightweight prediction cards
+    without running the full ML pipeline.
+    """
+    predictions = []
+    for timeframe, scalar in _TIMEFRAME_CONFIDENCE_SCALARS.items():
+        scaledConfidence = round(confidence * scalar, 2)
+        predictions.append({
+            "timeframe": timeframe,
+            "signal": signal,
+            "confidence": scaledConfidence,
+            "risk_level": _risk_level_for_confidence(scaledConfidence),
+        })
+    return predictions
+
+
 def _artifact_suffix(horizon_days: int) -> str:
     if horizon_days not in SUPPORTED_HORIZONS:
         raise ValueError("horizon_days must be one of 1, 3, or 5.")
