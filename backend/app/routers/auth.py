@@ -373,7 +373,7 @@ async def getUserDetails(
     investorID: str,
     current_user: dict = Depends(get_current_user),
 ):
-    if investorID != current_user["sub"]:
+    if investorID != current_user["sub"] and current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
     return await svcGetUserDetails(investorID)
 
@@ -383,7 +383,7 @@ async def getInvestorRecordForEdit(
     investorID: str,
     current_user: dict = Depends(get_current_user),
 ):
-    if investorID != current_user["sub"]:
+    if investorID != current_user["sub"] and current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Not authorized")
     return await svcGetInvestorRecordForEdit(investorID)
 
