@@ -1,16 +1,4 @@
-const STRONG_BUY_THRESHOLD = 80
-
-function displaySignal(rec) {
-    if (rec.signal === 'Buy' && rec.confidence_score >= STRONG_BUY_THRESHOLD) {
-        return 'Strong Buy'
-    }
-    return rec.signal
-}
-
 function signalClass(rec) {
-    if (rec.signal === 'Buy' && rec.confidence_score >= STRONG_BUY_THRESHOLD) {
-        return 'signal-strong-buy'
-    }
     return 'signal-' + (rec.signal || '').toLowerCase()
 }
 
@@ -29,7 +17,7 @@ function ViewStockRecommendation({ recommendations, navigate }) {
                         {rec.company_name && <span className="rec-company">{rec.company_name}</span>}
                     </div>
                     <div className={'rec-signal ' + signalClass(rec)}>
-                        {(displaySignal(rec) || '').toUpperCase()}
+                        {(rec.signal || '').toUpperCase()}
                     </div>
                     <div className="rec-confidence">Match Score: {Math.round(rec.confidence_score)}%</div>
                     <div className="rec-risk">Risk Level: {rec.risk_level}</div>
