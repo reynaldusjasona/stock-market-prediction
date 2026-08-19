@@ -194,6 +194,13 @@ async def register(body: RegisterRequest):
 
 @router.post("/auth/login", tags=["Auth"])
 async def login(body: LoginRequest):
+    if not checkRateLimit(
+        "login", body.email, max_count=5, window_minutes=15
+    ):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many login attempts. Please try again later.",
+        )
     result = await svcLogin(body.email, body.password)
     await logActivity(
         userID=result["user"]["id"], action="login", targetType="auth"
@@ -235,6 +242,13 @@ async def verifyLoginOtpRoute(body: VerifyLoginOtpRequest):
 
 @router.post("/auth/send-2fa", tags=["Auth"])
 async def sendTwoFactorCode(body: SendTwoFactorRequest):
+    if not checkRateLimit(
+        "send-2fa", body.email, max_count=3, window_minutes=15
+    ):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Please try again later.",
+        )
     user_result = (
         supabase.table("users")
         .select("id, role")
@@ -257,6 +271,13 @@ async def sendTwoFactorCode(body: SendTwoFactorRequest):
 
 @router.post("/auth/verify-2fa", tags=["Auth"])
 async def verifyTwoFactorCode(body: VerifyTwoFactorRequest):
+    if not checkRateLimit(
+        "verify-2fa", body.email, max_count=5, window_minutes=15
+    ):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Please try again later.",
+        )
     verified = await verifyOtp(body.email, body.otp_code)
     if not verified:
         raise HTTPException(
@@ -348,12 +369,22 @@ async def resetPasswordWithTokenRoute(body: ResetPasswordWithTokenRequest):
 
 
 @router.get("/auth/user/{investorID}", tags=["Auth"])
-async def getUserDetails(investorID: str):
+async def getUserDetails(
+    investorID: str,
+    current_user: dict = Depends(get_current_user),
+):
+    if investorID != current_user["sub"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
     return await svcGetUserDetails(investorID)
 
 
 @router.get("/auth/user/{investorID}/edit", tags=["Auth"])
-async def getInvestorRecordForEdit(investorID: str):
+async def getInvestorRecordForEdit(
+    investorID: str,
+    current_user: dict = Depends(get_current_user),
+):
+    if investorID != current_user["sub"] and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
     return await svcGetInvestorRecordForEdit(investorID)
 
 
