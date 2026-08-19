@@ -1,5 +1,4 @@
 import os
-import random
 import re
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -36,6 +35,19 @@ _PUBLIC_FIELDS = (
 
 def _strip_hash(row: dict) -> dict:
     return {k: v for k, v in row.items() if k != "password_hash"}
+
+
+_PUBLIC_FIELD_SET = {
+    "id", "name", "email", "role", "status", "risk_tolerance",
+    "sector_preferences", "created_at", "updated_at",
+    "phone", "trader_status", "license_number", "specialization",
+    "years_experience", "bio", "is_verified",
+}
+
+
+def _to_public(row: dict) -> dict:
+    """Return only the fields safe to expose in API responses."""
+    return {k: v for k, v in row.items() if k in _PUBLIC_FIELD_SET}
 
 
 async def validateInputs(name: str, email: str, password: str) -> dict:
@@ -226,7 +238,7 @@ async def login(identifier: str, password: str) -> dict:
     supabase.table("users").update(
         {"session_token": token}
     ).eq("id", user["id"]).execute()
-    return {"token": token, "user": _strip_hash(user)}
+    return {"token": token, "user": _to_public(user)}
 
 
 async def initiateLoginOtp(identifier: str, password: str) -> str:
@@ -325,11 +337,11 @@ async def verifyLoginOtp(loginChallenge: str, otpCode: str) -> dict:
         "login_otp_expires_at": None,
     }).eq("id", user["id"]).execute()
 
-    return {"token": token, "user": _strip_hash(user)}
+    return {"token": token, "user": _to_public(user)}
 
 
 async def generateOtp() -> str:
-    return f"{random.randint(0, 999999):06d}"
+    return f"{secrets.randbelow(1000000):06d}"
 
 
 async def saveOtp(email: str, otpCode: str) -> None:
