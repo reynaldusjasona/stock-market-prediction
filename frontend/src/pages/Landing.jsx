@@ -58,12 +58,14 @@ function Landing() {
     const navigate = useNavigate()
     const [sections, setSections] = useState({})
     const [plans, setPlans] = useState([])
+    const [testimonials, setTestimonials] = useState([])
 
     useEffect(() => {
         api.get('/landing')
             .then((data) => {
                 const list = data?.sections || []
                 setSections(Object.fromEntries(list.map((s) => [s.section_key, s])))
+                setTestimonials(data?.testimonials || [])
             })
             .catch((err) => console.log('landing content failed:', err.message))
 
@@ -217,7 +219,7 @@ function Landing() {
                 </section>
             )}
 
-            <ViewTestimonials />
+            <ViewTestimonials testimonials={testimonials} />
 
             {/* pricing - plan card is always sourced live from /subscription/plans;
                 title/subtitle text above it is admin-editable via landing_page_config */}

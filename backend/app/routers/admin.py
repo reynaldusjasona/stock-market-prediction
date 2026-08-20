@@ -418,4 +418,7 @@ async def deleteApiSourceRoute(
 @router.get("/landing", tags=["Public"])
 async def getPublicLandingContent():
     content = await getLandingContent()
-    return {"sections": buildPublicLandingSections(content)}
+    return {
+        "sections": buildPublicLandingSections(content),
+        "testimonials": content.get("testimonials") or [],
+    }
