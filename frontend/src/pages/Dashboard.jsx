@@ -25,6 +25,7 @@ function Dashboard() {
     const [showProfileModal, setShowProfileModal] = useState(false)
     const navigate = useNavigate()
     const { user, isSubscribed } = useAuth()
+    const isTrader = user?.role === 'trader'
 
     // get all data needed for dashboard
     async function getData() {
@@ -55,17 +56,21 @@ function Dashboard() {
             console.log('stocks failed:', err.message)
         }
 
-        try {
-            const recData = await api.get('/recommendations/personalized?limit=3')
-            setRecommendations(recData.recommendations || [])
-        } catch (err) {
-            console.log('recommendations failed:', err.message)
-        }
+        // recommendations and price alerts are investor-only features;
+        // traders visiting the investor view don't need either
+        if (!isTrader) {
+            try {
+                const recData = await api.get('/recommendations/personalized?limit=3')
+                setRecommendations(recData.recommendations || [])
+            } catch (err) {
+                console.log('recommendations failed:', err.message)
+            }
 
-        // opportunistically check price alerts here too, since dashboard is
-        // usually the first page visited after login - no need to block
-        // the rest of the page on this
-        api.post('/alerts/check-all').catch((err) => console.log('alert check failed:', err.message))
+            // opportunistically check price alerts here too, since dashboard is
+            // usually the first page visited after login - no need to block
+            // the rest of the page on this
+            api.post('/alerts/check-all').catch((err) => console.log('alert check failed:', err.message))
+        }
 
         setLoading(false)
     }
@@ -82,7 +87,7 @@ function Dashboard() {
     // Deferred until after subscribing - no point nudging someone to set up
     // personalization for a feature they can't access yet.
     useEffect(() => {
-        if (!user?.id || !isSubscribed) return
+        if (!user?.id || !isSubscribed || isTrader) return
         if (sessionStorage.getItem(PROFILE_MODAL_DISMISSED_KEY)) return
 
         api.get(`/auth/user/${user.id}/preferences`)
@@ -114,7 +119,7 @@ function Dashboard() {
             )}
 
             <div className="page-header">
-                <h1>Welcome back, Investor</h1>
+                <h1>Welcome back{isTrader ? '' : ', Investor'}</h1>
                 <p>Market analysis is updated and ready for your next move.</p>
             </div>
 
@@ -127,19 +132,21 @@ function Dashboard() {
 
             <ViewStocksList stockList={stockList} navigate={navigate} fmt={fmt} />
 
-            <div className="dashboard-recommendations">
-                <div className="dashboard-recommendations-header">
-                    <h2 className="section-heading" id="ai-recommendations">AI Recommendations</h2>
-                    <span className="view-all-link" onClick={() => navigate('/recommendations')}>
-                        View All Recommendations &rarr;
-                    </span>
+            {!isTrader && (
+                <div className="dashboard-recommendations">
+                    <div className="dashboard-recommendations-header">
+                        <h2 className="section-heading" id="ai-recommendations">AI Recommendations</h2>
+                        <span className="view-all-link" onClick={() => navigate('/recommendations')}>
+                            View All Recommendations &rarr;
+                        </span>
+                    </div>
+                    {recommendations.length === 0 ? (
+                        <p className="empty-state">No recommendations available yet.</p>
+                    ) : (
+                        <ViewStockRecommendation recommendations={recommendations} navigate={navigate} />
+                    )}
                 </div>
-                {recommendations.length === 0 ? (
-                    <p className="empty-state">No recommendations available yet.</p>
-                ) : (
-                    <ViewStockRecommendation recommendations={recommendations} navigate={navigate} />
-                )}
-            </div>
+            )}
         </AppLayout>
     )
 }
