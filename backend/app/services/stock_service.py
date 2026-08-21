@@ -298,7 +298,8 @@ async def queryStockDB(query: str) -> list:
         .limit(100)
         .execute()
     )
-    return result.data or []
+    rows = result.data or []
+    return await _enrich_with_prices(rows)
 
 
 async def calculateIndicators(priceData: list) -> dict:
