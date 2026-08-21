@@ -49,7 +49,7 @@ async def getTraderClients(trader_id: str) -> list:
     if investorIDs:
         usersResult = (
             supabase.table("users")
-            .select("id, name, email")
+            .select("id, name, email, risk_tolerance")
             .in_("id", investorIDs)
             .execute()
         )
@@ -63,6 +63,7 @@ async def getTraderClients(trader_id: str) -> list:
                 "id": link["investor_id"],
                 "full_name": user.get("name"),
                 "email": user.get("email"),
+                "risk_tolerance": user.get("risk_tolerance"),
                 "linked_since": link.get("created_at"),
             }
         )
