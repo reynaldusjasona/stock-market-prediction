@@ -34,8 +34,8 @@ function ViewClientModal({client, onClose}) {
             <div>
               <div className="admin-form-label">Engaged Since</div>
               <div style={{ fontSize:'0.85rem', color:'var(--text-muted)' }}>
-                {client.engaged_at || client.created_at
-                  ? new Date(client.engaged_at || client.created_at).toLocaleDateString('en-SG', { dateStyle:'medium' })
+                {client.linked_since || client.engaged_at || client.created_at
+                  ? new Date(client.linked_since || client.engaged_at || client.created_at).toLocaleDateString('en-SG', { dateStyle:'medium' })
                   : '—'}
               </div>
             </div>
